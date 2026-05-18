@@ -5,8 +5,8 @@ import {
   normalizeBitsAvatarPath
 } from '../../utils/format';
 import {
-  ESSAY_PUBLIC_SLUG_RE,
-  RESERVED_ESSAY_SLUGS,
+  LONGFORM_PUBLIC_SLUG_RE,
+  RESERVED_LONGFORM_SLUGS,
   flattenEntryIdToSlug
 } from '../../utils/slug-rules';
 import { isRoutableTagKey, normalizeTagLabel, toTagKey } from '../tags';
@@ -22,7 +22,7 @@ import {
 } from './content-shared';
 import { normalizeAdminBitsImageSource } from './image-shared';
 
-export type AdminChecksCategoryId = 'settings' | 'essay-slug' | 'bits-images' | 'tag';
+export type AdminChecksCategoryId = 'settings' | 'longform-slug' | 'bits-images' | 'tag';
 export type AdminChecksFilterValue = 'all' | AdminChecksCategoryId;
 export type AdminChecksCategoryStatus = 'ready' | 'blocked';
 
@@ -80,8 +80,8 @@ const ADMIN_CHECKS_CATEGORIES = [
     description: '检查 settings 文件是否缺字段或结构异常。'
   },
   {
-    id: 'essay-slug',
-    label: '随笔 Slug',
+    id: 'longform-slug',
+    label: '长文 Slug',
     description: '检查 slug 格式、重复和保留路由冲突。'
   },
   {
@@ -223,13 +223,13 @@ const createSourceReadIssue = (category: AdminChecksCategoryId, source: AdminCon
     detail: source.readError
   });
 
-const createEssaySlugIssues = (sources: readonly AdminContentSourceRecord[]): AdminChecksIssue[] => {
+const createLongformSlugIssues = (sources: readonly AdminContentSourceRecord[]): AdminChecksIssue[] => {
   const issues: AdminChecksIssue[] = [];
   const collisions = new Map<string, AdminContentSourceRecord[]>();
 
   for (const source of sources) {
     if (source.readError || !source.frontmatter) {
-      issues.push(createSourceReadIssue('essay-slug', source));
+      issues.push(createSourceReadIssue('longform-slug', source));
       continue;
     }
 
@@ -239,11 +239,11 @@ const createEssaySlugIssues = (sources: readonly AdminContentSourceRecord[]): Ad
         : '';
     const publicSlug = explicitSlug || flattenEntryIdToSlug(source.entryId);
 
-    if (!ESSAY_PUBLIC_SLUG_RE.test(publicSlug)) {
+    if (!LONGFORM_PUBLIC_SLUG_RE.test(publicSlug)) {
       issues.push(
         createIssue(
-          'essay-slug',
-          'essay public slug 非法',
+          'longform-slug',
+          'longform public slug 非法',
           explicitSlug
             ? `frontmatter.slug "${explicitSlug}" 不是合法的小写 kebab-case。`
             : `由 entry.id 拍平得到的公开 slug "${publicSlug}" 不合法，请调整路径或显式设置 slug。`,
@@ -259,12 +259,12 @@ const createEssaySlugIssues = (sources: readonly AdminContentSourceRecord[]): Ad
       continue;
     }
 
-    if (RESERVED_ESSAY_SLUGS.has(publicSlug)) {
+    if (RESERVED_LONGFORM_SLUGS.has(publicSlug)) {
       issues.push(
         createIssue(
-          'essay-slug',
-          'essay public slug 命中保留路由',
-          `公开 slug "${publicSlug}" 会与 /archive 或 /essay 下的保留路由冲突。`,
+          'longform-slug',
+          'longform public slug 命中保留路由',
+          `公开 slug "${publicSlug}" 会与 /archive 或 /longform 下的保留路由冲突。`,
           {
             relativePath: source.relativePath,
             fieldPath: 'slug',
@@ -292,9 +292,9 @@ const createEssaySlugIssues = (sources: readonly AdminContentSourceRecord[]): Ad
 
       issues.push(
         createIssue(
-          'essay-slug',
-          'essay public slug 冲突',
-          `公开 slug "${publicSlug}" 已被其他 essay 占用：${otherEntryIds.join(', ')}。`,
+          'longform-slug',
+          'longform public slug 冲突',
+          `公开 slug "${publicSlug}" 已被其他 longform 占用：${otherEntryIds.join(', ')}。`,
           {
             relativePath: source.relativePath,
             fieldPath: 'slug',
@@ -461,16 +461,16 @@ export const isAdminChecksCategoryId = (value: string): value is AdminChecksCate
   ADMIN_CHECKS_CATEGORIES.some((category) => category.id === value);
 
 export const getAdminChecksData = async (): Promise<AdminChecksData> => {
-  const [essaySources, bitsSources] = await Promise.all([
-    loadCollectionSources('essay'),
+  const [longformSources, bitsSources] = await Promise.all([
+    loadCollectionSources('longform'),
     loadCollectionSources('bits')
   ]);
 
   const issuesByCategory: Record<AdminChecksCategoryId, AdminChecksIssue[]> = {
     settings: createSettingsIssues(),
-    'essay-slug': createEssaySlugIssues(essaySources),
+    'longform-slug': createLongformSlugIssues(longformSources),
     'bits-images': createBitsImagesIssues(bitsSources),
-    tag: createTagIssues([...essaySources, ...bitsSources])
+    tag: createTagIssues([...longformSources, ...bitsSources])
   };
 
   const categories = ADMIN_CHECKS_CATEGORIES.map((category) => {

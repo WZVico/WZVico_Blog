@@ -18,11 +18,11 @@ import {
 const getCollectionMock = vi.mocked(getCollection);
 const date = (value: string) => new Date(value);
 
-const essay = (id: string, options: Record<string, unknown> = {}) => ({
+const longform = (id: string, options: Record<string, unknown> = {}) => ({
   id,
-  collection: 'essay',
+  collection: 'longform',
   data: {
-    title: `Essay ${id}`,
+    title: `Longform ${id}`,
     date: date('2026-01-10T00:00:00.000Z'),
     tags: [] as string[],
     draft: false,
@@ -43,11 +43,11 @@ const bit = (id: string, options: Record<string, unknown> = {}) => ({
   }
 });
 
-const memo = (id: string, options: Record<string, unknown> = {}) => ({
+const reads = (id: string, options: Record<string, unknown> = {}) => ({
   id,
-  collection: 'memo',
+  collection: 'reads',
   data: {
-    title: `Memo ${id}`,
+    title: `reads ${id}`,
     date: date('2026-01-08T00:00:00.000Z'),
     draft: false,
     ...options
@@ -78,15 +78,15 @@ describe('admin-console/overview', () => {
 
   it('builds public summary from published source and archive-only tag source', () => {
     const publicSource = {
-      essays: [
-        essay('archive-essay', { tags: ['Design', 'Astro'] }),
-        essay('essay-only', { archive: false, tags: ['Hidden'] })
+      longforms: [
+        longform('archive-longform', { tags: ['Design', 'Astro'] }),
+        longform('longform-only', { archive: false, tags: ['Hidden'] })
       ],
-      archiveEssays: [
-        essay('archive-essay', { tags: ['Design', 'Astro'] })
+      archiveLongforms: [
+        longform('archive-longform', { tags: ['Design', 'Astro'] })
       ],
       bits: [bit('published-bit', { date: date('2026-01-12T12:00:00.000Z') })],
-      memos: [memo('published-memo')],
+      reads: [reads('published-reads')],
       bitsHrefById: new Map([['published-bit', '/bits/#bit-published-bit']])
     } as unknown as AdminOverviewPublicSource;
 
@@ -131,26 +131,26 @@ describe('admin-console/overview', () => {
     const publicWordCount = [
       '中文 alpha 123',
       'beta test 42',
-      'かな memo'
+      'かな reads'
     ].reduce((total, body) => total + countAdminOverviewWords(body), 0);
     const draftWordCount = [
       '草稿 draft 999',
       '草稿 bit 888',
-      '草稿 memo 777'
+      '草稿 reads 777'
     ].reduce((total, body) => total + countAdminOverviewWords(body), 0);
 
     mockCollections({
-      essay: [
-        withBody(essay('published-essay'), '中文 alpha 123'),
-        withBody(essay('draft-essay', { draft: true }), '草稿 draft 999')
+      longform: [
+        withBody(longform('published-longform'), '中文 alpha 123'),
+        withBody(longform('draft-longform', { draft: true }), '草稿 draft 999')
       ],
       bits: [
         withBody(bit('published-bit'), 'beta test 42'),
         withBody(bit('draft-bit', { draft: true }), '草稿 bit 888')
       ],
-      memo: [
-        withBody(memo('published-memo'), 'かな memo'),
-        withBody(memo('draft-memo', { draft: true }), '草稿 memo 777')
+      reads: [
+        withBody(reads('published-reads'), 'かな reads'),
+        withBody(reads('draft-reads', { draft: true }), '草稿 reads 777')
       ]
     });
 
@@ -167,7 +167,7 @@ describe('admin-console/overview', () => {
 
   it('keeps draft recent items unlinkable while published bits use the public href map', () => {
     const maintainerSource = {
-      essays: [],
+      longforms: [],
       bits: [
         bit('draft-bit', {
           title: 'Draft Bit',
@@ -179,7 +179,7 @@ describe('admin-console/overview', () => {
           date: date('2026-01-12T12:00:00.000Z')
         })
       ],
-      memos: []
+      reads: []
     } as unknown as AdminOverviewMaintainerSource;
 
     const summary = buildAdminOverviewMaintainerSummary(

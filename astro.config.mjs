@@ -14,7 +14,7 @@ const getSchemaAttrs = (tagName) => {
 };
 
 const mergeAttrs = (...lists) => Array.from(new Set(lists.flat()));
-const SITEMAP_ROUTE_ROOTS = new Set(['about', 'admin', 'archive', 'bits', 'checks', 'essay', 'memo']);
+const SITEMAP_ROUTE_ROOTS = new Set(['about', 'admin', 'archive', 'bits', 'checks', 'longform', 'reads']);
 
 const normalizeSitemapPathname = (page) => {
   let pathname = '/';
@@ -42,7 +42,7 @@ const isExcludedSitemapPathname = (pathname) =>
   || pathname === '/checks'
   || pathname.startsWith('/checks/')
   || pathname === '/bits/draft-dialog'
-  || /^\/essay\/[^/]+$/.test(pathname);
+  || /^\/longform\/[^/]+$/.test(pathname);
 
 const isExcludedSitemapEntry = (page) => isExcludedSitemapPathname(normalizeSitemapPathname(page));
 

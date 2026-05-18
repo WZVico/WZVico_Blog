@@ -295,7 +295,7 @@ const activeFilterCount = pageData
               <p class="admin-content-toolbar__hint">
                 {pageData.hasActiveFilters
                   ? '当前 URL 已记录筛选状态，可以直接保留这次检索结果。'
-                  : '选择条目后会在下方显示索引详情；essay / bits 会补充 frontmatter 编辑卡片，memo 继续保持只读。'}
+                  : '选择条目后会在下方显示索引详情；longform / bits 会补充 frontmatter 编辑卡片，reads 继续保持只读。'}
               </p>
               <div class="admin-overview-card__actions">
                 <button class="admin-btn admin-btn--secondary" type="submit">应用筛选</button>
@@ -424,7 +424,7 @@ const activeFilterCount = pageData
                   <form id="admin-content-editor-form" class="admin-content-editor__form">
                     <div class="admin-content-editor__grid">
                       {
-                        selectedEntryEditorPayload.collection === 'essay' ? (
+                        selectedEntryEditorPayload.collection === 'longform' ? (
                           <>
                             <label class="admin-field admin-content-editor__field" data-field-path="title">
                               <span class="admin-field__label">title</span>
@@ -695,10 +695,10 @@ const activeFilterCount = pageData
                     {selectedEntryEditorPayload.readonlyReason}
                   </p>
                   <dl class="admin-data-meta admin-content-detail-meta">
-                    <dt class="admin-data-meta__label">memo.date</dt>
+                    <dt class="admin-data-meta__label">reads.date</dt>
                     <dd class="admin-data-meta__value">可选字段，不要求必填</dd>
-                    <dt class="admin-data-meta__label">memo.slug</dt>
-                    <dd class="admin-data-meta__value">使用普通字符串，不复用 essay 的 slugRule 正则</dd>
+                    <dt class="admin-data-meta__label">reads.slug</dt>
+                    <dd class="admin-data-meta__value">使用普通字符串，不复用 longform 的 slugRule 正则</dd>
                   </dl>
                 </article>
               )

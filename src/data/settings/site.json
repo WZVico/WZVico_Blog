@@ -1,25 +1,42 @@
 {
-  "title": "Astro Themes by Whono",
+  "title": "WZVico' Blog",
   "description": "一个 Astro 主题的展示站：轻量、可维护、可复用。",
   "defaultLocale": "zh-CN",
   "footer": {
-    "startYear": 2025,
+    "startYear": 2026,
     "showCurrentYear": true,
-    "copyright": "Whono · Theme Demo · by cxro"
+    "copyright": "WZVico' Blog · by 未可 · Based on whono"
   },
   "adminOverview": {
     "publicVisible": true,
     "hiddenMessage": "作者暂未公开此页面。"
   },
   "socialLinks": {
-    "github": "https://github.com/cxro/astro-whono",
-    "x": "https://twitter.com/yourname",
-    "email": "Whono@linux.do",
+    "github": "https://github.com/WZVico",
+    "x": "https://x.com/WZVico",
+    "email": "wz@wzvico.com",
     "presetOrder": {
-      "github": 1,
-      "x": 2,
-      "email": 3
+      "github": 4,
+      "x": 3,
+      "email": 5
     },
-    "custom": []
+    "custom": [
+      {
+        "id": "custom-weibo",
+        "label": "微博",
+        "href": "https://weibo.com/wzvico",
+        "iconKey": "weibo",
+        "visible": true,
+        "order": 1
+      },
+      {
+        "id": "custom-bilibili",
+        "label": "Bilibili",
+        "href": "https://space.bilibili.com/3706942868425331",
+        "iconKey": "bilibili",
+        "visible": true,
+        "order": 2
+      }
+    ]
   }
 }

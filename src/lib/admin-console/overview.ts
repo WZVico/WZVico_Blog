@@ -8,21 +8,21 @@ import {
   type BitsEntry
 } from '../bits';
 import {
-  getEssayDerivedText,
-  getEssaySlug,
-  getMemoDerivedText,
+  getLongformDerivedText,
+  getLongformSlug,
+  getReadsDerivedText,
   getPublished,
-  getSortedEssays,
+  getSortedLongforms,
   isReservedSlug,
-  type EssayEntry,
-  type MemoEntry
+  type LongformEntry,
+  type ReadsEntry
 } from '../content';
 import { collectTagSummary, getTagPath } from '../tags';
 import { formatDateTime, formatISODate, formatISODateUtc } from '../../utils/format';
 import { cleanMarkdownToText } from '../../utils/excerpt';
 import packageJson from '../../../package.json';
 
-export type AdminOverviewCollectionKey = 'essay' | 'bits' | 'memo';
+export type AdminOverviewCollectionKey = 'longform' | 'bits' | 'reads';
 
 export type AdminOverviewDataOptions = {
   includeMaintainer: boolean;
@@ -40,17 +40,17 @@ export type AdminOverviewSource = {
 };
 
 export type AdminOverviewPublicSource = {
-  essays: EssayEntry[];
-  archiveEssays: EssayEntry[];
+  longforms: LongformEntry[];
+  archiveLongforms: LongformEntry[];
   bits: BitsEntry[];
-  memos: MemoEntry[];
+  reads: ReadsEntry[];
   bitsHrefById: Map<string, string>;
 };
 
 export type AdminOverviewMaintainerSource = {
-  essays: EssayEntry[];
+  longforms: LongformEntry[];
   bits: BitsEntry[];
-  memos: MemoEntry[];
+  reads: ReadsEntry[];
 };
 
 export type AdminOverviewStats = {
@@ -146,22 +146,22 @@ export type AdminOverviewData = AdminOverviewPublicSummary & {
 };
 
 type RecentSource = {
-  essays: EssayEntry[];
+  longforms: LongformEntry[];
   bits: BitsEntry[];
-  memos: MemoEntry[];
+  reads: ReadsEntry[];
   bitsHrefById: ReadonlyMap<string, string>;
 };
 
 const COLLECTION_LABELS: Record<AdminOverviewCollectionKey, string> = {
-  essay: 'Essay',
+  longform: 'Longform',
   bits: 'Bits',
-  memo: 'Memo'
+  reads: 'reads'
 };
 
 const COLLECTION_DETAILS: Record<AdminOverviewCollectionKey, string> = {
-  essay: '文章',
+  longform: '文章',
   bits: '动态',
-  memo: '小记'
+  reads: '阅读'
 };
 
 const RECENT_LIMIT = 6;
@@ -198,7 +198,7 @@ const DEPLOY_TARGET_ALIASES = new Map<string, AdminOverviewDeployTarget>([
 const orderByNullableDateDesc = (left: Date | null, right: Date | null): number =>
   (right?.valueOf() ?? -Infinity) - (left?.valueOf() ?? -Infinity);
 
-const orderByMemoDate = (a: MemoEntry, b: MemoEntry): number =>
+const orderByReadsDate = (a: ReadsEntry, b: ReadsEntry): number =>
   orderByNullableDateDesc(a.data.date ?? null, b.data.date ?? null);
 
 const formatCompactDate = (date: Date) => formatISODate(date).replace(/-/g, '.');
@@ -211,15 +211,15 @@ const formatShortDate = (date: Date | null, useUtc = false): string => {
 };
 
 const getCollectionDraftCount = (
-  entries: readonly EssayEntry[] | readonly BitsEntry[] | readonly MemoEntry[]
+  entries: readonly LongformEntry[] | readonly BitsEntry[] | readonly ReadsEntry[]
 ): number => entries.filter((entry) => entry.data.draft === true).length;
 
 const filterPublishedEntries = <Entry extends { data: { draft?: boolean } }>(
   entries: readonly Entry[]
 ): Entry[] => entries.filter((entry) => entry.data.draft !== true);
 
-const filterArchiveEssays = (essays: readonly EssayEntry[]): EssayEntry[] =>
-  essays.filter((entry) => entry.data.archive !== false && !isReservedSlug(getEssaySlug(entry)));
+const filterArchiveLongforms = (longforms: readonly LongformEntry[]): LongformEntry[] =>
+  longforms.filter((entry) => entry.data.archive !== false && !isReservedSlug(getLongformSlug(entry)));
 
 const getPercentage = (count: number, total: number): number => {
   if (total <= 0 || count <= 0) return 0;
@@ -234,13 +234,13 @@ export const buildAdminOverviewBitsHrefById = (bits: readonly BitsEntry[]): Map<
     })
   );
 
-const getRecentEssayPublication = (entry: EssayEntry): AdminOverviewRecentPublication => {
+const getRecentLongformPublication = (entry: LongformEntry): AdminOverviewRecentPublication => {
   const isDraft = entry.data.draft === true;
   return {
-    collection: 'essay',
-    collectionLabel: COLLECTION_LABELS.essay,
+    collection: 'longform',
+    collectionLabel: COLLECTION_LABELS.longform,
     title: entry.data.title,
-    href: isDraft ? null : `/archive/${getEssaySlug(entry)}/`,
+    href: isDraft ? null : `/archive/${getLongformSlug(entry)}/`,
     isDraft,
     date: entry.data.date,
     dateLabel: formatCompactDateUtc(entry.data.date),
@@ -269,13 +269,13 @@ const getRecentBitsPublication = (
   };
 };
 
-const getRecentMemoPublication = (entry: MemoEntry): AdminOverviewRecentPublication => {
+const getRecentReadsPublication = (entry: ReadsEntry): AdminOverviewRecentPublication => {
   const isDraft = entry.data.draft === true;
   return {
-    collection: 'memo',
-    collectionLabel: COLLECTION_LABELS.memo,
+    collection: 'reads',
+    collectionLabel: COLLECTION_LABELS.reads,
     title: entry.data.title,
-    href: isDraft ? null : '/memo/',
+    href: isDraft ? null : '/reads/',
     isDraft,
     date: entry.data.date ?? null,
     dateLabel: entry.data.date ? formatCompactDate(entry.data.date) : '未设置日期',
@@ -285,16 +285,16 @@ const getRecentMemoPublication = (entry: MemoEntry): AdminOverviewRecentPublicat
 
 const buildRecentPublications = (source: RecentSource): AdminOverviewRecentPublication[] =>
   [
-    ...source.essays.map((entry) => getRecentEssayPublication(entry)),
+    ...source.longforms.map((entry) => getRecentLongformPublication(entry)),
     ...source.bits.map((entry) => getRecentBitsPublication(entry, source.bitsHrefById)),
-    ...source.memos.map((entry) => getRecentMemoPublication(entry))
+    ...source.reads.map((entry) => getRecentReadsPublication(entry))
   ]
     .sort((left, right) => orderByNullableDateDesc(left.date, right.date))
     .slice(0, RECENT_LIMIT);
 
 const getLatestUpdate = (source: AdminOverviewPublicSource): AdminOverviewStats['lastUpdate'] => {
   const candidates = [
-    ...source.essays.map((entry) => ({
+    ...source.longforms.map((entry) => ({
       date: entry.data.date,
       dateLabel: formatCompactDateUtc(entry.data.date)
     })),
@@ -302,7 +302,7 @@ const getLatestUpdate = (source: AdminOverviewPublicSource): AdminOverviewStats[
       date: entry.data.date,
       dateLabel: formatCompactDate(entry.data.date)
     })),
-    ...source.memos
+    ...source.reads
       .filter((entry) => entry.data.date)
       .map((entry) => ({
         date: entry.data.date as Date,
@@ -315,11 +315,11 @@ const getLatestUpdate = (source: AdminOverviewPublicSource): AdminOverviewStats[
 };
 
 const buildCollectionShares = (source: AdminOverviewPublicSource): AdminOverviewCollectionShare[] => {
-  const total = source.essays.length + source.bits.length + source.memos.length;
+  const total = source.longforms.length + source.bits.length + source.reads.length;
   const counts: Record<AdminOverviewCollectionKey, number> = {
-    essay: source.essays.length,
+    longform: source.longforms.length,
     bits: source.bits.length,
-    memo: source.memos.length
+    reads: source.reads.length
   };
 
   return (Object.keys(counts) as AdminOverviewCollectionKey[]).map((key) => {
@@ -358,16 +358,16 @@ export const formatAdminOverviewWordMetric = (wordCount: number): { value: strin
 };
 
 const buildAdminOverviewWordCount = (source: AdminOverviewPublicSource): number =>
-  source.essays.reduce(
-    (total, entry) => total + countAdminOverviewTextWords(getEssayDerivedText(entry).plainText),
+  source.longforms.reduce(
+    (total, entry) => total + countAdminOverviewTextWords(getLongformDerivedText(entry).plainText),
     0
   )
   + source.bits.reduce(
     (total, entry) => total + countAdminOverviewTextWords(getBitsDerivedText(entry).plainText),
     0
   )
-  + source.memos.reduce(
-    (total, entry) => total + countAdminOverviewTextWords(getMemoDerivedText(entry).plainText),
+  + source.reads.reduce(
+    (total, entry) => total + countAdminOverviewTextWords(getReadsDerivedText(entry).plainText),
     0
   );
 
@@ -403,12 +403,12 @@ const getHostTargetLabel = (env: Record<string, string | undefined>): string => 
 const formatBuildDateLabel = (date: Date): string => formatDateTime(date);
 
 const buildWritingActivity = (
-  essays: readonly EssayEntry[],
+  longforms: readonly LongformEntry[],
   bits: readonly BitsEntry[],
   now: Date = new Date()
 ): AdminOverviewActivityDay[] => {
   const datedEntries = [
-    ...essays.map((entry) => entry.data.date),
+    ...longforms.map((entry) => entry.data.date),
     ...bits.map((entry) => entry.data.date)
   ];
   if (datedEntries.length === 0) return [];
@@ -476,11 +476,11 @@ export const buildAdminOverviewPublicSummary = (
   source: AdminOverviewPublicSource,
   options: AdminOverviewPublicSummaryOptions = {}
 ): AdminOverviewPublicSummary => {
-  const topTags = collectTagSummary(source.archiveEssays);
+  const topTags = collectTagSummary(source.archiveLongforms);
 
   return {
     stats: {
-      publishedCount: source.essays.length + source.bits.length + source.memos.length,
+      publishedCount: source.longforms.length + source.bits.length + source.reads.length,
       tagCount: topTags.length,
       wordCount: buildAdminOverviewWordCount(source),
       lastUpdate: getLatestUpdate(source)
@@ -492,7 +492,7 @@ export const buildAdminOverviewPublicSummary = (
       count: tag.count,
       href: getTagPath('archive', tag.key)
     })),
-    writingActivity: buildWritingActivity(source.essays, source.bits, options.now),
+    writingActivity: buildWritingActivity(source.longforms, source.bits, options.now),
     recentPublications: buildRecentPublications(source)
   };
 };
@@ -505,10 +505,10 @@ export const buildAdminOverviewMaintainerSummary = (
 
   const collectionDrafts: AdminOverviewCollectionDraftSummary[] = [
     {
-      key: 'essay',
-      label: COLLECTION_LABELS.essay,
-      draftCount: getCollectionDraftCount(source.essays),
-      totalCount: source.essays.length
+      key: 'longform',
+      label: COLLECTION_LABELS.longform,
+      draftCount: getCollectionDraftCount(source.longforms),
+      totalCount: source.longforms.length
     },
     {
       key: 'bits',
@@ -517,16 +517,16 @@ export const buildAdminOverviewMaintainerSummary = (
       totalCount: source.bits.length
     },
     {
-      key: 'memo',
-      label: COLLECTION_LABELS.memo,
-      draftCount: getCollectionDraftCount(source.memos),
-      totalCount: source.memos.length
+      key: 'reads',
+      label: COLLECTION_LABELS.reads,
+      draftCount: getCollectionDraftCount(source.reads),
+      totalCount: source.reads.length
     }
   ];
   const recentPublications = buildRecentPublications({
-    essays: source.essays,
+    longforms: source.longforms,
     bits: source.bits,
-    memos: source.memos,
+    reads: source.reads,
     bitsHrefById
   });
 
@@ -542,20 +542,20 @@ export const loadAdminOverviewSource = async (
   options: AdminOverviewSourceOptions
 ): Promise<AdminOverviewSource> => {
   const includeDraft = options.includeMaintainer;
-  const [sourceEssays, sourceBits, sourceMemos] = await Promise.all([
-    getSortedEssays({ includeDraft }),
+  const [sourceLongforms, sourceBits, sourceReads] = await Promise.all([
+    getSortedLongforms({ includeDraft }),
     getSortedBits({ includeDraft }),
-    getPublished('memo', { includeDraft, orderBy: orderByMemoDate })
+    getPublished('reads', { includeDraft, orderBy: orderByReadsDate })
   ]);
-  const essays = filterPublishedEntries(sourceEssays);
+  const longforms = filterPublishedEntries(sourceLongforms);
   const bits = filterPublishedEntries(sourceBits);
-  const memos = filterPublishedEntries(sourceMemos);
+  const reads = filterPublishedEntries(sourceReads);
 
   const publicSource: AdminOverviewPublicSource = {
-    essays,
-    archiveEssays: filterArchiveEssays(essays),
+    longforms,
+    archiveLongforms: filterArchiveLongforms(longforms),
     bits,
-    memos,
+    reads,
     bitsHrefById: buildAdminOverviewBitsHrefById(bits)
   };
 
@@ -569,9 +569,9 @@ export const loadAdminOverviewSource = async (
   return {
     public: publicSource,
     maintainer: {
-      essays: sourceEssays,
+      longforms: sourceLongforms,
       bits: sourceBits,
-      memos: sourceMemos
+      reads: sourceReads
     }
   };
 };

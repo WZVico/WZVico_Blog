@@ -4,13 +4,13 @@ import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
 import { normalizeBitsAvatarPath } from '../../utils/format';
 import {
-  parseEssayDateInput,
-  parseEssayPublishedAtInput
+  parseLongformDateInput,
+  parseLongformPublishedAtInput
 } from '../../utils/date-only';
 import { normalizeAdminBitsImageSource } from './image-shared';
 import {
-  ESSAY_PUBLIC_SLUG_RE,
-  RESERVED_ESSAY_SLUGS,
+  LONGFORM_PUBLIC_SLUG_RE,
+  RESERVED_LONGFORM_SLUGS,
   flattenEntryIdToSlug
 } from '../../utils/slug-rules';
 import {
@@ -20,11 +20,11 @@ import {
   splitMarkdownFrontmatter
 } from './frontmatter';
 
-export type AdminContentCollectionKey = 'essay' | 'bits' | 'memo';
-export type AdminContentWriteCollectionKey = 'essay' | 'bits';
+export type AdminContentCollectionKey = 'longform' | 'bits' | 'reads';
+export type AdminContentWriteCollectionKey = 'longform' | 'bits';
 
-export const ADMIN_CONTENT_COLLECTION_KEYS = ['essay', 'bits', 'memo'] as const satisfies readonly AdminContentCollectionKey[];
-export const ADMIN_CONTENT_WRITE_COLLECTION_KEYS = ['essay', 'bits'] as const satisfies readonly AdminContentWriteCollectionKey[];
+export const ADMIN_CONTENT_COLLECTION_KEYS = ['longform', 'bits', 'reads'] as const satisfies readonly AdminContentCollectionKey[];
+export const ADMIN_CONTENT_WRITE_COLLECTION_KEYS = ['longform', 'bits'] as const satisfies readonly AdminContentWriteCollectionKey[];
 
 export const isAdminContentCollectionKey = (value: string): value is AdminContentCollectionKey =>
   (ADMIN_CONTENT_COLLECTION_KEYS as readonly string[]).includes(value);
@@ -49,7 +49,7 @@ export type AdminContentValidationIssue = {
   message: string;
 };
 
-export type AdminEssayEditorValues = {
+export type AdminLongformEditorValues = {
   title: string;
   description: string;
   date: string;
@@ -73,7 +73,7 @@ export type AdminBitsEditorValues = {
   imagesText: string;
 };
 
-export type AdminMemoEditorValues = {
+export type AdminReadsEditorValues = {
   title: string;
   subtitle: string;
   date: string;
@@ -82,18 +82,18 @@ export type AdminMemoEditorValues = {
 };
 
 export type AdminContentEditorValues =
-  | AdminEssayEditorValues
+  | AdminLongformEditorValues
   | AdminBitsEditorValues
-  | AdminMemoEditorValues;
+  | AdminReadsEditorValues;
 
-export type AdminEssayEditorPayload = {
-  collection: 'essay';
+export type AdminLongformEditorPayload = {
+  collection: 'longform';
   entryId: string;
   revision: string;
   relativePath: string;
   writable: true;
   readonlyReason: null;
-  values: AdminEssayEditorValues;
+  values: AdminLongformEditorValues;
 };
 
 export type AdminBitsEditorPayload = {
@@ -106,22 +106,22 @@ export type AdminBitsEditorPayload = {
   values: AdminBitsEditorValues;
 };
 
-export type AdminMemoEditorPayload = {
-  collection: 'memo';
+export type AdminReadsEditorPayload = {
+  collection: 'reads';
   entryId: string;
   revision: string;
   relativePath: string;
   writable: false;
   readonlyReason: string;
-  values: AdminMemoEditorValues;
+  values: AdminReadsEditorValues;
 };
 
 export type AdminContentEditorPayload =
-  | AdminEssayEditorPayload
+  | AdminLongformEditorPayload
   | AdminBitsEditorPayload
-  | AdminMemoEditorPayload;
+  | AdminReadsEditorPayload;
 
-type AdminEssayFrontmatter = {
+type AdminLongformFrontmatter = {
   title: string;
   description?: string;
   date: string;
@@ -267,9 +267,9 @@ const parseTagsText = (value: string): string[] =>
     .map((item) => item.trim())
     .filter(Boolean);
 
-const parseAdminEssayEditorInput = (
+const parseAdminLongformEditorInput = (
   input: unknown
-): { values?: AdminEssayEditorValues; issues: AdminContentValidationIssue[] } => {
+): { values?: AdminLongformEditorValues; issues: AdminContentValidationIssue[] } => {
   if (!isRecord(input)) {
     return {
       issues: [createIssue('frontmatter', 'frontmatter 必须是对象')]
@@ -277,7 +277,7 @@ const parseAdminEssayEditorInput = (
   }
 
   const issues: AdminContentValidationIssue[] = [];
-  const values: AdminEssayEditorValues = {
+  const values: AdminLongformEditorValues = {
     title: getRequiredStringField(input, 'title', issues),
     description: getRequiredStringField(input, 'description', issues),
     date: getRequiredStringField(input, 'date', issues),
@@ -364,34 +364,34 @@ export const readAdminSourceFrontmatterRecord = async (
   return isRecord(rawFrontmatter) ? rawFrontmatter : {};
 };
 
-const resolveEssayPublicSlug = (entryId: string, explicitSlug?: string): string =>
+const resolveLongformPublicSlug = (entryId: string, explicitSlug?: string): string =>
   explicitSlug && explicitSlug.trim().length > 0
     ? explicitSlug.trim()
     : flattenEntryIdToSlug(entryId);
 
-const validateEssayPublicSlug = async (
+const validateLongformPublicSlug = async (
   state: Pick<AdminContentSourceState, 'entryId'>,
-  frontmatter: Pick<AdminEssayFrontmatter, 'slug'>
+  frontmatter: Pick<AdminLongformFrontmatter, 'slug'>
 ): Promise<AdminContentValidationIssue[]> => {
   const issues: AdminContentValidationIssue[] = [];
-  const publicSlug = resolveEssayPublicSlug(state.entryId, frontmatter.slug);
+  const publicSlug = resolveLongformPublicSlug(state.entryId, frontmatter.slug);
 
-  if (!ESSAY_PUBLIC_SLUG_RE.test(publicSlug)) {
+  if (!LONGFORM_PUBLIC_SLUG_RE.test(publicSlug)) {
     issues.push(
       createIssue(
         'slug',
         frontmatter.slug
-          ? 'essay.slug 必须是小写 kebab-case'
+          ? 'longform.slug 必须是小写 kebab-case'
           : '当前条目路径拍平后的公开 slug 不合法，请设置合法 slug 或调整文件路径'
       )
     );
   }
 
-  if (RESERVED_ESSAY_SLUGS.has(publicSlug)) {
+  if (RESERVED_LONGFORM_SLUGS.has(publicSlug)) {
     issues.push(
       createIssue(
         'slug',
-        `公开 slug "${publicSlug}" 与 /archive 或 /essay 下的保留路由冲突，请修改 slug`
+        `公开 slug "${publicSlug}" 与 /archive 或 /longform 下的保留路由冲突，请修改 slug`
       )
     );
   }
@@ -401,18 +401,18 @@ const validateEssayPublicSlug = async (
   }
 
   try {
-    const essayFiles = await listAdminCollectionSourceFiles('essay');
-    for (const filePath of essayFiles) {
-      const candidateEntryId = resolveAdminContentEntryIdFromSourcePath('essay', filePath);
+    const longformFiles = await listAdminCollectionSourceFiles('longform');
+    for (const filePath of longformFiles) {
+      const candidateEntryId = resolveAdminContentEntryIdFromSourcePath('longform', filePath);
       if (candidateEntryId === state.entryId) continue;
 
       const frontmatterRecord = await readAdminSourceFrontmatterRecord(filePath);
-      const candidateSlug = resolveEssayPublicSlug(candidateEntryId, normalizeOptionalText(frontmatterRecord.slug));
+      const candidateSlug = resolveLongformPublicSlug(candidateEntryId, normalizeOptionalText(frontmatterRecord.slug));
       if (candidateSlug === publicSlug) {
         issues.push(
           createIssue(
             'slug',
-            `公开 slug "${publicSlug}" 已被其他 essay 占用：${candidateEntryId}`
+            `公开 slug "${publicSlug}" 已被其他 longform 占用：${candidateEntryId}`
           )
         );
         return issues;
@@ -422,7 +422,7 @@ const validateEssayPublicSlug = async (
     issues.push(
       createIssue(
         'slug',
-        `无法完成 essay.slug 唯一性校验：${error instanceof Error ? error.message : 'unknown error'}`
+        `无法完成 longform.slug 唯一性校验：${error instanceof Error ? error.message : 'unknown error'}`
       )
     );
   }
@@ -452,11 +452,11 @@ const loadAdminContentSourceState = async (
   };
 };
 
-const toEssayEditorValues = (state: AdminContentSourceState): AdminEssayEditorValues => {
+const toLongformEditorValues = (state: AdminContentSourceState): AdminLongformEditorValues => {
   const frontmatter = state.rawFrontmatter;
   const rawDate = getDateString(frontmatter, 'date', '');
   const rawPublishedAt = normalizeOptionalText(frontmatter.publishedAt);
-  const dateResult = parseEssayDateInput(rawDate);
+  const dateResult = parseLongformDateInput(rawDate);
 
   return {
     title: normalizeOptionalText(frontmatter.title),
@@ -488,7 +488,7 @@ const toBitsEditorValues = (state: AdminContentSourceState): AdminBitsEditorValu
   };
 };
 
-const toMemoEditorValues = (state: AdminContentSourceState): AdminMemoEditorValues => {
+const toReadsEditorValues = (state: AdminContentSourceState): AdminReadsEditorValues => {
   const frontmatter = state.rawFrontmatter;
   return {
     title: normalizeOptionalText(frontmatter.title),
@@ -500,8 +500,8 @@ const toMemoEditorValues = (state: AdminContentSourceState): AdminMemoEditorValu
 };
 
 export const getAdminContentReadOnlyReason = (collection: AdminContentCollectionKey): string | null =>
-  collection === 'memo'
-    ? 'Phase 2B 首批仅开放 essay / bits frontmatter 写回；memo 仍保持只读，并单独保留 date 可选 / slug 不走 slugRule 的 schema 差异。'
+  collection === 'reads'
+    ? 'Phase 2B 首批仅开放 longform / bits frontmatter 写回；reads 仍保持只读，并单独保留 date 可选 / slug 不走 slugRule 的 schema 差异。'
     : null;
 
 export const readAdminContentEntryEditorPayload = async (
@@ -510,7 +510,7 @@ export const readAdminContentEntryEditorPayload = async (
 ): Promise<AdminContentEditorPayload> => {
   const state = await loadAdminContentSourceState(collection, entryId);
 
-  if (collection === 'essay') {
+  if (collection === 'longform') {
     return {
       collection,
       entryId: state.entryId,
@@ -518,7 +518,7 @@ export const readAdminContentEntryEditorPayload = async (
       relativePath: state.relativePath,
       writable: true,
       readonlyReason: null,
-      values: toEssayEditorValues(state)
+      values: toLongformEditorValues(state)
     };
   }
 
@@ -541,32 +541,32 @@ export const readAdminContentEntryEditorPayload = async (
     relativePath: state.relativePath,
     writable: false,
     readonlyReason: getAdminContentReadOnlyReason(collection) ?? '当前 collection 暂不支持写盘',
-    values: toMemoEditorValues(state)
+    values: toReadsEditorValues(state)
   };
 };
 
-const buildEssayFrontmatterFromValues = (
-  values: AdminEssayEditorValues
-): { frontmatter?: AdminEssayFrontmatter; issues: AdminContentValidationIssue[] } => {
+const buildLongformFrontmatterFromValues = (
+  values: AdminLongformEditorValues
+): { frontmatter?: AdminLongformFrontmatter; issues: AdminContentValidationIssue[] } => {
   const issues: AdminContentValidationIssue[] = [];
   const title = values.title.trim();
   if (!title) {
     issues.push(createIssue('title', 'title 不能为空'));
   }
 
-  const dateResult = parseEssayDateInput(values.date);
+  const dateResult = parseLongformDateInput(values.date);
   if (!dateResult) {
-    issues.push(createIssue('date', 'essay.date 必须是 YYYY-MM-DD 或带时区的 ISO 8601 日期时间'));
+    issues.push(createIssue('date', 'longform.date 必须是 YYYY-MM-DD 或带时区的 ISO 8601 日期时间'));
   }
 
   const explicitPublishedAt = values.publishedAt.trim();
   const hasExplicitPublishedAt = explicitPublishedAt.length > 0;
   const publishedAt = hasExplicitPublishedAt
-    ? parseEssayPublishedAtInput(explicitPublishedAt)
+    ? parseLongformPublishedAtInput(explicitPublishedAt)
     : dateResult?.publishedAt;
 
   if (hasExplicitPublishedAt && !publishedAt) {
-    issues.push(createIssue('publishedAt', 'essay.publishedAt 必须是带时区的 ISO 8601 日期时间'));
+    issues.push(createIssue('publishedAt', 'longform.publishedAt 必须是带时区的 ISO 8601 日期时间'));
   }
 
   if (!dateResult || issues.length > 0) {
@@ -715,11 +715,11 @@ const buildBitsFrontmatterFromValues = (
   };
 };
 
-const buildEssayCurrentFrontmatter = (state: AdminContentSourceState): AdminEssayFrontmatter => {
-  const values = toEssayEditorValues(state);
-  const result = buildEssayFrontmatterFromValues(values);
+const buildLongformCurrentFrontmatter = (state: AdminContentSourceState): AdminLongformFrontmatter => {
+  const values = toLongformEditorValues(state);
+  const result = buildLongformFrontmatterFromValues(values);
   if (!result.frontmatter) {
-    throw new Error(`Current essay frontmatter is invalid: ${state.relativePath}`);
+    throw new Error(`Current longform frontmatter is invalid: ${state.relativePath}`);
   }
   return result.frontmatter;
 };
@@ -736,21 +736,21 @@ const buildBitsCurrentFrontmatter = (state: AdminContentSourceState): AdminBitsF
 const isEqualJsonValue = (left: unknown, right: unknown): boolean =>
   JSON.stringify(left) === JSON.stringify(right);
 
-const buildEssayWritePlan = async (
+const buildLongformWritePlan = async (
   state: AdminContentSourceState,
-  values: AdminEssayEditorValues
+  values: AdminLongformEditorValues
 ): Promise<AdminWritePlan> => {
-  const next = buildEssayFrontmatterFromValues(values);
+  const next = buildLongformFrontmatterFromValues(values);
   if (!next.frontmatter) {
     return { issues: next.issues, changedFields: [], patches: [] };
   }
 
-  const slugIssues = await validateEssayPublicSlug(state, next.frontmatter);
+  const slugIssues = await validateLongformPublicSlug(state, next.frontmatter);
   if (slugIssues.length > 0) {
     return { issues: slugIssues, changedFields: [], patches: [] };
   }
 
-  const current = buildEssayCurrentFrontmatter(state);
+  const current = buildLongformCurrentFrontmatter(state);
   const currentDate = getDateString(state.rawFrontmatter, 'date', current.date);
   const currentPublishedAt = normalizeOptionalText(state.rawFrontmatter.publishedAt) || undefined;
   const fieldMatrix: Array<{
@@ -832,8 +832,8 @@ export const buildAdminContentWritePlan = async (
 ): Promise<AdminWritePlan & { state: AdminContentSourceState }> => {
   const state = await loadAdminContentSourceState(collection, entryId);
 
-  if (collection === 'essay') {
-    const parsed = parseAdminEssayEditorInput(frontmatterInput);
+  if (collection === 'longform') {
+    const parsed = parseAdminLongformEditorInput(frontmatterInput);
     if (!parsed.values) {
       return {
         state,
@@ -845,7 +845,7 @@ export const buildAdminContentWritePlan = async (
 
     return {
       state,
-      ...(await buildEssayWritePlan(state, parsed.values))
+      ...(await buildLongformWritePlan(state, parsed.values))
     };
   }
 
@@ -871,7 +871,7 @@ export const buildAdminContentWritePlan = async (
     issues: [
       createIssue(
         'collection',
-        'Phase 2B 首批仅开放 essay / bits frontmatter 写回；memo 仍保持只读。'
+        'Phase 2B 首批仅开放 longform / bits frontmatter 写回；reads 仍保持只读。'
       )
     ],
     changedFields: [],

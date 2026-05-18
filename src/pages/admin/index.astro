@@ -44,7 +44,7 @@ const lastUpdateDays = overview?.stats.lastUpdate
   ? String(getDaysSinceUpdate(overview.stats.lastUpdate.date))
   : '暂无';
 const wordMetric = overview ? formatAdminOverviewWordMetric(overview.stats.wordCount) : null;
-const articleCount = overview?.collections.find((summary) => summary.key === 'essay')?.count ?? 0;
+const articleCount = overview?.collections.find((summary) => summary.key === 'longform')?.count ?? 0;
 const moreTagsHref = withBase('/archive/?picker=tag');
 const statItems = overview && wordMetric
   ? [
@@ -236,7 +236,7 @@ const statItems = overview && wordMetric
               }
             </div>
           ) : (
-            <p class="admin-site-overview__empty">暂无可用于活动统计的公开随笔或絮语。</p>
+            <p class="admin-site-overview__empty">暂无可用于活动统计的公开长文或絮语。</p>
           )
         }
       </section>

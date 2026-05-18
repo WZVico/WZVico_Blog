@@ -7,7 +7,7 @@ import {
   ADMIN_HOME_INTRO_LINK_DEFAULT,
   getAdminHomeIntroLinkOption
 } from '../lib/admin-console/theme-shared';
-import { getEssayDerivedText, getEssaySlug, getVisibleEssays } from '../lib/content';
+import { getLongformDerivedText, getLongformSlug, getVisibleLongforms } from '../lib/content';
 import { getThemeSettings, getVisibleArticleMetaTags } from '../lib/theme-settings';
 import { createWithBase } from '../utils/format';
 
@@ -33,7 +33,7 @@ const resolvedIntroMoreLinks = (introMoreLinks.length ? introMoreLinks : [...ADM
   (linkKey) => getAdminHomeIntroLinkOption(linkKey)
 );
 
-const latest = (await getVisibleEssays()).slice(0, 12);
+const latest = (await getVisibleLongforms()).slice(0, 12);
 
 type HomeHeadCriticalFontFace = {
   family: 'LXGW WenKai Lite' | 'Noto Serif SC';
@@ -664,7 +664,7 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
 
   <div class="list">
     {latest.map((entry) => {
-      const slug = getEssaySlug(entry);
+      const slug = getLongformSlug(entry);
       const href = withBase(`/archive/${slug}/`);
       const visibleTags = getVisibleArticleMetaTags(entry.data.tags, 'home');
       return (
@@ -674,7 +674,7 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
           date={entry.data.date}
           visibleTags={visibleTags}
           articleMetaSettings={articleMeta}
-          excerpt={getEssayDerivedText(entry).excerpt}
+          excerpt={getLongformDerivedText(entry).excerpt}
         />
       );
     })}

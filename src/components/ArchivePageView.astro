@@ -1,7 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import TagFilterHeader from './TagFilterHeader.astro';
-import { createWithBase, getEssaySlug, type EssayEntry } from '../lib/content';
+import { createWithBase, getLongformSlug, type LongformEntry } from '../lib/content';
 import { getTagPath, type TagSummary } from '../lib/tags';
 import { getThemeSettings } from '../lib/theme-settings';
 import { formatISODateUtc, formatMonthDayUtc, groupByUtcYear, joinPageSubtitleText } from '../utils/format';
@@ -20,7 +20,7 @@ const {
   currentPage: number;
   currentPath: string;
   currentTag?: TagSummary | null;
-  items: EssayEntry[];
+  items: LongformEntry[];
   nextPath?: string | null;
   prevPath?: string | null;
   resultCount: number;
@@ -95,7 +95,7 @@ const currentTagState = currentTag
       <h2 class="archive-year">{group.year}</h2>
       <div class="archive-list">
         {group.list.map((entry) => {
-          const slug = getEssaySlug(entry);
+          const slug = getLongformSlug(entry);
           const href = withBase(`/archive/${slug}/`);
           const tag = currentTag?.label ?? entry.data.tags?.[0];
           return (

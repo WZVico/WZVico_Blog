@@ -22,7 +22,7 @@ describe('admin-console/checks', () => {
       recursive: true
     });
 
-    await mkdir(path.join(tempRoot, 'src', 'content', 'essay'), { recursive: true });
+    await mkdir(path.join(tempRoot, 'src', 'content', 'longform'), { recursive: true });
     await mkdir(path.join(tempRoot, 'src', 'content', 'bits'), { recursive: true });
     await mkdir(path.join(tempRoot, 'public', 'author'), { recursive: true });
     await mkdir(path.join(tempRoot, 'public', 'bits'), { recursive: true });
@@ -31,7 +31,7 @@ describe('admin-console/checks', () => {
     await writeFile(path.join(tempRoot, 'public', 'bits', 'existing.webp'), 'image');
 
     await writeFile(
-      path.join(tempRoot, 'src', 'content', 'essay', 'duplicate-one.md'),
+      path.join(tempRoot, 'src', 'content', 'longform', 'duplicate-one.md'),
       [
         '---',
         'title: Duplicate One',
@@ -39,13 +39,13 @@ describe('admin-console/checks', () => {
         'slug: duplicate-slug',
         '---',
         '',
-        'essay one',
+        'longform one',
         ''
       ].join('\n'),
       'utf8'
     );
     await writeFile(
-      path.join(tempRoot, 'src', 'content', 'essay', 'duplicate-two.md'),
+      path.join(tempRoot, 'src', 'content', 'longform', 'duplicate-two.md'),
       [
         '---',
         'title: Duplicate Two',
@@ -53,13 +53,13 @@ describe('admin-console/checks', () => {
         'slug: duplicate-slug',
         '---',
         '',
-        'essay two',
+        'longform two',
         ''
       ].join('\n'),
       'utf8'
     );
     await writeFile(
-      path.join(tempRoot, 'src', 'content', 'essay', 'reserved.md'),
+      path.join(tempRoot, 'src', 'content', 'longform', 'reserved.md'),
       [
         '---',
         'title: Reserved Slug',
@@ -67,13 +67,13 @@ describe('admin-console/checks', () => {
         'slug: tag',
         '---',
         '',
-        'essay reserved',
+        'longform reserved',
         ''
       ].join('\n'),
       'utf8'
     );
     await writeFile(
-      path.join(tempRoot, 'src', 'content', 'essay', 'invalid.md'),
+      path.join(tempRoot, 'src', 'content', 'longform', 'invalid.md'),
       [
         '---',
         'title: Invalid Slug',
@@ -81,23 +81,23 @@ describe('admin-console/checks', () => {
         'slug: bad_slug',
         '---',
         '',
-        'essay invalid',
+        'longform invalid',
         ''
       ].join('\n'),
       'utf8'
     );
     await writeFile(
-      path.join(tempRoot, 'src', 'content', 'essay', 'taggy.md'),
+      path.join(tempRoot, 'src', 'content', 'longform', 'taggy.md'),
       [
         '---',
-        'title: Taggy Essay',
+        'title: Taggy Longform',
         'date: 2026-04-05',
         'tags:',
         '  - "???"',
         '  - Astro',
         '---',
         '',
-        'essay taggy',
+        'longform taggy',
         ''
       ].join('\n'),
       'utf8'
@@ -180,7 +180,7 @@ describe('admin-console/checks', () => {
       return category!;
     };
     const settingsCategory = getCategory('settings');
-    const essaySlugCategory = getCategory('essay-slug');
+    const longformSlugCategory = getCategory('longform-slug');
     const bitsImagesCategory = getCategory('bits-images');
     const tagCategory = getCategory('tag');
     const blockedCategories = result.categories.filter((category) => category.status === 'blocked');
@@ -192,7 +192,7 @@ describe('admin-console/checks', () => {
     expect(result.totalIssueCount).toBe(allIssues.length);
     expect(result.blockedCategoryCount).toBe(blockedCategories.length);
     expect(result.affectedPathCount).toBe(affectedPaths.size);
-    for (const category of [settingsCategory, essaySlugCategory, bitsImagesCategory, tagCategory]) {
+    for (const category of [settingsCategory, longformSlugCategory, bitsImagesCategory, tagCategory]) {
       expect(category.status).toBe('blocked');
       expect(category.issueCount).toBe(category.issues.length);
       expect(category.issues.length).toBeGreaterThan(0);
@@ -206,14 +206,14 @@ describe('admin-console/checks', () => {
         })
       ])
     );
-    expect(essaySlugCategory.issues).toEqual(
+    expect(longformSlugCategory.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          relativePath: 'src/content/essay/reserved.md',
+          relativePath: 'src/content/longform/reserved.md',
           fieldPath: 'slug'
         }),
         expect.objectContaining({
-          relativePath: 'src/content/essay/duplicate-one.md',
+          relativePath: 'src/content/longform/duplicate-one.md',
           message: expect.stringContaining('duplicate-slug')
         })
       ])
@@ -234,7 +234,7 @@ describe('admin-console/checks', () => {
     expect(tagCategory.issues).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          relativePath: 'src/content/essay/taggy.md',
+          relativePath: 'src/content/longform/taggy.md',
           fieldPath: 'tags[0]'
         })
       ])

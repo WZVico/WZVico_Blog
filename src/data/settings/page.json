@@ -1,7 +1,7 @@
 {
-  "essay": {
-    "title": "随笔",
-    "subtitle": "随笔与杂记"
+  "longform": {
+    "title": "长文",
+    "subtitle": "原创与翻译"
   },
   "archive": {
     "title": "归档",
@@ -12,10 +12,10 @@
     "subtitle": "生活不只是长篇",
     "defaultAuthor": {
       "name": "Whono",
-      "avatar": "author/avatar.webp"
+      "avatar": "author/Avatar.webp"
     }
   },
-  "memo": {
+  "reads": {
     "title": null,
     "subtitle": null
   },

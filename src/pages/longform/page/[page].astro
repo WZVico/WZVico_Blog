@@ -1,0 +1,27 @@
+---
+import LongformPageView from '../../../components/LongformPageView.astro';
+import { buildPaginatedPaths, getPageSlice, getTotalPages, getVisibleLongforms } from '../../../lib/content';
+import { PAGE_SIZE_LONGFORM } from '../../../../site.config.mjs';
+
+export const prerender = true;
+
+export async function getStaticPaths() {
+  const visibleLongforms = await getVisibleLongforms();
+  const totalPages = getTotalPages(visibleLongforms.length, PAGE_SIZE_LONGFORM);
+  return buildPaginatedPaths(totalPages);
+}
+
+const currentPage = Number(Astro.params.page);
+const visibleLongforms = await getVisibleLongforms();
+const totalPages = getTotalPages(visibleLongforms.length, PAGE_SIZE_LONGFORM);
+const pageLongforms = getPageSlice(visibleLongforms, currentPage, PAGE_SIZE_LONGFORM);
+---
+
+<LongformPageView
+  items={pageLongforms}
+  resultCount={visibleLongforms.length}
+  currentPage={currentPage}
+  totalPages={totalPages}
+  prevPath={currentPage === 2 ? '/longform/' : `/longform/page/${currentPage - 1}/`}
+  nextPath={currentPage < totalPages ? `/longform/page/${currentPage + 1}/` : null}
+/>

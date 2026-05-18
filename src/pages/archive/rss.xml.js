@@ -1,5 +1,5 @@
 import rss from '@astrojs/rss';
-import { getArchiveEssays, getEssaySlug } from '../../lib/content';
+import { getArchiveLongforms, getLongformSlug } from '../../lib/content';
 import { createWithBase } from '../../utils/format';
 import { getThemeSettings } from '../../lib/theme-settings';
 
@@ -8,7 +8,7 @@ const withBase = createWithBase(base);
 const { settings } = getThemeSettings();
 
 export async function buildArchiveFeed(context, overrides = {}) {
-  const archiveItems = await getArchiveEssays({
+  const archiveItems = await getArchiveLongforms({
     includeDraft: false
   });
 
@@ -20,7 +20,7 @@ export async function buildArchiveFeed(context, overrides = {}) {
       title: entry.data.title,
       pubDate: entry.data.date,
       description: entry.data.description,
-      link: withBase(`/archive/${getEssaySlug(entry)}/`)
+      link: withBase(`/archive/${getLongformSlug(entry)}/`)
     }))
   });
 }

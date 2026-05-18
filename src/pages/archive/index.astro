@@ -1,10 +1,10 @@
 ---
 import ArchivePageView from '../../components/ArchivePageView.astro';
-import { getArchiveEssays, getPageSlice, getTotalPages } from '../../lib/content';
+import { getArchiveLongforms, getPageSlice, getTotalPages } from '../../lib/content';
 import { collectTagSummary } from '../../lib/tags';
 import { PAGE_SIZE_ARCHIVE } from '../../../site.config.mjs';
 
-const archiveItems = await getArchiveEssays();
+const archiveItems = await getArchiveLongforms();
 const tagSummaries = collectTagSummary(archiveItems);
 const totalPages = getTotalPages(archiveItems.length, PAGE_SIZE_ARCHIVE);
 const currentPage = 1;

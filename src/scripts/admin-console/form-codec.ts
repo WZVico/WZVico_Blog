@@ -69,14 +69,14 @@ type FormCodecContext = {
   inputHomeIntroMoreLinkPrimary: HTMLSelectElement;
   inputHomeIntroMoreLinkSecondaryEnabled: HTMLInputElement;
   inputHomeIntroMoreLinkSecondary: HTMLSelectElement;
-  inputPageEssayTitle: HTMLInputElement;
-  inputPageEssaySubtitle: HTMLInputElement;
+  inputPageLongformTitle: HTMLInputElement;
+  inputPageLongformSubtitle: HTMLInputElement;
   inputPageArchiveTitle: HTMLInputElement;
   inputPageArchiveSubtitle: HTMLInputElement;
   inputPageBitsTitle: HTMLInputElement;
   inputPageBitsSubtitle: HTMLInputElement;
-  inputPageMemoTitle: HTMLInputElement;
-  inputPageMemoSubtitle: HTMLInputElement;
+  inputPageReadsTitle: HTMLInputElement;
+  inputPageReadsSubtitle: HTMLInputElement;
   inputPageAboutTitle: HTMLInputElement;
   inputPageAboutSubtitle: HTMLInputElement;
   inputArticleMetaShowDate: HTMLInputElement;
@@ -176,14 +176,14 @@ export const createFormCodec = ({
   inputHomeIntroMoreLinkPrimary,
   inputHomeIntroMoreLinkSecondaryEnabled,
   inputHomeIntroMoreLinkSecondary,
-  inputPageEssayTitle,
-  inputPageEssaySubtitle,
+  inputPageLongformTitle,
+  inputPageLongformSubtitle,
   inputPageArchiveTitle,
   inputPageArchiveSubtitle,
   inputPageBitsTitle,
   inputPageBitsSubtitle,
-  inputPageMemoTitle,
-  inputPageMemoSubtitle,
+  inputPageReadsTitle,
+  inputPageReadsSubtitle,
   inputPageAboutTitle,
   inputPageAboutSubtitle,
   inputArticleMetaShowDate,
@@ -389,7 +389,7 @@ export const createFormCodec = ({
   const collectSettings = (): EditableSettings => {
     const nav = getNavRows().map((row, index): EditableNavItem => {
       const idRaw = row.getAttribute('data-nav-id')?.trim() ?? '';
-      const id = isAdminNavId(idRaw) ? idRaw : ADMIN_NAV_IDS[index] ?? 'essay';
+      const id = isAdminNavId(idRaw) ? idRaw : ADMIN_NAV_IDS[index] ?? 'longform';
       const labelInput = query<HTMLInputElement>(row, '[data-nav-field="label"]');
       const ornamentInput = query<HTMLInputElement>(row, '[data-nav-field="ornament"]');
       const orderInput = query<HTMLInputElement>(row, '[data-nav-field="order"]');
@@ -465,9 +465,9 @@ export const createFormCodec = ({
         heroImageAlt: showHero ? normalizeHeroImageAlt(inputHeroImageAlt.value) : ADMIN_HERO_IMAGE_ALT_DEFAULT
       },
       page: {
-        essay: {
-          title: normalizeOptionalSingleLine(inputPageEssayTitle.value),
-          subtitle: normalizeOptionalSingleLine(inputPageEssaySubtitle.value)
+        longform: {
+          title: normalizeOptionalSingleLine(inputPageLongformTitle.value),
+          subtitle: normalizeOptionalSingleLine(inputPageLongformSubtitle.value)
         },
         archive: {
           title: normalizeOptionalSingleLine(inputPageArchiveTitle.value),
@@ -481,9 +481,9 @@ export const createFormCodec = ({
             avatar: inputPageBitsAuthorAvatar.value.trim()
           }
         },
-        memo: {
-          title: normalizeOptionalSingleLine(inputPageMemoTitle.value),
-          subtitle: normalizeOptionalSingleLine(inputPageMemoSubtitle.value)
+        reads: {
+          title: normalizeOptionalSingleLine(inputPageReadsTitle.value),
+          subtitle: normalizeOptionalSingleLine(inputPageReadsSubtitle.value)
         },
         about: {
           title: normalizeOptionalSingleLine(inputPageAboutTitle.value),
@@ -555,14 +555,14 @@ export const createFormCodec = ({
       introMoreLinks[1] || getFallbackSecondaryIntroLink(primaryIntroLink);
     syncHomeIntroLinkControls();
     refreshHomeIntroPreview();
-    inputPageEssayTitle.value = settings.page.essay?.title || '';
-    inputPageEssaySubtitle.value = settings.page.essay?.subtitle || '';
+    inputPageLongformTitle.value = settings.page.longform?.title || '';
+    inputPageLongformSubtitle.value = settings.page.longform?.subtitle || '';
     inputPageArchiveTitle.value = settings.page.archive?.title || '';
     inputPageArchiveSubtitle.value = settings.page.archive?.subtitle || '';
     inputPageBitsTitle.value = settings.page.bits?.title || '';
     inputPageBitsSubtitle.value = settings.page.bits?.subtitle || '';
-    inputPageMemoTitle.value = settings.page.memo?.title || '';
-    inputPageMemoSubtitle.value = settings.page.memo?.subtitle || '';
+    inputPageReadsTitle.value = settings.page.reads?.title || '';
+    inputPageReadsSubtitle.value = settings.page.reads?.subtitle || '';
     inputPageAboutTitle.value = settings.page.about?.title || '';
     inputPageAboutSubtitle.value = settings.page.about?.subtitle || '';
     inputPageBitsAuthorName.value = settings.page.bits?.defaultAuthor?.name || '';
@@ -590,7 +590,7 @@ export const createFormCodec = ({
     const navMap = new Map<SidebarNavId, EditableNavItem>(settings.shell.nav.map((item) => [item.id, item]));
     getNavRows().forEach((row, index) => {
       const rawId = row.getAttribute('data-nav-id')?.trim() ?? '';
-      const id = isAdminNavId(rawId) ? rawId : ADMIN_NAV_IDS[index] ?? 'essay';
+      const id = isAdminNavId(rawId) ? rawId : ADMIN_NAV_IDS[index] ?? 'longform';
       const current = navMap.get(id);
       const labelInput = query<HTMLInputElement>(row, '[data-nav-field="label"]');
       const ornamentInput = query<HTMLInputElement>(row, '[data-nav-field="ornament"]');

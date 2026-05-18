@@ -2,7 +2,7 @@ export const DATE_ONLY_RE = /^\d{4}-\d{2}-\d{2}$/;
 export const ISO_DATETIME_WITH_ZONE_RE =
   /^(\d{4}-\d{2}-\d{2})[Tt](?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,9})?)?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d)$/;
 
-export type EssayDateParseResult = {
+export type LongformDateParseResult = {
   date: Date;
   dateText: string;
   publishedAt?: Date;
@@ -36,7 +36,7 @@ export const parseDateOnlyInput = (value: unknown): Date | null => {
   return null;
 };
 
-export const parseEssayPublishedAtInput = (value: unknown): Date | null => {
+export const parseLongformPublishedAtInput = (value: unknown): Date | null => {
   if (value instanceof Date) {
     return Number.isFinite(value.valueOf()) ? new Date(value.valueOf()) : null;
   }
@@ -53,7 +53,7 @@ export const parseEssayPublishedAtInput = (value: unknown): Date | null => {
   return Number.isFinite(date.valueOf()) ? date : null;
 };
 
-export const parseEssayDateInput = (value: unknown): EssayDateParseResult | null => {
+export const parseLongformDateInput = (value: unknown): LongformDateParseResult | null => {
   if (typeof value === 'string') {
     const trimmed = value.trim();
     const dateOnly = parseDateOnlyUtc(trimmed);
@@ -69,7 +69,7 @@ export const parseEssayDateInput = (value: unknown): EssayDateParseResult | null
 
     const dateText = match[1] ?? '';
     const date = parseDateOnlyUtc(dateText);
-    const publishedAt = parseEssayPublishedAtInput(trimmed);
+    const publishedAt = parseLongformPublishedAtInput(trimmed);
     if (!date || !publishedAt) return null;
 
     return {

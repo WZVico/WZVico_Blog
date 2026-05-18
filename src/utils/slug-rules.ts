@@ -1,5 +1,5 @@
 /**
- * Shared slug rules for essay public URLs.
+ * Shared slug rules for longform public URLs.
  *
  * Both `content.config.ts` (schema validation) and `content.ts` (build-time
  * assertions) depend on this module so the "what is a valid public slug"
@@ -7,14 +7,14 @@
  */
 
 /** A valid public slug must be lowercase kebab-case. */
-export const ESSAY_PUBLIC_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+export const LONGFORM_PUBLIC_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 /**
  * Slug values that collide with sibling static routes under `/archive/` or
- * `/essay/`.  Since essay slugs are always single-segment (enforced by schema
+ * `/longform/`.  Since longform slugs are always single-segment (enforced by schema
  * + `[slug]` route), only exact matches need to be checked.
  */
-export const RESERVED_ESSAY_SLUGS: ReadonlySet<string> = new Set([
+export const RESERVED_LONGFORM_SLUGS: ReadonlySet<string> = new Set([
   'page',
   'tag',
   'rss.xml'

@@ -6,7 +6,7 @@ import {
   ADMIN_HOME_INTRO_LINK_DEFAULT,
   ADMIN_HOME_INTRO_LINK_OPTIONS
 } from '../../lib/admin-console/theme-shared';
-import defaultHero from '../../assets/hero.png';
+import { DEFAULT_HERO_IMAGE_SRC, defaultHeroImageMetadata } from '../../lib/default-assets';
 
 interface Props {
   homeIntroMaxLength: number;
@@ -45,7 +45,7 @@ const { homeIntroMaxLength } = Astro.props;
                 type="text"
                 inputmode="url"
                 spellcheck="false"
-                placeholder="当前使用：src/assets/hero.png"
+                placeholder={`当前使用：${DEFAULT_HERO_IMAGE_SRC}`}
                 aria-label="Hero 图片地址"
               />
               <button
@@ -80,7 +80,7 @@ const { homeIntroMaxLength } = Astro.props;
           <div
             class="admin-images-field-preview admin-images-field-preview--hero"
             data-admin-images-preview="home.heroImageSrc"
-            data-admin-images-default-preview-src={defaultHero.src}
+            data-admin-images-default-preview-src={defaultHeroImageMetadata.src}
             hidden
           >
             <img alt="" loading="lazy" decoding="async" data-admin-images-preview-img="home.heroImageSrc" />
@@ -170,4 +170,3 @@ const { homeIntroMaxLength } = Astro.props;
     </div>
   </div>
 </fieldset>
-

@@ -3,20 +3,20 @@ import BaseLayout from '../../layouts/BaseLayout.astro';
 import UiIcon from '../../components/UiIcon.astro';
 import Lightbox from '../../components/Lightbox.astro';
 import '../../styles/article.css';
-import '../../styles/memo.css';
+import '../../styles/reads.css';
 import { getEntry, render } from 'astro:content';
 import { getThemeSettings } from '../../lib/theme-settings';
 
 const prod = import.meta.env.PROD;
-const DEFAULT_MEMO_TITLE = '生活小记';
-const DEFAULT_MEMO_SUBTITLE = '整理一些值得留存的片刻与回忆。';
+const DEFAULT_READS_TITLE = '阅读';
+const DEFAULT_READS_SUBTITLE = '书单与简短理由。';
 
-const entry = await getEntry('memo', 'index');
+const entry = await getEntry('reads', 'index');
 if (!entry) {
-  throw new Error('Missing memo page entry: src/content/memo/index.md');
+  throw new Error('Missing reads page entry: src/content/reads/index.md');
 }
 if (prod && entry.data.draft) {
-  throw new Error('Memo entry is marked draft...');
+  throw new Error('reads entry is marked draft...');
 }
 
 const {
@@ -25,8 +25,8 @@ const {
   }
 } = getThemeSettings();
 const { Content, headings } = await render(entry);
-const memoTitle = page.memo.title ?? entry.data.title ?? DEFAULT_MEMO_TITLE;
-const memoSubtitle = page.memo.subtitle ?? entry.data.subtitle ?? DEFAULT_MEMO_SUBTITLE;
+const readsTitle = page.reads.title ?? entry.data.title ?? DEFAULT_READS_TITLE;
+const readsSubtitle = page.reads.subtitle ?? entry.data.subtitle ?? DEFAULT_READS_SUBTITLE;
 
 // Build a grouped TOC: H2 as section titles, H3 as items.
 type TocItem = { text: string; slug: string };
@@ -49,13 +49,13 @@ for (const h of headings) {
 ---
 
 <BaseLayout
-  title={memoTitle}
-  description="整理一些值得留存的片刻与回忆。"
-  bodyClass="memo-page immersive-page"
+  title={readsTitle}
+  description="分享值得一读的书单和简短理由。"
+  bodyClass="reads-page immersive-page"
 >
   <div class="page-header reader-exit-anchor">
-    <h1 class="page-title">{memoTitle}</h1>
-    {memoSubtitle ? <span class="page-subtitle">{memoSubtitle}</span> : null}
+    <h1 class="page-title">{readsTitle}</h1>
+    {readsSubtitle ? <span class="page-subtitle">{readsSubtitle}</span> : null}
     <button
       id="reader-exit"
       class="icon-button reader-exit"
@@ -70,13 +70,12 @@ for (const h of headings) {
   </div>
 
   <div class="intro">
-    时间流经我们，如同风穿过回廊。
-    <br />总有一些瞬间，携带着特别的气息或光亮，短暂停留后便消散。
-    <br />有些感受，无法被镜头承载，有些记忆难以被影像收藏。
-    <br />也许，为瞬间的感受留下一份文字备份，正是抵抗遗忘最温柔却最有效的方式。
+    这里收集我读过、正在读或愿意推荐的书。
+    <br />每一本只留下最直接的理由：它解决了什么问题，带来什么视角，适合谁在什么时候翻开。
+    <br />书单会慢慢更新，不追求完整，只保留真正想分享的部分。
   </div>
 
-  <nav class="memo-toc" aria-label="目录">
+  <nav class="reads-toc" aria-label="目录">
     {groups.map((g) => (
       <details open>
         <summary>{g.title}</summary>
@@ -94,7 +93,7 @@ for (const h of headings) {
     ))}
   </nav>
 
-  <div class="memo-content prose">
+  <div class="reads-content prose">
     <Content />
   </div>
 
@@ -103,11 +102,11 @@ for (const h of headings) {
       const mq = window.matchMedia('(max-width: 640px)');
       const sync = () => {
         if (mq.matches) {
-          document.querySelectorAll('.memo-toc details[open]').forEach((el) => {
+          document.querySelectorAll('.reads-toc details[open]').forEach((el) => {
             el.removeAttribute('open');
           });
         } else {
-          document.querySelectorAll('.memo-toc details:not([open])').forEach((el) => {
+          document.querySelectorAll('.reads-toc details:not([open])').forEach((el) => {
             el.setAttribute('open', '');
           });
         }
@@ -115,7 +114,7 @@ for (const h of headings) {
       sync();
       mq.addEventListener('change', sync);
 
-      const content = document.querySelector('.memo-content');
+      const content = document.querySelector('.reads-content');
       if (content) {
         const nodes = content.querySelectorAll('h2, h3');
         let count = 0;
@@ -147,7 +146,7 @@ for (const h of headings) {
     initCodeCopyButtons();
     initArticleLightbox({
       dialogId: 'lightbox',
-      containerSelector: '.memo-content.prose',
+      containerSelector: '.reads-content.prose',
       enableZoom: false,
       enablePan: false,
       enableSwipeDownClose: false

@@ -466,7 +466,7 @@
   margin-left: auto;
 }
 
-.essay-page .pagination__inner {
+.longform-page .pagination__inner {
   padding: 0 14px;
 }
 
@@ -475,7 +475,7 @@
     min-height: 36px;
   }
 
-  .essay-page .pagination__inner {
+  .longform-page .pagination__inner {
     padding: 0 2px;
   }
 }

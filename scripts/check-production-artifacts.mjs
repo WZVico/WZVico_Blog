@@ -35,14 +35,14 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/robots.txt',
     'dist/rss.xml',
     'dist/archive/rss.xml',
-    'dist/essay/rss.xml',
+    'dist/longform/rss.xml',
     'dist/index.html',
     'dist/about/index.html',
     'dist/admin/index.html',
     'dist/admin/content/index.html',
-    'dist/admin/content/essay/index.html',
+    'dist/admin/content/longform/index.html',
     'dist/admin/content/bits/index.html',
-    'dist/admin/content/memo/index.html',
+    'dist/admin/content/reads/index.html',
     'dist/admin/images/index.html',
     'dist/admin/checks/index.html',
     'dist/bits/index.html',
@@ -85,8 +85,8 @@ export const runProductionArtifactCheck = async (options = {}) => {
     sitemapXml.matchAll(/<loc>([^<]+)<\/loc>/g),
     (match) => match[1].trim()
   ).filter(Boolean);
-  const leakedEssayDetail = sitemapLocs.find((loc) => /^\/essay\/[^/]+\/$/.test(new URL(loc).pathname));
-  expect(!leakedEssayDetail, `Essay compatibility redirect leaked into sitemap: ${leakedEssayDetail}`);
+  const leakedLongformDetail = sitemapLocs.find((loc) => /^\/longform\/[^/]+\/$/.test(new URL(loc).pathname));
+  expect(!leakedLongformDetail, `Longform compatibility redirect leaked into sitemap: ${leakedLongformDetail}`);
 
   const aboutHtml = readText('dist/about/index.html');
   expect(
@@ -102,18 +102,18 @@ export const runProductionArtifactCheck = async (options = {}) => {
 
   const adminHtml = readText('dist/admin/index.html');
   const adminContentHtml = readText('dist/admin/content/index.html');
-  const adminContentEssayHtml = readText('dist/admin/content/essay/index.html');
+  const adminContentLongformHtml = readText('dist/admin/content/longform/index.html');
   const adminContentBitsHtml = readText('dist/admin/content/bits/index.html');
-  const adminContentMemoHtml = readText('dist/admin/content/memo/index.html');
+  const adminContentReadsHtml = readText('dist/admin/content/reads/index.html');
   const adminImageHtml = readText('dist/admin/images/index.html');
   const adminChecksHtml = readText('dist/admin/checks/index.html');
   const adminThemeHtml = readText('dist/admin/theme/index.html');
   const adminDataHtml = readText('dist/admin/data/index.html');
   const readonlyAdminHtmlChecks = [
     ['dist/admin/content/index.html', adminContentHtml, 'Content Console'],
-    ['dist/admin/content/essay/index.html', adminContentEssayHtml, 'Content Console'],
+    ['dist/admin/content/longform/index.html', adminContentLongformHtml, 'Content Console'],
     ['dist/admin/content/bits/index.html', adminContentBitsHtml, 'Content Console'],
-    ['dist/admin/content/memo/index.html', adminContentMemoHtml, 'Content Console'],
+    ['dist/admin/content/reads/index.html', adminContentReadsHtml, 'Content Console'],
     ['dist/admin/images/index.html', adminImageHtml, 'Images Console'],
     ['dist/admin/checks/index.html', adminChecksHtml, 'Checks Console'],
     ['dist/admin/theme/index.html', adminThemeHtml, 'Theme Console'],
@@ -217,15 +217,15 @@ export const runProductionArtifactCheck = async (options = {}) => {
 
   const defaultRssXml = readText('dist/rss.xml');
   const archiveRssXml = readText('dist/archive/rss.xml');
-  const essayRssXml = readText('dist/essay/rss.xml');
+  const longformRssXml = readText('dist/longform/rss.xml');
 
   const defaultRssLinks = getRssItemLinks(defaultRssXml);
   const archiveRssLinks = getRssItemLinks(archiveRssXml);
-  const essayRssLinks = getRssItemLinks(essayRssXml);
+  const longformRssLinks = getRssItemLinks(longformRssXml);
 
   expect(archiveRssLinks.length > 0, 'Archive RSS does not contain any item links');
   expect(defaultRssLinks.length > 0, 'Default RSS does not contain any item links');
-  expect(essayRssLinks.length > 0, 'Essay RSS does not contain any item links');
+  expect(longformRssLinks.length > 0, 'Longform RSS does not contain any item links');
 
   const sampleArchiveLink = archiveRssLinks[0];
   expect(
@@ -237,8 +237,8 @@ export const runProductionArtifactCheck = async (options = {}) => {
     `Default RSS is missing archive item link: ${sampleArchiveLink}`
   );
   expect(
-    essayRssLinks.includes(sampleArchiveLink),
-    `Essay RSS is missing archive item link: ${sampleArchiveLink}`
+    longformRssLinks.includes(sampleArchiveLink),
+    `Longform RSS is missing archive item link: ${sampleArchiveLink}`
   );
   expect(
     sitemapXml.includes(`<loc>${sampleArchiveLink}</loc>`),
@@ -264,21 +264,21 @@ export const runProductionArtifactCheck = async (options = {}) => {
     `Archive detail page still contains admin CSS tokens: ${sampleArchiveHtmlPath}`
   );
 
-  const latestEssayLink = essayRssLinks[0];
-  const latestEssayHtmlPath = normalizeArchiveDetailPath(latestEssayLink);
-  const latestEssayHtml = readText(latestEssayHtmlPath);
+  const latestLongformLink = longformRssLinks[0];
+  const latestLongformHtmlPath = normalizeArchiveDetailPath(latestLongformLink);
+  const latestLongformHtml = readText(latestLongformHtmlPath);
   expect(
-    !PREV_LINK_PATTERN.test(latestEssayHtml),
-    `Latest essay detail page should not render a prev link: ${latestEssayHtmlPath}`
+    !PREV_LINK_PATTERN.test(latestLongformHtml),
+    `Latest longform detail page should not render a prev link: ${latestLongformHtmlPath}`
   );
 
-  const oldestEssayLink = essayRssLinks.at(-1);
-  expect(oldestEssayLink, 'Essay RSS does not contain an oldest item link');
-  const oldestEssayHtmlPath = normalizeArchiveDetailPath(oldestEssayLink);
-  const oldestEssayHtml = readText(oldestEssayHtmlPath);
+  const oldestLongformLink = longformRssLinks.at(-1);
+  expect(oldestLongformLink, 'Longform RSS does not contain an oldest item link');
+  const oldestLongformHtmlPath = normalizeArchiveDetailPath(oldestLongformLink);
+  const oldestLongformHtml = readText(oldestLongformHtmlPath);
   expect(
-    !NEXT_LINK_PATTERN.test(oldestEssayHtml),
-    `Oldest essay detail page should not render a next link: ${oldestEssayHtmlPath}`
+    !NEXT_LINK_PATTERN.test(oldestLongformHtml),
+    `Oldest longform detail page should not render a next link: ${oldestLongformHtmlPath}`
   );
 
   const adminSettingsArtifact = readText('dist/api/admin/settings');

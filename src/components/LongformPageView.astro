@@ -1,8 +1,8 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import TagFilterHeader from './TagFilterHeader.astro';
-import EssayCard from './EssayCard.astro';
-import { createWithBase, getEssayDerivedText, getEssaySlug, type EssayEntry } from '../lib/content';
+import LongformCard from './LongformCard.astro';
+import { createWithBase, getLongformDerivedText, getLongformSlug, type LongformEntry } from '../lib/content';
 import { getThemeSettings, getVisibleArticleMetaTags } from '../lib/theme-settings';
 import { joinPageSubtitleText } from '../utils/format';
 
@@ -15,7 +15,7 @@ const {
   totalPages
 } = Astro.props as {
   currentPage: number;
-  items: EssayEntry[];
+  items: LongformEntry[];
   nextPath?: string | null;
   prevPath?: string | null;
   resultCount: number;
@@ -31,48 +31,48 @@ const {
   }
 } = getThemeSettings();
 
-const pageTitleText = page.essay.title || '随笔';
+const pageTitleText = page.longform.title || '长文';
 const pageTitleParts = [pageTitleText, currentPage > 1 ? `第 ${currentPage} 页` : null].filter(Boolean);
 const pageTitle = pageTitleParts.join(' · ');
 const subtitleText = joinPageSubtitleText(
-  page.essay.subtitle,
+  page.longform.subtitle,
   `共 ${resultCount} 篇`,
   totalPages > 1 ? `第 ${currentPage} / ${totalPages} 页` : null
 );
 const pageDescription = joinPageSubtitleText(
   `${pageTitleText}列表`,
-  page.essay.subtitle,
+  page.longform.subtitle,
   `共 ${resultCount} 篇`,
   totalPages > 1 ? `第 ${currentPage} / ${totalPages} 页` : null
 ) ?? `${pageTitleText}列表`;
-const fallbackListId = 'essay-tag-list';
+const fallbackListId = 'longform-tag-list';
 ---
 
-<BaseLayout title={pageTitle} description={pageDescription} bodyClass="essay-page">
+<BaseLayout title={pageTitle} description={pageDescription} bodyClass="longform-page">
   <div
     class="entry-filters"
     data-entry-filters
-    data-index-url="/essay/index.json"
+    data-index-url="/longform/index.json"
   >
     <TagFilterHeader
       pageTitleText={pageTitleText}
       subtitleText={subtitleText}
-      rssHref={withBase('/essay/rss.xml')}
+      rssHref={withBase('/longform/rss.xml')}
       pickerHref={`#${fallbackListId}`}
       fallbackListId={fallbackListId}
-      dialogTitleId="essay-tag-dialog-title"
+      dialogTitleId="longform-tag-dialog-title"
       searchAriaLabel={`搜索${pageTitleText}`}
-      headerClass="page-header page-header--essay page-header--with-search"
+      headerClass="page-header page-header--longform page-header--with-search"
     />
   </div>
 
   <div class="list">
     {items.map((entry) => (
-      <EssayCard
-        href={withBase(`/archive/${getEssaySlug(entry)}/`)}
-        slug={getEssaySlug(entry)}
+      <LongformCard
+        href={withBase(`/archive/${getLongformSlug(entry)}/`)}
+        slug={getLongformSlug(entry)}
         title={entry.data.title}
-        excerpt={getEssayDerivedText(entry).excerpt}
+        excerpt={getLongformDerivedText(entry).excerpt}
         date={entry.data.date}
         visibleTags={getVisibleArticleMetaTags(entry.data.tags, 'list')}
         articleMetaSettings={articleMeta}

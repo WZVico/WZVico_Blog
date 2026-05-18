@@ -26,7 +26,7 @@ A minimal two-column Astro theme for personal writing and lightweight publishing
 
 - Two-column layout (sidebar navigation + content area)
 - Responsive design for mobile devices
-- Content collections: essay / bits / memo (archive is generated from essay)
+- Content collections: longform / bits / reads (archive is generated from longform)
 - Built-in local Admin Console (`/admin`): use Theme / Images / Checks / Data Console in development to manage site settings and assets, and take over the theme after forking or cloning
 - Bits draft generator on `/bits/`: one-click Markdown output (copy/download), with multi-image support and automatic image dimension detection
 - RSS: default archive feed + section feeds
@@ -141,7 +141,7 @@ npm run check:preview-admin
 - Site config: `site.config.mjs`
 - Content collections: `src/content.config.ts`
 - Shared style entry: `src/styles/global.css`
-- Page / scene style entries: `src/styles/home.css`, `src/styles/about.css`, `src/styles/memo.css`, `src/styles/article.css`, `src/styles/bits-page.css`
+- Page / scene style entries: `src/styles/home.css`, `src/styles/about.css`, `src/styles/reads.css`, `src/styles/article.css`, `src/styles/bits-page.css`
 - Admin style entry: `src/styles/components/admin-shell.css` + route-specific Admin styles; the full `admin.css` aggregate is no longer provided
 
 ### Admin Console (`/admin`)
@@ -216,14 +216,14 @@ For more details, see the [Theme Console configuration guide](https://astro.whon
 ### Collections and Routes
 
 Content Collections:
-- Essay: `src/content/essay`
+- Longform: `src/content/longform`
 - Bits: `src/content/bits`
-- Memo: `src/content/memo/index.md`
-- Archive: generated from essay entries via the `archive` field
+- reads: `src/content/reads/index.md`
+- Archive: generated from longform entries via the `archive` field
 
 Main routes:
-- List pages: `/archive/`, `/essay/`, `/bits/`, `/memo/`, `/about/`
-- Canonical detail route: `/archive/[slug]` (`/essay/[slug]` remains as a compatibility redirect)
+- List pages: `/archive/`, `/longform/`, `/bits/`, `/reads/`, `/about/`
+- Canonical detail route: `/archive/[slug]` (`/longform/[slug]` remains as a compatibility redirect)
 
 ### Image Assets
 
@@ -236,17 +236,17 @@ Main routes:
 
 ### Core Frontmatter Fields
 
-Essay:
+Longform:
 ```yaml
 title: My Post
 date: 2026-01-01
 draft: false        # Draft: hidden from list/RSS in production (visible in local preview; default false, optional)
-archive: true       # Archive switch: false excludes it from /archive and /archive/rss.xml (default true; detail page and /essay remain available)
+archive: true       # Archive switch: false excludes it from /archive and /archive/rss.xml (default true; detail page and /longform remain available)
 slug: optional      # Custom URL slug (defaults to the flattened content path, e.g. 2024/my-post -> 2024-my-post)
-badge: optional     # List badge; if omitted, list shows "Essay"
+badge: optional     # List badge; if omitted, list shows "Longform"
 ```
 
-`essay.date` should use the `YYYY-MM-DD` format for archive grouping, ordering, and page date display.
+`longform.date` should use the `YYYY-MM-DD` format for archive grouping, ordering, and page date display.
 
 Legacy ISO 8601 datetime values are still accepted. When written as a string, for example `date: "2026-01-01T12:00:00+08:00"`, the leading date is normalized to `2026-01-01`.
 
@@ -370,7 +370,7 @@ Font license: SIL Open Font License 1.1 (see `public/fonts/OFL-LXGW-WenKai-Lite.
 
 - `/rss.xml` (default feed; uses the same archive items as `/archive/rss.xml`)
 - `/archive/rss.xml` (archive feed)
-- `/essay/rss.xml`
+- `/longform/rss.xml`
 
 Setting `SITE_URL` is recommended for deployment (affects absolute links in RSS/OG/canonical).
 

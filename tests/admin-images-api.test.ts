@@ -18,8 +18,8 @@ describe('admin images api', () => {
     await mkdir(path.join(tempRoot, 'public', 'author'), { recursive: true });
     await mkdir(path.join(tempRoot, 'public', 'bits'), { recursive: true });
     await mkdir(path.join(tempRoot, 'public', 'images', 'archive'), { recursive: true });
-    await mkdir(path.join(tempRoot, 'src', 'content', 'essay', 'guide-assets'), { recursive: true });
-    await mkdir(path.join(tempRoot, 'src', 'content', 'essay', 'no-assets'), { recursive: true });
+    await mkdir(path.join(tempRoot, 'src', 'content', 'longform', 'guide-assets'), { recursive: true });
+    await mkdir(path.join(tempRoot, 'src', 'content', 'longform', 'no-assets'), { recursive: true });
     await mkdir(path.join(tempRoot, 'src', 'assets'), { recursive: true });
 
     await writeFile(path.join(tempRoot, 'public', 'favicon.png'), PNG_1X1);
@@ -28,14 +28,14 @@ describe('admin images api', () => {
     await writeFile(path.join(tempRoot, 'public', 'bits', 'demo.png'), PNG_1X1);
     await writeFile(path.join(tempRoot, 'public', 'images', 'archive', 'cover.png'), PNG_1X1);
     await writeFile(
-      path.join(tempRoot, 'src', 'content', 'essay', 'guide.md'),
+      path.join(tempRoot, 'src', 'content', 'longform', 'guide.md'),
       ['---', 'title: 附件映射测试', '---', '', '![封面](./guide-assets/hero.png)'].join('\n')
     );
     await writeFile(
-      path.join(tempRoot, 'src', 'content', 'essay', 'no-assets', 'index.md'),
+      path.join(tempRoot, 'src', 'content', 'longform', 'no-assets', 'index.md'),
       ['---', 'title: 无附件条目', '---', '', '这里只是普通正文，没有图片。'].join('\n')
     );
-    await writeFile(path.join(tempRoot, 'src', 'content', 'essay', 'guide-assets', 'hero.png'), PNG_1X1);
+    await writeFile(path.join(tempRoot, 'src', 'content', 'longform', 'guide-assets', 'hero.png'), PNG_1X1);
     await writeFile(path.join(tempRoot, 'src', 'assets', 'hero.png'), PNG_1X1);
   });
 
@@ -104,7 +104,7 @@ describe('admin images api', () => {
 
     const response = await GET({
       url: new URL(
-        'http://127.0.0.1:4321/api/admin/images/list?dir=src/content&owner=src/content/essay/guide&page=1&limit=10'
+        'http://127.0.0.1:4321/api/admin/images/list?dir=src/content&owner=src/content/longform/guide&page=1&limit=10'
       )
     } as never);
 
@@ -112,12 +112,12 @@ describe('admin images api', () => {
     const payload = JSON.parse(await response.text());
     expect(payload.ok).toBe(true);
     expect(payload.result.directory).toBe('src/content');
-    expect(payload.result.owner).toBe('src/content/essay/guide');
+    expect(payload.result.owner).toBe('src/content/longform/guide');
     expect(payload.result.ownerOptions).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          value: 'src/content/essay/guide',
-          label: '随笔 · 附件映射测试',
+          value: 'src/content/longform/guide',
+          label: '长文 · 附件映射测试',
           count: 1
         })
       ])
@@ -125,22 +125,22 @@ describe('admin images api', () => {
     expect(payload.result.ownerOptions).not.toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          value: 'src/content/essay/no-assets/index'
+          value: 'src/content/longform/no-assets/index'
         })
       ])
     );
     expect(payload.result.items).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          path: 'src/content/essay/guide-assets/hero.png',
-          value: 'src/content/essay/guide-assets/hero.png',
+          path: 'src/content/longform/guide-assets/hero.png',
+          value: 'src/content/longform/guide-assets/hero.png',
           origin: 'src/content',
-          owner: 'src/content/essay/guide',
-          ownerLabel: '随笔 · 附件映射测试'
+          owner: 'src/content/longform/guide',
+          ownerLabel: '长文 · 附件映射测试'
         })
       ])
     );
-    expect(payload.result.items.every((item: { owner: string | null }) => item.owner === 'src/content/essay/guide')).toBe(true);
+    expect(payload.result.items.every((item: { owner: string | null }) => item.owner === 'src/content/longform/guide')).toBe(true);
   });
 
   it('returns metadata for field values and keeps remote urls readonly-compatible', async () => {
@@ -235,7 +235,7 @@ describe('admin images api', () => {
     await touch('public/author/avatar.png', '2026-04-01T00:00:00.000Z');
     await touch('public/bits/demo.png', '2026-04-02T00:00:00.000Z');
     await touch('public/images/archive/cover.png', '2026-04-03T00:00:00.000Z');
-    await touch('src/content/essay/guide-assets/hero.png', '2026-03-31T00:00:00.000Z');
+    await touch('src/content/longform/guide-assets/hero.png', '2026-03-31T00:00:00.000Z');
     await touch('src/assets/hero.png', '2026-04-04T00:00:00.000Z');
     await touch('public/apple-touch-icon.png', '2026-04-05T00:00:00.000Z');
 
@@ -247,7 +247,7 @@ describe('admin images api', () => {
       'public/bits/demo.png',
       'public/author/avatar.png'
     ]);
-    expect(scopeIndex.recent).toContain('src/content/essay/guide-assets/hero.png');
+    expect(scopeIndex.recent).toContain('src/content/longform/guide-assets/hero.png');
     expect(scopeIndex.recent).not.toContain('public/favicon.png');
     expect(scopeIndex.recent).not.toContain('public/apple-touch-icon.png');
 

@@ -20,20 +20,20 @@ describe('admin content write api', () => {
     tempRoot = await mkdtemp(path.join(tmpdir(), 'astro-whono-content-'));
     process.env.ASTRO_WHONO_INTERNAL_TEST_PROJECT_ROOT = tempRoot;
 
-    await mkdir(path.join(tempRoot, 'src', 'content', 'essay'), { recursive: true });
+    await mkdir(path.join(tempRoot, 'src', 'content', 'longform'), { recursive: true });
     await mkdir(path.join(tempRoot, 'src', 'content', 'bits'), { recursive: true });
-    await mkdir(path.join(tempRoot, 'src', 'content', 'memo'), { recursive: true });
+    await mkdir(path.join(tempRoot, 'src', 'content', 'reads'), { recursive: true });
     await mkdir(path.join(tempRoot, 'public', 'author'), { recursive: true });
 
     await writeFile(path.join(tempRoot, 'public', 'author', 'alice.webp'), 'avatar');
     await writeFile(
-      path.join(tempRoot, 'src', 'content', 'essay', 'demo.md'),
-      ['---', 'title: Demo Essay', 'date: 2026-03-18', 'draft: false', '---', '', '# Essay', '', '正文保持不变。', ''].join('\n'),
+      path.join(tempRoot, 'src', 'content', 'longform', 'demo.md'),
+      ['---', 'title: Demo Longform', 'date: 2026-03-18', 'draft: false', '---', '', '# Longform', '', '正文保持不变。', ''].join('\n'),
       'utf8'
     );
     await writeFile(
-      path.join(tempRoot, 'src', 'content', 'essay', 'other.md'),
-      ['---', 'title: Other Essay', 'date: 2026-03-20', 'slug: existing-essay', '---', '', '# Other', '', 'duplicate guard', ''].join('\n'),
+      path.join(tempRoot, 'src', 'content', 'longform', 'other.md'),
+      ['---', 'title: Other Longform', 'date: 2026-03-20', 'slug: existing-longform', '---', '', '# Other', '', 'duplicate guard', ''].join('\n'),
       'utf8'
     );
     await writeFile(
@@ -55,8 +55,8 @@ describe('admin content write api', () => {
       'utf8'
     );
     await writeFile(
-      path.join(tempRoot, 'src', 'content', 'memo', 'index.md'),
-      ['---', 'title: Memo', 'date: 2026-01-10', '---', '', 'memo body', ''].join('\n'),
+      path.join(tempRoot, 'src', 'content', 'reads', 'index.md'),
+      ['---', 'title: reads', 'date: 2026-01-10', '---', '', 'reads body', ''].join('\n'),
       'utf8'
     );
   });
@@ -68,21 +68,21 @@ describe('admin content write api', () => {
     }
   });
 
-  it('loads editable payload for essay entries', async () => {
+  it('loads editable payload for longform entries', async () => {
     const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
-    const payload = await readAdminContentEntryEditorPayload('essay', 'demo');
+    const payload = await readAdminContentEntryEditorPayload('longform', 'demo');
 
     expect(payload.writable).toBe(true);
-    expect(payload.values.title).toBe('Demo Essay');
+    expect(payload.values.title).toBe('Demo Longform');
     expect(payload.values.date).toBe('2026-03-18');
-    if (payload.collection === 'essay') {
+    if (payload.collection === 'longform') {
       expect(payload.values.publishedAt).toBe('');
     }
   });
 
-  it('loads legacy essay datetime dates for compatibility', async () => {
+  it('loads legacy longform datetime dates for compatibility', async () => {
     await writeFile(
-      path.join(tempRoot, 'src', 'content', 'essay', 'legacy-datetime.md'),
+      path.join(tempRoot, 'src', 'content', 'longform', 'legacy-datetime.md'),
       [
         '---',
         'title: Legacy Datetime',
@@ -97,22 +97,22 @@ describe('admin content write api', () => {
     );
 
     const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
-    const payload = await readAdminContentEntryEditorPayload('essay', 'legacy-datetime');
+    const payload = await readAdminContentEntryEditorPayload('longform', 'legacy-datetime');
 
-    if (payload.collection === 'essay') {
+    if (payload.collection === 'longform') {
       expect(payload.values.date).toBe('2024-11-23');
       expect(payload.values.publishedAt).toBe('2024-11-23T18:00:00+08:00');
     }
   });
 
-  it('rejects memo writes while still exposing readonly schema info', async () => {
+  it('rejects reads writes while still exposing readonly schema info', async () => {
     const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
-    const payload = await readAdminContentEntryEditorPayload('memo', 'index');
+    const payload = await readAdminContentEntryEditorPayload('reads', 'index');
 
     expect(payload.writable).toBe(false);
     expect(payload.readonlyReason).toContain('Phase 2B');
-    expect(payload.collection).toBe('memo');
-    if (payload.collection === 'memo') {
+    expect(payload.collection).toBe('reads');
+    if (payload.collection === 'reads') {
       expect(payload.values.slug).toBe('');
     }
   });
@@ -128,25 +128,25 @@ describe('admin content write api', () => {
         message: '不支持的 content collection'
       },
       {
-        body: { collection: 'memo', entryId: 'index', revision: 'stale', frontmatter: {} },
+        body: { collection: 'reads', entryId: 'index', revision: 'stale', frontmatter: {} },
         status: 400,
         issuePath: 'collection',
         message: '只读'
       },
       {
-        body: { collection: 'essay', entryId: '../secret', revision: 'stale', frontmatter: {} },
+        body: { collection: 'longform', entryId: '../secret', revision: 'stale', frontmatter: {} },
         status: 400,
         issuePath: 'entryId',
         message: 'entryId'
       },
       {
-        body: { collection: 'essay', entryId: 'missing', revision: 'stale', frontmatter: {} },
+        body: { collection: 'longform', entryId: 'missing', revision: 'stale', frontmatter: {} },
         status: 404,
         issuePath: 'entryId',
         message: '未找到 content 源文件'
       },
       {
-        body: { collection: 'essay', entryId: 'demo', revision: 'stale', frontmatter: [] },
+        body: { collection: 'longform', entryId: 'demo', revision: 'stale', frontmatter: [] },
         status: 400,
         issuePath: 'frontmatter',
         message: 'frontmatter 必须是对象'
@@ -173,20 +173,20 @@ describe('admin content write api', () => {
     }
   });
 
-  it('supports dry-run and real writes for essay frontmatter without changing body', async () => {
+  it('supports dry-run and real writes for longform frontmatter without changing body', async () => {
     const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
     const { POST } = await import('../src/pages/api/admin/content/entry');
 
-    const current = await readAdminContentEntryEditorPayload('essay', 'demo');
+    const current = await readAdminContentEntryEditorPayload('longform', 'demo');
     const nextValues = {
       ...current.values,
-      title: 'Edited Essay',
+      title: 'Edited Longform',
       tagsText: 'astro\nadmin'
     };
 
     const dryRunResponse = await POST({
       request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry?dryRun=1', {
-        collection: 'essay',
+        collection: 'longform',
         entryId: 'demo',
         revision: current.revision,
         frontmatter: nextValues
@@ -200,11 +200,11 @@ describe('admin content write api', () => {
     expect(dryRunPayload.dryRun).toBe(true);
     expect(dryRunPayload.result.changedFields).toEqual(['title', 'tags']);
 
-    const before = await readFile(path.join(tempRoot, 'src', 'content', 'essay', 'demo.md'), 'utf8');
+    const before = await readFile(path.join(tempRoot, 'src', 'content', 'longform', 'demo.md'), 'utf8');
 
     const writeResponse = await POST({
       request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry', {
-        collection: 'essay',
+        collection: 'longform',
         entryId: 'demo',
         revision: current.revision,
         frontmatter: nextValues
@@ -217,15 +217,15 @@ describe('admin content write api', () => {
     expect(writePayload.ok).toBe(true);
     expect(writePayload.result.written).toBe(true);
 
-    const after = await readFile(path.join(tempRoot, 'src', 'content', 'essay', 'demo.md'), 'utf8');
-    expect(after).toContain('title: Edited Essay');
+    const after = await readFile(path.join(tempRoot, 'src', 'content', 'longform', 'demo.md'), 'utf8');
+    expect(after).toContain('title: Edited Longform');
     expect(after).toContain('tags:');
-    expect(after.endsWith('# Essay\n\n正文保持不变。\n')).toBe(true);
+    expect(after.endsWith('# Longform\n\n正文保持不变。\n')).toBe(true);
     expect(after).not.toBe(before);
   });
 
-  it('normalizes legacy essay datetime dates to date plus publishedAt on save', async () => {
-    const legacyPath = path.join(tempRoot, 'src', 'content', 'essay', 'legacy-datetime.md');
+  it('normalizes legacy longform datetime dates to date plus publishedAt on save', async () => {
+    const legacyPath = path.join(tempRoot, 'src', 'content', 'longform', 'legacy-datetime.md');
     await writeFile(
       legacyPath,
       [
@@ -244,10 +244,10 @@ describe('admin content write api', () => {
     const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
     const { POST } = await import('../src/pages/api/admin/content/entry');
 
-    const current = await readAdminContentEntryEditorPayload('essay', 'legacy-datetime');
+    const current = await readAdminContentEntryEditorPayload('longform', 'legacy-datetime');
     const response = await POST({
       request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry', {
-        collection: 'essay',
+        collection: 'longform',
         entryId: 'legacy-datetime',
         revision: current.revision,
         frontmatter: {
@@ -270,14 +270,14 @@ describe('admin content write api', () => {
     expect(after).not.toContain('date: 2024-11-23T18:00:00+08:00');
   });
 
-  it('writes explicit essay publishedAt without forcing date datetime syntax', async () => {
+  it('writes explicit longform publishedAt without forcing date datetime syntax', async () => {
     const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
     const { POST } = await import('../src/pages/api/admin/content/entry');
 
-    const current = await readAdminContentEntryEditorPayload('essay', 'demo');
+    const current = await readAdminContentEntryEditorPayload('longform', 'demo');
     const response = await POST({
       request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry', {
-        collection: 'essay',
+        collection: 'longform',
         entryId: 'demo',
         revision: current.revision,
         frontmatter: {
@@ -293,19 +293,19 @@ describe('admin content write api', () => {
     expect(payload.ok).toBe(true);
     expect(payload.result.changedFields).toEqual(['publishedAt']);
 
-    const after = await readFile(path.join(tempRoot, 'src', 'content', 'essay', 'demo.md'), 'utf8');
+    const after = await readFile(path.join(tempRoot, 'src', 'content', 'longform', 'demo.md'), 'utf8');
     expect(after).toContain('date: 2026-03-18');
     expect(after).toContain('publishedAt: 2026-03-18T19:30:00+08:00');
   });
 
-  it('rejects impossible essay publishedAt calendar dates before writing', async () => {
+  it('rejects impossible longform publishedAt calendar dates before writing', async () => {
     const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
     const { POST } = await import('../src/pages/api/admin/content/entry');
 
-    const current = await readAdminContentEntryEditorPayload('essay', 'demo');
+    const current = await readAdminContentEntryEditorPayload('longform', 'demo');
     const response = await POST({
       request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry?dryRun=1', {
-        collection: 'essay',
+        collection: 'longform',
         entryId: 'demo',
         revision: current.revision,
         frontmatter: {
@@ -427,14 +427,14 @@ describe('admin content write api', () => {
     );
   });
 
-  it('rejects reserved essay slugs before writing invalid content', async () => {
+  it('rejects reserved longform slugs before writing invalid content', async () => {
     const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
     const { POST } = await import('../src/pages/api/admin/content/entry');
-    const current = await readAdminContentEntryEditorPayload('essay', 'demo');
+    const current = await readAdminContentEntryEditorPayload('longform', 'demo');
 
     const response = await POST({
       request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry?dryRun=1', {
-        collection: 'essay',
+        collection: 'longform',
         entryId: 'demo',
         revision: current.revision,
         frontmatter: {
@@ -457,19 +457,19 @@ describe('admin content write api', () => {
     );
   });
 
-  it('rejects duplicate public essay slugs before writing invalid content', async () => {
+  it('rejects duplicate public longform slugs before writing invalid content', async () => {
     const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
     const { POST } = await import('../src/pages/api/admin/content/entry');
-    const current = await readAdminContentEntryEditorPayload('essay', 'demo');
+    const current = await readAdminContentEntryEditorPayload('longform', 'demo');
 
     const response = await POST({
       request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry?dryRun=1', {
-        collection: 'essay',
+        collection: 'longform',
         entryId: 'demo',
         revision: current.revision,
         frontmatter: {
           ...current.values,
-          slug: 'existing-essay'
+          slug: 'existing-longform'
         }
       }),
       url: new URL('http://127.0.0.1:4321/api/admin/content/entry?dryRun=1')
@@ -487,14 +487,14 @@ describe('admin content write api', () => {
     );
   });
 
-  it('rejects malformed essay frontmatter payloads with field errors instead of 500', async () => {
+  it('rejects malformed longform frontmatter payloads with field errors instead of 500', async () => {
     const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
     const { POST } = await import('../src/pages/api/admin/content/entry');
-    const current = await readAdminContentEntryEditorPayload('essay', 'demo');
+    const current = await readAdminContentEntryEditorPayload('longform', 'demo');
 
     const response = await POST({
       request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry?dryRun=1', {
-        collection: 'essay',
+        collection: 'longform',
         entryId: 'demo',
         revision: current.revision,
         frontmatter: {
@@ -520,17 +520,17 @@ describe('admin content write api', () => {
   it('rejects stale revisions after the source file changes externally', async () => {
     const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
     const { POST } = await import('../src/pages/api/admin/content/entry');
-    const current = await readAdminContentEntryEditorPayload('essay', 'demo');
+    const current = await readAdminContentEntryEditorPayload('longform', 'demo');
 
     await writeFile(
-      path.join(tempRoot, 'src', 'content', 'essay', 'demo.md'),
+      path.join(tempRoot, 'src', 'content', 'longform', 'demo.md'),
       ['---', 'title: External Change', 'date: 2026-03-18', '---', '', 'changed body', ''].join('\n'),
       'utf8'
     );
 
     const response = await POST({
       request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry', {
-        collection: 'essay',
+        collection: 'longform',
         entryId: 'demo',
         revision: current.revision,
         frontmatter: {

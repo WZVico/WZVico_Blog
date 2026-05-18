@@ -1,13 +1,13 @@
 ---
 import ArchivePageView from '../../../components/ArchivePageView.astro';
-import { getArchiveEssays, getPageSlice, getTotalPages } from '../../../lib/content';
+import { getArchiveLongforms, getPageSlice, getTotalPages } from '../../../lib/content';
 import { collectTagSummary, filterEntriesByTag, findTagSummary, getTagPath } from '../../../lib/tags';
 import { PAGE_SIZE_ARCHIVE } from '../../../../site.config.mjs';
 
 export const prerender = true;
 
 export async function getStaticPaths() {
-  const archiveItems = await getArchiveEssays();
+  const archiveItems = await getArchiveLongforms();
   const tagSummaries = collectTagSummary(archiveItems);
   return tagSummaries.map((tagSummary) => ({
     params: {
@@ -16,7 +16,7 @@ export async function getStaticPaths() {
   }));
 }
 
-const archiveItems = await getArchiveEssays();
+const archiveItems = await getArchiveLongforms();
 const tagSummaries = collectTagSummary(archiveItems);
 const currentTag = findTagSummary(tagSummaries, Astro.params.tag ?? '');
 

@@ -1,14 +1,14 @@
 import type { CollectionEntry } from 'astro:content';
 import { PAGE_SIZE_BITS } from '../../../site.config.mjs';
 import {
-  getEssayDerivedText,
-  getEssaySlug,
-  getMemoDerivedText,
+  getLongformDerivedText,
+  getLongformSlug,
+  getReadsDerivedText,
   getPageSlice,
   getPublished,
-  getSortedEssays,
+  getSortedLongforms,
   getTotalPages,
-  type EssayEntry
+  type LongformEntry
 } from '../content';
 import {
   getBitAnchorId,
@@ -26,8 +26,8 @@ import {
   tokenizeSearchQuery
 } from '../../utils/format';
 
-export type MemoEntry = CollectionEntry<'memo'>;
-export type AdminContentCollectionKey = 'essay' | 'bits' | 'memo';
+export type ReadsEntry = CollectionEntry<'reads'>;
+export type AdminContentCollectionKey = 'longform' | 'bits' | 'reads';
 export type AdminContentDraftFilter = 'all' | 'draft' | 'published';
 export type AdminContentSortKey = 'recent' | 'title';
 export type AdminContentField = {
@@ -102,7 +102,7 @@ export type AdminContentOverviewData = {
   summaries: AdminContentCollectionSummary[];
 };
 
-export const ADMIN_CONTENT_COLLECTIONS = ['essay', 'bits', 'memo'] as const satisfies readonly AdminContentCollectionKey[];
+export const ADMIN_CONTENT_COLLECTIONS = ['longform', 'bits', 'reads'] as const satisfies readonly AdminContentCollectionKey[];
 
 export const ADMIN_CONTENT_SORT_OPTIONS = [
   { value: 'recent', label: '最近更新' },
@@ -116,15 +116,15 @@ export const ADMIN_CONTENT_DRAFT_OPTIONS = [
 ] as const satisfies readonly { value: AdminContentDraftFilter; label: string }[];
 
 const COLLECTION_LABELS: Record<AdminContentCollectionKey, string> = {
-  essay: '随笔',
+  longform: '长文',
   bits: '絮语',
-  memo: '小记'
+  reads: '阅读'
 };
 
 const ADMIN_CONTENT_PAGE_SIZES: Record<AdminContentCollectionKey, number> = {
-  essay: 12,
+  longform: 12,
   bits: 18,
-  memo: 12
+  reads: 12
 };
 
 const EMPTY_VALUE = '(空)';
@@ -157,7 +157,7 @@ const orderByNullableDateDesc = (left: Date | null, right: Date | null): number 
   return 0;
 };
 
-const orderByMemoDate = (left: MemoEntry, right: MemoEntry): number =>
+const orderByReadsDate = (left: ReadsEntry, right: ReadsEntry): number =>
   orderByNullableDateDesc(left.data.date ?? null, right.data.date ?? null);
 
 const formatNullableDate = (date: Date | null): { label: string; value: string | null; year: number | null } => {
@@ -225,18 +225,18 @@ const loadPublishedBitsHrefMap = async (): Promise<Map<string, string>> => {
   return new Map(index.map((item) => [item.key, item.href]));
 };
 
-const createEssayIndexItem = (entry: EssayEntry): AdminContentIndexItem => {
-  const derivedText = getEssayDerivedText(entry);
+const createLongformIndexItem = (entry: LongformEntry): AdminContentIndexItem => {
+  const derivedText = getLongformDerivedText(entry);
   const title = normalizeFieldValue(entry.data.title, entry.id);
   const { label, value, year } = formatNullableDate(entry.data.date);
-  const slug = getEssaySlug(entry);
-  const relativePath = buildRelativePath('essay', entry.id);
+  const slug = getLongformSlug(entry);
+  const relativePath = buildRelativePath('longform', entry.id);
   const publicHref = entry.data.draft === true ? null : `/archive/${slug}/`;
   const excerpt = derivedText.excerpt || null;
 
   return {
-    collection: 'essay',
-    collectionLabel: COLLECTION_LABELS.essay,
+    collection: 'longform',
+    collectionLabel: COLLECTION_LABELS.longform,
     id: entry.id,
     title,
     slug,
@@ -328,19 +328,19 @@ const createBitsIndexItem = (
   };
 };
 
-const createMemoIndexItem = (entry: MemoEntry): AdminContentIndexItem => {
-  const derivedText = getMemoDerivedText(entry);
+const createReadsIndexItem = (entry: ReadsEntry): AdminContentIndexItem => {
+  const derivedText = getReadsDerivedText(entry);
   const excerpt = truncateText(derivedText.excerptText, 160) || null;
   const title = normalizeFieldValue(entry.data.title, entry.id);
   const { label, value, year } = formatNullableDate(entry.data.date ?? null);
   const slug = normalizeOptionalText(entry.data.slug) || null;
-  const relativePath = buildRelativePath('memo', entry.id);
-  const publicHref = entry.data.draft === true ? null : '/memo/';
+  const relativePath = buildRelativePath('reads', entry.id);
+  const publicHref = entry.data.draft === true ? null : '/reads/';
   const subtitle = normalizeOptionalText(entry.data.subtitle);
 
   return {
-    collection: 'memo',
-    collectionLabel: COLLECTION_LABELS.memo,
+    collection: 'reads',
+    collectionLabel: COLLECTION_LABELS.reads,
     id: entry.id,
     title,
     slug,
@@ -360,7 +360,7 @@ const createMemoIndexItem = (entry: MemoEntry): AdminContentIndexItem => {
       buildEntryField('date', value, '未设置日期'),
       buildEntryField('draft', String(entry.data.draft === true)),
       buildEntryField('slug', slug, MISSING_VALUE),
-      buildEntryField('public route', '/memo/')
+      buildEntryField('public route', '/reads/')
     ],
     searchHaystack: buildSearchHaystack([
       title,
@@ -374,8 +374,8 @@ const createMemoIndexItem = (entry: MemoEntry): AdminContentIndexItem => {
 
 const loadCollectionItems = async (collection: AdminContentCollectionKey): Promise<AdminContentIndexItem[]> => {
   switch (collection) {
-    case 'essay':
-      return (await getSortedEssays({ includeDraft: true })).map((entry) => createEssayIndexItem(entry));
+    case 'longform':
+      return (await getSortedLongforms({ includeDraft: true })).map((entry) => createLongformIndexItem(entry));
     case 'bits': {
       const [entries, publicHrefById] = await Promise.all([
         getSortedBits({ includeDraft: true }),
@@ -383,9 +383,9 @@ const loadCollectionItems = async (collection: AdminContentCollectionKey): Promi
       ]);
       return entries.map((entry) => createBitsIndexItem(entry, publicHrefById));
     }
-    case 'memo':
-      return (await getPublished('memo', { includeDraft: true, orderBy: orderByMemoDate }))
-        .map((entry) => createMemoIndexItem(entry));
+    case 'reads':
+      return (await getPublished('reads', { includeDraft: true, orderBy: orderByReadsDate }))
+        .map((entry) => createReadsIndexItem(entry));
     default:
       throw new Error(`Unsupported admin content collection: ${String(collection)}`);
   }
@@ -395,8 +395,8 @@ const loadCollectionSummary = async (
   collection: AdminContentCollectionKey
 ): Promise<AdminContentCollectionSummary> => {
   switch (collection) {
-    case 'essay': {
-      const entries = await getSortedEssays({ includeDraft: true });
+    case 'longform': {
+      const entries = await getSortedLongforms({ includeDraft: true });
       const latestDate = entries.find((entry) => entry.data.date !== null)?.data.date ?? null;
 
       return {
@@ -419,8 +419,8 @@ const loadCollectionSummary = async (
         latestDateLabel: latestDate ? formatDateTime(latestDate) : '未设置日期'
       };
     }
-    case 'memo': {
-      const entries = await getPublished('memo', { includeDraft: true, orderBy: orderByMemoDate });
+    case 'reads': {
+      const entries = await getPublished('reads', { includeDraft: true, orderBy: orderByReadsDate });
       const latestDate = entries.find((entry) => entry.data.date !== null)?.data.date ?? null;
 
       return {
@@ -537,8 +537,8 @@ export const getAdminContentPublicFallbackLabel = (item: AdminContentIndexItem):
     return 'draft 条目默认不暴露公开页';
   }
 
-  if (item.collection === 'memo') {
-    return 'memo 当前使用固定公开路由 /memo/';
+  if (item.collection === 'reads') {
+    return 'reads 当前使用固定公开路由 /reads/';
   }
 
   if (item.collection === 'bits') {

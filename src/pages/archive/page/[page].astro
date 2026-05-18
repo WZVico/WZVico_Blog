@@ -1,19 +1,19 @@
 ---
 import ArchivePageView from '../../../components/ArchivePageView.astro';
-import { buildPaginatedPaths, getArchiveEssays, getPageSlice, getTotalPages } from '../../../lib/content';
+import { buildPaginatedPaths, getArchiveLongforms, getPageSlice, getTotalPages } from '../../../lib/content';
 import { collectTagSummary } from '../../../lib/tags';
 import { PAGE_SIZE_ARCHIVE } from '../../../../site.config.mjs';
 
 export const prerender = true;
 
 export async function getStaticPaths() {
-  const archiveItems = await getArchiveEssays();
+  const archiveItems = await getArchiveLongforms();
   const totalPages = getTotalPages(archiveItems.length, PAGE_SIZE_ARCHIVE);
   return buildPaginatedPaths(totalPages);
 }
 
 const currentPage = Number(Astro.params.page);
-const archiveItems = await getArchiveEssays();
+const archiveItems = await getArchiveLongforms();
 const tagSummaries = collectTagSummary(archiveItems);
 const totalPages = getTotalPages(archiveItems.length, PAGE_SIZE_ARCHIVE);
 const pageItems = getPageSlice(archiveItems, currentPage, PAGE_SIZE_ARCHIVE);

@@ -253,7 +253,7 @@ export const runPreviewAdminBoundaryCheck = async () => {
     const adminOverviewResponse = await request(baseUrl, '/admin/');
     const adminThemeResponse = await request(baseUrl, '/admin/theme/');
     const adminContentResponse = await request(baseUrl, '/admin/content/');
-    const adminEssayContentResponse = await request(baseUrl, '/admin/content/essay/');
+    const adminLongformContentResponse = await request(baseUrl, '/admin/content/longform/');
     const adminImageResponse = await request(baseUrl, '/admin/images/');
     const adminChecksResponse = await request(baseUrl, '/admin/checks/');
     const adminDataResponse = await request(baseUrl, '/admin/data/');
@@ -269,7 +269,7 @@ export const runPreviewAdminBoundaryCheck = async () => {
         origin: baseUrl
       },
       body: JSON.stringify({
-        collection: 'essay',
+        collection: 'longform',
         entryId: 'preview-boundary-demo',
         revision: 'invalid',
         frontmatter: {}
@@ -287,7 +287,7 @@ export const runPreviewAdminBoundaryCheck = async () => {
     assertAdminOverviewShell('Preview GET /admin/', adminOverviewResponse);
     assertReadonlyAdminThemeShell('Preview GET /admin/theme/', adminThemeResponse);
     assertAdminContentPlaceholderShell('Preview GET /admin/content/', adminContentResponse);
-    assertAdminContentPlaceholderShell('Preview GET /admin/content/essay/', adminEssayContentResponse);
+    assertAdminContentPlaceholderShell('Preview GET /admin/content/longform/', adminLongformContentResponse);
     assertReadonlyAdminImageShell('Preview GET /admin/images/', adminImageResponse);
     assertReadonlyAdminChecksShell('Preview GET /admin/checks/', adminChecksResponse);
     assertReadonlyAdminDataShell('Preview GET /admin/data/', adminDataResponse);
@@ -346,9 +346,9 @@ export const runDevAdminSettingsSmokeCheck = async () => {
     expect(payload.settings && typeof payload.settings === 'object', 'Dev payload settings snapshot is missing');
 
     const contentOverviewResponse = await request(baseUrl, '/admin/content/');
-    const contentEssayResponse = await request(baseUrl, '/admin/content/essay/');
+    const contentLongformResponse = await request(baseUrl, '/admin/content/longform/');
     assertAdminContentPlaceholderShell('Dev GET /admin/content/', contentOverviewResponse, { expectNav: true });
-    assertAdminContentPlaceholderShell('Dev GET /admin/content/essay/', contentEssayResponse, { expectNav: true });
+    assertAdminContentPlaceholderShell('Dev GET /admin/content/longform/', contentLongformResponse, { expectNav: true });
 
     const uiSettingsPath = path.join(fixture.settingsDir, 'ui.json');
     const beforeDryRun = await readFile(uiSettingsPath, 'utf8');

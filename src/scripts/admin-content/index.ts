@@ -3,7 +3,7 @@ import { initAdminContentBitsImagesEditor } from './images-editor';
 
 type AdminContentBootstrap = {
   endpoint: string;
-  collection: 'essay' | 'bits';
+  collection: 'longform' | 'bits';
   entryId: string;
   revision: string;
 };
@@ -30,7 +30,7 @@ const parseBootstrap = (value: string): AdminContentBootstrap | null => {
     const parsed = JSON.parse(value) as unknown;
     if (!isRecord(parsed)) return null;
     const endpoint = typeof parsed.endpoint === 'string' ? parsed.endpoint.trim() : '';
-    const collection = parsed.collection === 'essay' || parsed.collection === 'bits' ? parsed.collection : null;
+    const collection = parsed.collection === 'longform' || parsed.collection === 'bits' ? parsed.collection : null;
     const entryId = typeof parsed.entryId === 'string' ? parsed.entryId.trim() : '';
     const revision = typeof parsed.revision === 'string' ? parsed.revision.trim() : '';
     if (!endpoint || !collection || !entryId || !revision) return null;
@@ -266,7 +266,7 @@ if (!adminContentRoot) {
         const formData = new FormData(editorForm);
         const getText = (name: string) => String(formData.get(name) ?? '');
 
-        if (bootstrap.collection === 'essay') {
+        if (bootstrap.collection === 'longform') {
           return {
             title: getText('title'),
             description: getText('description'),

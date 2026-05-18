@@ -40,14 +40,14 @@ describe('admin-console/shared', () => {
   it('reports duplicate and range issues for nav orders', () => {
     expect(
       getAdminNavOrderIssues([
-        { key: 'essay', order: 1 },
+        { key: 'longform', order: 1 },
         { key: 'bits', order: 1 },
-        { key: 'memo', order: 0 }
+        { key: 'reads', order: 0 }
       ])
     ).toEqual([
-      { type: 'duplicate', key: 'essay', order: 1 },
+      { type: 'duplicate', key: 'longform', order: 1 },
       { type: 'duplicate', key: 'bits', order: 1 },
-      { type: 'range', key: 'memo', order: 0 }
+      { type: 'range', key: 'reads', order: 0 }
     ]);
   });
 
@@ -124,6 +124,7 @@ describe('admin-console/shared', () => {
     raw.site.title = `  ${raw.site.title}  `;
     raw.site.footer.startYear = String(raw.site.footer.startYear);
     raw.site.socialLinks.email = `mailto:${raw.site.socialLinks.email}`;
+    const customOrder = Math.max(...Object.values(raw.site.socialLinks.presetOrder).map(Number)) + 1;
     raw.site.socialLinks.custom = [
       {
         id: 'custom-home',
@@ -131,7 +132,7 @@ describe('admin-console/shared', () => {
         href: 'https://example.com',
         iconKey: 'globe',
         visible: 1,
-        order: '4'
+        order: String(customOrder)
       }
     ];
     delete raw.page.about.subtitle;
@@ -148,7 +149,7 @@ describe('admin-console/shared', () => {
       iconKey: 'website',
       label: 'website',
       visible: true,
-      order: 4
+      order: customOrder
     });
     expect(validateAdminThemeSettings(canonical, { footerStartYearMax: 2030 })).toEqual([]);
     expect(

@@ -1,6 +1,6 @@
 ---
 import { render } from 'astro:content';
-import { getEssaySlug, getVisibleEssayRouteEntries, type EssayEntry } from '../../lib/content';
+import { getLongformSlug, getVisibleLongformRouteEntries, type LongformEntry } from '../../lib/content';
 import ArticleLayout from '../../layouts/ArticleLayout.astro';
 import { createWithBase } from '../../utils/format';
 import { getThemeSettings, getVisibleArticleMetaTags } from '../../lib/theme-settings';
@@ -15,17 +15,17 @@ export const prerender = true;
 export async function getStaticPaths() {
   const base = import.meta.env.BASE_URL ?? '/';
   const withBase = createWithBase(base);
-  const routeEntries = await getVisibleEssayRouteEntries();
+  const routeEntries = await getVisibleLongformRouteEntries();
   return routeEntries.map(({ slug, entry, prev, next }) => {
     return {
       params: { slug },
       props: {
         entry,
         prev: prev
-          ? { href: withBase(`/archive/${getEssaySlug(prev)}/`), title: prev.data.title }
+          ? { href: withBase(`/archive/${getLongformSlug(prev)}/`), title: prev.data.title }
           : null,
         next: next
-          ? { href: withBase(`/archive/${getEssaySlug(next)}/`), title: next.data.title }
+          ? { href: withBase(`/archive/${getLongformSlug(next)}/`), title: next.data.title }
           : null
       }
     };
@@ -33,7 +33,7 @@ export async function getStaticPaths() {
 }
 
 const { entry, prev, next } = Astro.props as {
-  entry: EssayEntry;
+  entry: LongformEntry;
   prev: ArticleNeighborLink | null;
   next: ArticleNeighborLink | null;
 };

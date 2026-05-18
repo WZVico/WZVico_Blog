@@ -24,8 +24,8 @@ export {
   normalizeAdminHeroImageSrc
 };
 
-export const ADMIN_NAV_IDS = ['essay', 'bits', 'memo', 'archive', 'about'] as const satisfies readonly SidebarNavId[];
-export const ADMIN_PAGE_IDS = ['essay', 'archive', 'bits', 'memo', 'about'] as const satisfies readonly PageId[];
+export const ADMIN_NAV_IDS = ['longform', 'bits', 'reads', 'archive', 'about'] as const satisfies readonly SidebarNavId[];
+export const ADMIN_PAGE_IDS = ['longform', 'archive', 'bits', 'reads', 'about'] as const satisfies readonly PageId[];
 export const ADMIN_SOCIAL_CUSTOM_LIMIT = 8;
 
 export const ADMIN_HERO_PRESETS = ['default', 'none'] as const satisfies readonly HeroPresetId[];
@@ -54,20 +54,20 @@ export const ADMIN_SIDEBAR_DIVIDER_OPTIONS = [
 
 export const ADMIN_HOME_INTRO_LINK_KEYS = [
   'archive',
-  'essay',
+  'longform',
   'bits',
-  'memo',
+  'reads',
   'about',
   'tag'
 ] as const satisfies readonly HomeIntroLinkKey[];
-export const ADMIN_HOME_INTRO_LINK_DEFAULT = ['archive', 'essay'] as const satisfies readonly HomeIntroLinkKey[];
+export const ADMIN_HOME_INTRO_LINK_DEFAULT = ['archive', 'longform'] as const satisfies readonly HomeIntroLinkKey[];
 export const ADMIN_HOME_INTRO_LINK_LIMIT = 2;
 export const ADMIN_HOME_INTRO_LINK_KEY_SET: ReadonlySet<HomeIntroLinkKey> = new Set(ADMIN_HOME_INTRO_LINK_KEYS);
 export const ADMIN_HOME_INTRO_LINK_OPTIONS = [
   { id: 'archive', label: '归档', href: '/archive/' },
-  { id: 'essay', label: '随笔', href: '/essay/' },
+  { id: 'longform', label: '长文', href: '/longform/' },
   { id: 'bits', label: '絮语', href: '/bits/' },
-  { id: 'memo', label: '小记', href: '/memo/' },
+  { id: 'reads', label: '阅读', href: '/reads/' },
   { id: 'about', label: '关于', href: '/about/' },
   { id: 'tag', label: '#标签', href: '/archive/?picker=tag' }
 ] as const satisfies readonly {
@@ -503,9 +503,9 @@ export const canonicalizeAdminThemeSettings = (
       heroImageAlt
     },
     page: {
-      essay: {
-        title: normalizeOptionalSingleLine(String(isRecord(page.essay) ? page.essay.title ?? '' : '')),
-        subtitle: normalizeOptionalSingleLine(String(isRecord(page.essay) ? page.essay.subtitle ?? '' : ''))
+      longform: {
+        title: normalizeOptionalSingleLine(String(isRecord(page.longform) ? page.longform.title ?? '' : '')),
+        subtitle: normalizeOptionalSingleLine(String(isRecord(page.longform) ? page.longform.subtitle ?? '' : ''))
       },
       archive: {
         title: normalizeOptionalSingleLine(String(isRecord(page.archive) ? page.archive.title ?? '' : '')),
@@ -519,9 +519,9 @@ export const canonicalizeAdminThemeSettings = (
           avatar: normalizeTrimmed(bitsDefaultAuthor.avatar)
         }
       },
-      memo: {
-        title: normalizeOptionalSingleLine(String(isRecord(page.memo) ? page.memo.title ?? '' : '')),
-        subtitle: normalizeOptionalSingleLine(String(isRecord(page.memo) ? page.memo.subtitle ?? '' : ''))
+      reads: {
+        title: normalizeOptionalSingleLine(String(isRecord(page.reads) ? page.reads.title ?? '' : '')),
+        subtitle: normalizeOptionalSingleLine(String(isRecord(page.reads) ? page.reads.subtitle ?? '' : ''))
       },
       about: {
         title: normalizeOptionalSingleLine(String(isRecord(page.about) ? page.about.title ?? '' : '')),
@@ -595,7 +595,7 @@ export const createAdminWritableThemeSettingsGroups = (
     introMoreLinks: [...settings.home.introMoreLinks]
   },
   page: {
-    essay: { ...settings.page.essay },
+    longform: { ...settings.page.longform },
     archive: { ...settings.page.archive },
     bits: {
       title: settings.page.bits.title,
@@ -604,7 +604,7 @@ export const createAdminWritableThemeSettingsGroups = (
         ...settings.page.bits.defaultAuthor
       }
     },
-    memo: { ...settings.page.memo },
+    reads: { ...settings.page.reads },
     about: { ...settings.page.about }
   },
   ui: {
@@ -862,10 +862,10 @@ export const validateAdminThemeSettings = (
   }
 
   const pageTitleMap: Array<[string | null, string, string]> = [
-    [settings.page.essay?.title, '/essay/ 页面主标题', 'page.essay.title'],
+    [settings.page.longform?.title, '/longform/ 页面主标题', 'page.longform.title'],
     [settings.page.archive?.title, '/archive/ 页面主标题', 'page.archive.title'],
     [settings.page.bits?.title, '/bits/ 页面主标题', 'page.bits.title'],
-    [settings.page.memo?.title, '/memo/ 页面主标题', 'page.memo.title'],
+    [settings.page.reads?.title, '/reads/ 页面主标题', 'page.reads.title'],
     [settings.page.about?.title, '/about/ 页面主标题', 'page.about.title']
   ];
 
@@ -884,10 +884,10 @@ export const validateAdminThemeSettings = (
   });
 
   const pageSubtitleMap: Array<[string | null, string, string]> = [
-    [settings.page.essay?.subtitle, '/essay/ 页面副标题', 'page.essay.subtitle'],
+    [settings.page.longform?.subtitle, '/longform/ 页面副标题', 'page.longform.subtitle'],
     [settings.page.archive?.subtitle, '/archive/ 页面副标题', 'page.archive.subtitle'],
     [settings.page.bits?.subtitle, '/bits/ 页面副标题', 'page.bits.subtitle'],
-    [settings.page.memo?.subtitle, '/memo/ 页面副标题', 'page.memo.subtitle'],
+    [settings.page.reads?.subtitle, '/reads/ 页面副标题', 'page.reads.subtitle'],
     [settings.page.about?.subtitle, '/about/ 页面副标题', 'page.about.subtitle']
   ];
 

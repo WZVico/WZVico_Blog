@@ -5,15 +5,15 @@ import { ADMIN_ARTICLE_META_DATE_LABEL_MAX_LENGTH } from '../../lib/admin-consol
 interface Props {
   pageTitleMaxLength: number;
   pageSubtitleMaxLength: number;
-  memoTitlePlaceholder?: string;
-  memoSubtitlePlaceholder?: string;
+  readsTitlePlaceholder?: string;
+  readsSubtitlePlaceholder?: string;
 }
 
 const {
   pageTitleMaxLength,
   pageSubtitleMaxLength,
-  memoTitlePlaceholder = '',
-  memoSubtitlePlaceholder = ''
+  readsTitlePlaceholder = '',
+  readsSubtitlePlaceholder = ''
 } = Astro.props;
 ---
 
@@ -29,29 +29,29 @@ const {
     <label class="admin-field">
       <span class="admin-label">
         <span class="admin-label__main">
-          <code>/essay/</code> 页面主 <span class="admin-label__pipe" aria-hidden="true">|</span> 副标题
+          <code>/longform/</code> 页面主 <span class="admin-label__pipe" aria-hidden="true">|</span> 副标题
         </span>
         <span class="admin-label__hint">（动态计数 / RSS 固定输出）</span>
       </span>
-      <span class="admin-title-pair" role="group" aria-label="/essay/ 页面主标题与副标题">
+      <span class="admin-title-pair" role="group" aria-label="/longform/ 页面主标题与副标题">
         <input
-          id="page-essay-title"
+          id="page-longform-title"
           class="admin-title-pair__input admin-title-pair__input--title"
           type="text"
           maxlength={pageTitleMaxLength}
           autocomplete="off"
-          placeholder="随笔"
-          aria-label="/essay/ 页面主标题"
+          placeholder="长文"
+          aria-label="/longform/ 页面主标题"
         />
         <span class="admin-title-pair__sep" aria-hidden="true">|</span>
         <input
-          id="page-essay-subtitle"
+          id="page-longform-subtitle"
           class="admin-title-pair__input admin-title-pair__input--subtitle"
           type="text"
           maxlength={pageSubtitleMaxLength}
           autocomplete="off"
-          placeholder="随笔与杂记"
-          aria-label="/essay/ 页面副标题"
+          placeholder="长文与杂记"
+          aria-label="/longform/ 页面副标题"
         />
       </span>
     </label>
@@ -83,32 +83,32 @@ const {
         />
       </span>
     </label>
-    <label class="admin-field admin-field--full admin-field--memo">
+    <label class="admin-field admin-field--full admin-field--reads">
       <span class="admin-label">
         <span class="admin-label__main">
-          <code>/memo/</code> 页面主 <span class="admin-label__pipe" aria-hidden="true">|</span> 副标题
+          <code>/reads/</code> 页面主 <span class="admin-label__pipe" aria-hidden="true">|</span> 副标题
         </span>
-        <span class="admin-label__hint">（填写后覆盖对应字段，留空则沿用 src/content/memo/index.md）</span>
+        <span class="admin-label__hint">（填写后覆盖对应字段，留空则沿用 src/content/reads/index.md）</span>
       </span>
-      <span class="admin-title-pair" role="group" aria-label="/memo/ 页面主标题与副标题">
+      <span class="admin-title-pair" role="group" aria-label="/reads/ 页面主标题与副标题">
         <input
-          id="page-memo-title"
+          id="page-reads-title"
           class="admin-title-pair__input admin-title-pair__input--title"
           type="text"
           maxlength={pageTitleMaxLength}
           autocomplete="off"
-          placeholder={memoTitlePlaceholder || undefined}
-          aria-label="/memo/ 页面主标题"
+          placeholder={readsTitlePlaceholder || undefined}
+          aria-label="/reads/ 页面主标题"
         />
         <span class="admin-title-pair__sep" aria-hidden="true">|</span>
         <input
-          id="page-memo-subtitle"
+          id="page-reads-subtitle"
           class="admin-title-pair__input admin-title-pair__input--subtitle"
           type="text"
           maxlength={pageSubtitleMaxLength}
           autocomplete="off"
-          placeholder={memoSubtitlePlaceholder || undefined}
-          aria-label="/memo/ 页面副标题"
+          placeholder={readsSubtitlePlaceholder || undefined}
+          aria-label="/reads/ 页面副标题"
         />
       </span>
     </label>

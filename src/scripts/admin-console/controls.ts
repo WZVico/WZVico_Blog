@@ -66,14 +66,14 @@ export type AdminThemeControls = RequiredElements<{
   inputHomeIntroMoreLinkSecondaryEnabled: HTMLInputElement | null;
   homeIntroMoreLinkSecondaryGroupEl: HTMLElement | null;
   inputHomeIntroMoreLinkSecondary: HTMLSelectElement | null;
-  inputPageEssayTitle: HTMLInputElement | null;
-  inputPageEssaySubtitle: HTMLInputElement | null;
+  inputPageLongformTitle: HTMLInputElement | null;
+  inputPageLongformSubtitle: HTMLInputElement | null;
   inputPageArchiveTitle: HTMLInputElement | null;
   inputPageArchiveSubtitle: HTMLInputElement | null;
   inputPageBitsTitle: HTMLInputElement | null;
   inputPageBitsSubtitle: HTMLInputElement | null;
-  inputPageMemoTitle: HTMLInputElement | null;
-  inputPageMemoSubtitle: HTMLInputElement | null;
+  inputPageReadsTitle: HTMLInputElement | null;
+  inputPageReadsSubtitle: HTMLInputElement | null;
   inputPageAboutTitle: HTMLInputElement | null;
   inputPageAboutSubtitle: HTMLInputElement | null;
   inputArticleMetaShowDate: HTMLInputElement | null;
@@ -148,14 +148,14 @@ export const queryAdminThemeControls = (): AdminThemeControls | null => {
     inputHomeIntroMoreLinkSecondaryEnabled: byId<HTMLInputElement>('home-intro-more-link-secondary-enabled'),
     homeIntroMoreLinkSecondaryGroupEl: byId<HTMLElement>('home-intro-more-link-secondary-group'),
     inputHomeIntroMoreLinkSecondary: byId<HTMLSelectElement>('home-intro-more-link-secondary'),
-    inputPageEssayTitle: byId<HTMLInputElement>('page-essay-title'),
-    inputPageEssaySubtitle: byId<HTMLInputElement>('page-essay-subtitle'),
+    inputPageLongformTitle: byId<HTMLInputElement>('page-longform-title'),
+    inputPageLongformSubtitle: byId<HTMLInputElement>('page-longform-subtitle'),
     inputPageArchiveTitle: byId<HTMLInputElement>('page-archive-title'),
     inputPageArchiveSubtitle: byId<HTMLInputElement>('page-archive-subtitle'),
     inputPageBitsTitle: byId<HTMLInputElement>('page-bits-title'),
     inputPageBitsSubtitle: byId<HTMLInputElement>('page-bits-subtitle'),
-    inputPageMemoTitle: byId<HTMLInputElement>('page-memo-title'),
-    inputPageMemoSubtitle: byId<HTMLInputElement>('page-memo-subtitle'),
+    inputPageReadsTitle: byId<HTMLInputElement>('page-reads-title'),
+    inputPageReadsSubtitle: byId<HTMLInputElement>('page-reads-subtitle'),
     inputPageAboutTitle: byId<HTMLInputElement>('page-about-title'),
     inputPageAboutSubtitle: byId<HTMLInputElement>('page-about-subtitle'),
     inputArticleMetaShowDate: byId<HTMLInputElement>('ui-article-meta-show-date'),

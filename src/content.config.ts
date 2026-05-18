@@ -1,15 +1,15 @@
 import { defineCollection } from 'astro:content';
 import { glob } from 'astro/loaders';
 import { z } from 'astro/zod';
-import { ESSAY_PUBLIC_SLUG_RE } from './utils/slug-rules';
+import { LONGFORM_PUBLIC_SLUG_RE } from './utils/slug-rules';
 import { normalizeBitsAvatarPath } from './utils/format';
-import { parseEssayDateInput, parseEssayPublishedAtInput } from './utils/date-only';
+import { parseLongformDateInput, parseLongformPublishedAtInput } from './utils/date-only';
 
 const slugRule = z
   .string()
-  .regex(ESSAY_PUBLIC_SLUG_RE, 'slug must be lowercase kebab-case');
+  .regex(LONGFORM_PUBLIC_SLUG_RE, 'slug must be lowercase kebab-case');
 
-const essayBaseFields = {
+const longformBaseFields = {
   title: z.string(),
   description: z.string().optional(),
   date: z.unknown(),
@@ -22,14 +22,14 @@ const essayBaseFields = {
   slug: slugRule.optional()
 };
 
-const essayShape = {
-  ...essayBaseFields,
+const longformShape = {
+  ...longformBaseFields,
   cover: z.string().optional(),
   badge: z.string().optional()
 };
 
-const essaySchema = z.object(essayShape).transform((data, ctx) => {
-  const dateResult = parseEssayDateInput(data.date);
+const longformSchema = z.object(longformShape).transform((data, ctx) => {
+  const dateResult = parseLongformDateInput(data.date);
   if (!dateResult) {
     ctx.addIssue({
       code: 'custom',
@@ -44,7 +44,7 @@ const essaySchema = z.object(essayShape).transform((data, ctx) => {
     publishedAtInput != null &&
     !(typeof publishedAtInput === 'string' && publishedAtInput.trim() === '');
   const publishedAt = hasExplicitPublishedAt
-    ? parseEssayPublishedAtInput(publishedAtInput)
+    ? parseLongformPublishedAtInput(publishedAtInput)
     : dateResult.publishedAt;
 
   if (hasExplicitPublishedAt && !publishedAt) {
@@ -92,9 +92,9 @@ const bitsAuthor = z.object({
   avatar: bitsAuthorAvatar.optional()
 });
 
-const essay = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/essay' }),
-  schema: essaySchema
+const longform = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/longform' }),
+  schema: longformSchema
 });
 
 const bits = defineCollection({
@@ -114,8 +114,8 @@ const bits = defineCollection({
   })
 });
 
-const memo = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/memo' }),
+const reads = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/reads' }),
   schema: z.object({
     title: z.string(),
     subtitle: z.string().optional(),
@@ -125,4 +125,4 @@ const memo = defineCollection({
   })
 });
 
-export const collections = { essay, bits, memo };
+export const collections = { longform, bits, reads };

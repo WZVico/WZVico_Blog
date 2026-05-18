@@ -1,0 +1,19 @@
+---
+import LongformPageView from '../../components/LongformPageView.astro';
+import { getPageSlice, getTotalPages, getVisibleLongforms } from '../../lib/content';
+import { PAGE_SIZE_LONGFORM } from '../../../site.config.mjs';
+
+const visibleLongforms = await getVisibleLongforms();
+const totalPages = getTotalPages(visibleLongforms.length, PAGE_SIZE_LONGFORM);
+const currentPage = 1;
+const pageLongforms = getPageSlice(visibleLongforms, currentPage, PAGE_SIZE_LONGFORM);
+---
+
+<LongformPageView
+  items={pageLongforms}
+  resultCount={visibleLongforms.length}
+  currentPage={currentPage}
+  totalPages={totalPages}
+  prevPath={null}
+  nextPath={currentPage < totalPages ? `/longform/page/${currentPage + 1}/` : null}
+/>

@@ -12,7 +12,7 @@ const prefersReducedMotion = () =>
   window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
 const isLongPage = () =>
-  /^(?:\/(?:archive|essay|memo)(?:\/|$))/.test(window.location.pathname);
+  /^(?:\/(?:archive|longform|reads)(?:\/|$))/.test(window.location.pathname);
 
 let updateFloating = () => {};
 
@@ -49,8 +49,8 @@ const setReaderDisabled = (disabled: boolean) => {
   readerBtn.setAttribute('aria-pressed', 'false');
   readerBtn.setAttribute('aria-disabled', disabled ? 'true' : 'false');
   if (disabled) {
-    readerBtn.setAttribute('title', '阅读模式（仅文章/小记页可用）');
-    readerBtn.setAttribute('aria-label', '阅读模式（仅文章/小记页可用）');
+    readerBtn.setAttribute('title', '阅读模式（仅文章/阅读页可用）');
+    readerBtn.setAttribute('aria-label', '阅读模式（仅文章/阅读页可用）');
     readerBtn.tabIndex = -1;
   } else {
     readerBtn.setAttribute('title', '阅读模式');

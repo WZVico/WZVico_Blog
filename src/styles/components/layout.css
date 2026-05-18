@@ -225,7 +225,7 @@
   display: block;
 }
 
-.page-header.page-header--essay {
+.page-header.page-header--longform {
   padding-left: 14px;
 }
 
@@ -447,7 +447,7 @@
     align-self: flex-start;
   }
 
-  .page-header.page-header--essay {
+  .page-header.page-header--longform {
     padding-left: 0;
   }
 

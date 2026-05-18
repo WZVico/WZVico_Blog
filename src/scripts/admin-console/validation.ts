@@ -38,15 +38,15 @@ type ValidationContext = {
   inputHomeShowHero: HTMLInputElement;
   inputHeroImageSrc: HTMLInputElement;
   inputHeroImageAlt: HTMLInputElement;
-  inputPageEssayTitle: HTMLInputElement;
+  inputPageLongformTitle: HTMLInputElement;
   inputPageArchiveTitle: HTMLInputElement;
   inputPageBitsTitle: HTMLInputElement;
-  inputPageMemoTitle: HTMLInputElement;
+  inputPageReadsTitle: HTMLInputElement;
   inputPageAboutTitle: HTMLInputElement;
-  inputPageEssaySubtitle: HTMLInputElement;
+  inputPageLongformSubtitle: HTMLInputElement;
   inputPageArchiveSubtitle: HTMLInputElement;
   inputPageBitsSubtitle: HTMLInputElement;
-  inputPageMemoSubtitle: HTMLInputElement;
+  inputPageReadsSubtitle: HTMLInputElement;
   inputPageAboutSubtitle: HTMLInputElement;
   inputArticleMetaShowDate: HTMLInputElement;
   inputArticleMetaDateLabel: HTMLInputElement;
@@ -74,7 +74,7 @@ type ValidationContext = {
 
 const CUSTOM_ITEM_PATH_RE = /^site\.socialLinks\.custom\[(\d+)\](?:\.(id|label|href|iconKey|order|visible))?$/;
 const NAV_PATH_RE = /^shell\.nav(?:(?:\.([a-z]+))|\[(\d+)\])(?:\.(id|label|ornament|order|visible))?$/;
-const PAGE_TITLE_INPUT_KEYS = ['essay', 'archive', 'bits', 'memo', 'about'] as const;
+const PAGE_TITLE_INPUT_KEYS = ['longform', 'archive', 'bits', 'reads', 'about'] as const;
 
 export const createValidation = ({
   form,
@@ -102,15 +102,15 @@ export const createValidation = ({
   inputHomeShowHero,
   inputHeroImageSrc,
   inputHeroImageAlt,
-  inputPageEssayTitle,
+  inputPageLongformTitle,
   inputPageArchiveTitle,
   inputPageBitsTitle,
-  inputPageMemoTitle,
+  inputPageReadsTitle,
   inputPageAboutTitle,
-  inputPageEssaySubtitle,
+  inputPageLongformSubtitle,
   inputPageArchiveSubtitle,
   inputPageBitsSubtitle,
-  inputPageMemoSubtitle,
+  inputPageReadsSubtitle,
   inputPageAboutSubtitle,
   inputArticleMetaShowDate,
   inputArticleMetaDateLabel,
@@ -153,17 +153,17 @@ export const createValidation = ({
   };
 
   const pageTitleTargets: Record<(typeof PAGE_TITLE_INPUT_KEYS)[number], () => HTMLElement | null> = {
-    essay: () => inputPageEssayTitle,
+    longform: () => inputPageLongformTitle,
     archive: () => inputPageArchiveTitle,
     bits: () => inputPageBitsTitle,
-    memo: () => inputPageMemoTitle,
+    reads: () => inputPageReadsTitle,
     about: () => inputPageAboutTitle
   };
   const pageSubtitleTargets: Record<(typeof PAGE_TITLE_INPUT_KEYS)[number], () => HTMLElement | null> = {
-    essay: () => inputPageEssaySubtitle,
+    longform: () => inputPageLongformSubtitle,
     archive: () => inputPageArchiveSubtitle,
     bits: () => inputPageBitsSubtitle,
-    memo: () => inputPageMemoSubtitle,
+    reads: () => inputPageReadsSubtitle,
     about: () => inputPageAboutSubtitle
   };
 

@@ -1,10 +1,10 @@
 ---
-import { getVisibleEssayRouteEntries } from '../../lib/content';
+import { getVisibleLongformRouteEntries } from '../../lib/content';
 
 export const prerender = true;
 
 export async function getStaticPaths() {
-  const routeEntries = await getVisibleEssayRouteEntries();
+  const routeEntries = await getVisibleLongformRouteEntries();
   return routeEntries.map(({ slug }) => {
     return {
       params: { slug },

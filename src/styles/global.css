@@ -1,7 +1,7 @@
 /* global.css 为公开站点的共享样式入口，只负责 tokens/base 与跨页面公共规则。
    公开页聚合入口分层如下：
    - global.css：共享基础层 + layout/list 等跨页面公共规则
-   - home.css / about.css / memo.css：页面私有规则
+   - home.css / about.css / reads.css：页面私有规则
    - article.css：正文页专用（prose / figure / callout / lightbox / code-block）
    - bits-page.css：/bits/ 专用（bits / lightbox）
    - admin-shell.css + Admin 路由私有样式：/admin 页面按需引入

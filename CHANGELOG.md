@@ -17,7 +17,7 @@ The format is based on Keep a Changelog, and this project aims to follow Semanti
 - 优化图片选择器的实时搜索体验。
 
 ### Fixed
-- 修复 `essay.date` 不再兼容 ISO 8601 datetime 的问题，旧内容无需批量迁移即可继续构建。
+- 修复 `longform.date` 不再兼容 ISO 8601 datetime 的问题，旧内容无需批量迁移即可继续构建。
 - 修复后台图片预览直接使用表单输入路径时可能触发安全扫描告警的问题。
 - 修复 Hero 图片、Bits 配图和 Bits 默认头像在元数据读取时规则不一致的问题，字段预览现在与前台展示规则保持一致。
 - 修复 Theme Console 中 Hero 图片路径留空时默认预览图可能不显示的问题。
@@ -77,10 +77,10 @@ node ".\export-astro-whono-settings.mjs" --include-legacy
 ### Changed
 - 升级 Astro 到 v6，并同步更新相关官方包，延续现有主题、内容集合与构建流程。
 - 明确 Theme Console 的生产环境边界：`/admin/` 保留只读提示，`/api/admin/settings/` 仅供本地开发使用。
-- 优化代码块交互脚本的加载范围：正文页与小记页按需加载复制与行号逻辑，非正文页不再加载相关脚本。
+- 优化代码块交互脚本的加载范围：正文页与阅读页按需加载复制与行号逻辑，非正文页不再加载相关脚本。
 
 ### Fixed
-- 修复移动端首页留白以及文章、小记页标题和元信息显示异常的问题，优化手机端浏览体验。
+- 修复移动端首页留白以及文章、阅读页标题和元信息显示异常的问题，优化手机端浏览体验。
 - 修复 Windows 下 `npm run check:preview-admin` 无法执行的问题。
 - 修复 Hero 图片与 Bits 头像在不同入口下校验规则不一致的问题；Theme Console、内容配置与前台展示现已保持一致。
 - 修复 Theme Console 在本地开发环境 `/admin/` 首次载入配置时的注入风险。
@@ -99,14 +99,14 @@ node ".\export-astro-whono-settings.mjs" --include-legacy
 
 ### Changed
 - 列表搜索现可与归档标签页联动，归档页无结果的年份分组会自动收起。
-- `/archive/` 与 `/essay/` 补充了更明确的页面描述，改善分享与搜索引擎识别。
+- `/archive/` 与 `/longform/` 补充了更明确的页面描述，改善分享与搜索引擎识别。
 - `/bits/` 改为分页浏览；搜索支持高亮、命中片段、键盘操作，并可直接跳转到对应内容。
 - 统一文章路由与 slug 规则，避免与 `tag/`、`page/` 子路由冲突。
 - 调整测试与 CI 基线：Markdown smoke check 改用专用测试页面，并新增 `npm test` 与轻量回归测试，减少 fork 或替换示例内容后的无关 CI 失败。
 
 ### Fixed
 - 修复无 JavaScript 时 `/archive/` 标签入口不可用，以及标签结果页标签显示异常的问题。
-- 修复 `/archive/` 与 `/essay/` 列表搜索过滤失效、跨时区日期显示异常，以及开发环境下可能读取旧索引的问题。
+- 修复 `/archive/` 与 `/longform/` 列表搜索过滤失效、跨时区日期显示异常，以及开发环境下可能读取旧索引的问题。
 - 修复 `/bits/` 搜索与年份筛选结果不同步、图片预览在特殊字符场景下的输出异常，以及搜索框交互时的轻微跳动。
 - 修复 Theme Console 在配置缓存、校验提示和手动修改 settings JSON 后排序一致性方面的多个问题。
 - 修复 archive 异常标签可能生成错误路由与统计的问题；构建时会直接中止并提示。
@@ -130,7 +130,7 @@ node ".\export-astro-whono-settings.mjs" --include-legacy
 - 首页在 Hero 与导语都关闭时会切换到更紧凑的首屏节奏，减少首屏留白。
 - Theme Console 后台样式改为仅在 `/admin/` 页面按需加载，公开页面不再携带后台样式，减少构建产物中的冗余 HTML/CSS 体积。
 - 优化公开页样式加载：减少多页面浏览时重复内联样式带来的 HTML 体积开销；正文页与 `/bits/` 改为按页面场景加载样式，更利于缓存复用。
-- 调整公开页样式结构：首页、关于页和小记页的样式改为按页维护，共享样式只保留通用部分，fork 后更容易定位和修改。
+- 调整公开页样式结构：首页、关于页和阅读页的样式改为按页维护，共享样式只保留通用部分，fork 后更容易定位和修改。
 - 优化首页首屏加载：首页会优先加载首屏所需的样式与字体声明，再加载共享样式，在不改变现有视觉效果的前提下减少等待。
 - `/bits/` 页面的“碎碎念”草稿生成器改为按需加载；草稿对话框和相关脚本不再首屏加载，首次点击时才会加载。
 
@@ -139,11 +139,11 @@ node ".\export-astro-whono-settings.mjs" --include-legacy
 - 修复隐藏侧栏分隔线后页面布局错位的问题，并改进保存失败时的错误提示与接口校验反馈。
 - 修复 Theme Console 社交链接在固定平台与自定义链接之间可能出现的排序冲突；后台自动整理排序，并限制可选范围，避免保存重复排序值。
 - 修复 Theme Console 自定义社交链接保存时可能静默覆盖已有名称的问题；固定平台会自动沿用平台名，兜底平台统一显示为“网站”。
-- 修复 `/archive/` 与 `/essay/` 列表搜索在子路径部署下可能重复拼接 Base URL，导致索引加载失败的问题。
+- 修复 `/archive/` 与 `/longform/` 列表搜索在子路径部署下可能重复拼接 Base URL，导致索引加载失败的问题。
 - 修复首页在子路径部署下可能请求错误字体路径的问题；当前首屏字体声明会跟随 `BASE_URL` 输出，避免字体 404、回退或二次切换。
 - 修复 `/bits/` 单图卡片无法打开图片预览的问题，单图与多图现在共用同一套 Lightbox 交互。
 - 修复 `/bits/` 草稿对话框作者设置区域的可访问性问题，补齐展开状态语义与焦点管理。
-- 修复开发环境下 `/archive/{slug}/`、`/essay/{slug}/` 及对应分页页在 Theme Console 使用 `server` 输出模式后可能无法访问的问题。
+- 修复开发环境下 `/archive/{slug}/`、`/longform/{slug}/` 及对应分页页在 Theme Console 使用 `server` 输出模式后可能无法访问的问题。
 - 修复正文页图片预览对键盘用户不可用的问题；当前可通过键盘打开 Lightbox，关闭后焦点会返回到原触发位置。
 - 修复 Theme Console 默认语言在配置文件被手动写入非法值时仍可能透传的问题；当前会回退到安全默认值，避免输出非法 `<html lang>`。
 
@@ -154,7 +154,7 @@ node ".\export-astro-whono-settings.mjs" --include-legacy
 ### Added
 - 新增 sitemap 与构建期 `robots.txt`，在设置 `SITE_URL` 时自动启用。
 - 新增统一的 Lightbox 预览能力，正文页与 `/bits/` 复用同一套图片预览交互。
-- `/archive/` 与 `/essay/` 列表页新增静态搜索，索引按需加载，搜索体验更轻量。
+- `/archive/` 与 `/longform/` 列表页新增静态搜索，索引按需加载，搜索体验更轻量。
 - `/bits/` 新增轻量图片预览与 Markdown 语法演示。
 - `/bits/` 支持作者覆盖，并在草稿生成器中补充作者输入。
 - 新增 Cloudflare Pages 与 Netlify 的基础部署配置。
@@ -162,11 +162,11 @@ node ".\export-astro-whono-settings.mjs" --include-legacy
 ### Changed
 - Markdown 渲染链路补充安全清洗，在保留现有写作能力的前提下增强 XSS 防护。
 - `/bits/` 列表改为按内容长度分流展示：短内容保留原结构渲染，长内容显示摘要。
-- `/archive/` 与 `/essay/` 列表页新增搜索框与命中提示。
+- `/archive/` 与 `/longform/` 列表页新增搜索框与命中提示。
 - `/bits/` 多图展示与交互进一步优化，缩略图、移动端网格与 `+N` 展示更清晰。
 - 首页 Hero 图片改用 `astro:assets` 优化，并配合 LCP 控制提升首屏表现。
 - 字体改为子集化与自托管，减少首屏字体负担。
-- 路由与内容集合进一步收敛：归档入口统一为 `/archive/`，`/essay/` 改为重定向，`/memo/` 替代 `/kids/`。
+- 路由与内容集合进一步收敛：归档入口统一为 `/archive/`，`/longform/` 改为重定向，`/reads/` 替代 `/kids/`。
 
 ### Fixed
 - 修复 bits 多图 `+N` 点击无响应的问题。
@@ -219,8 +219,8 @@ node ".\export-astro-whono-settings.mjs" --include-legacy
 
 ### Added
 - 建立 Astro 主题基础骨架，包含固定侧栏与内容区布局。
-- 初步建立内容集合：`essay`、`bits`、`memo`。
-- 增加基础路由：`/`、`/archive/`、`/essay/`、`/bits/`、`/memo/`、`/about/`。
+- 初步建立内容集合：`longform`、`bits`、`reads`。
+- 增加基础路由：`/`、`/archive/`、`/longform/`、`/bits/`、`/reads/`、`/about/`。
 - 增加 RSS 订阅入口与 `/bits/` 草稿生成能力。
 - 增加夜间模式与阅读模式入口。
 - 增加最薄的 Callout 组件，实现统一的输出结构。

@@ -1,14 +1,14 @@
 export type AdminImageOrigin = 'public' | 'src/assets' | 'src/content';
-export type AdminImageBrowseGroup = 'all' | 'essay' | 'bits' | 'memo' | 'assets' | 'pages' | 'uncategorized';
+export type AdminImageBrowseGroup = 'all' | 'longform' | 'bits' | 'reads' | 'assets' | 'pages' | 'uncategorized';
 export type AdminImageScopeKey = 'recent';
 
 export const ADMIN_IMAGE_DEFAULT_LIST_LIMIT = 20;
 
 export const ADMIN_IMAGE_BROWSE_GROUP_LABELS = {
   all: '全部',
-  essay: '随笔',
+  longform: '长文',
   bits: 'Bits',
-  memo: 'Memo',
+  reads: 'reads',
   assets: '配置素材',
   pages: '页面插图',
   uncategorized: '未归类'
@@ -16,9 +16,9 @@ export const ADMIN_IMAGE_BROWSE_GROUP_LABELS = {
 
 export const ADMIN_IMAGE_BROWSE_GROUP_ORDER = [
   'all',
-  'essay',
+  'longform',
   'bits',
-  'memo',
+  'reads',
   'assets',
   'pages',
   'uncategorized'

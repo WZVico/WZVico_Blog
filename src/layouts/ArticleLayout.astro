@@ -3,7 +3,7 @@ import BaseLayout from './BaseLayout.astro';
 import UiIcon from '../components/UiIcon.astro';
 import Lightbox from '../components/Lightbox.astro';
 import '../styles/article.css';
-import { getEssayDerivedText, type EssayEntry } from '../lib/content';
+import { getLongformDerivedText, type LongformEntry } from '../lib/content';
 import type { ArticleMetaSettings, SidebarNavId } from '../lib/theme-settings';
 import { formatISODateUtc } from '../utils/format';
 import { truncateText } from '../utils/excerpt';
@@ -20,7 +20,7 @@ const {
   articleMetaSettings,
   visibleTags = []
 } = Astro.props as {
-  entry: EssayEntry;
+  entry: LongformEntry;
   prev: ArticleNeighborLink | null;
   next: ArticleNeighborLink | null;
   articleMetaSettings: ArticleMetaSettings;
@@ -31,10 +31,10 @@ const entryTags: string[] = entry?.data?.tags ?? [];
 const defaultImage = '/og.svg';
 const coverImage = entry?.data?.cover ?? null;
 const ogImage = coverImage ?? defaultImage;
-const derivedText = getEssayDerivedText(entry);
+const derivedText = getLongformDerivedText(entry);
 const rawDescription = entry?.data?.description?.trim?.() ?? '';
 const description = rawDescription || truncateText(derivedText.excerpt, 90);
-const activeNavId: SidebarNavId = entry?.data?.archive === false ? 'essay' : 'archive';
+const activeNavId: SidebarNavId = entry?.data?.archive === false ? 'longform' : 'archive';
 const articleReadingStats = articleMetaSettings.showWordCount || articleMetaSettings.showReadingTime
   ? (() => {
       const wordCount = derivedText.plainText.replace(/\s+/g, '').length;

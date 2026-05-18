@@ -27,7 +27,7 @@
 
 - 双栏布局（侧栏导航 + 内容区）
 - 移动端适配
-- 内容集合：随笔 / 絮语 / 小记（归档为目录视图）
+- 内容集合：长文 / 絮语 / 阅读（归档为目录视图）
 - 内置本地 Admin Console（/admin）：开发环境下可使用 Theme / Images / Checks / Data Console 管理站点配置与资源，fork / clone 后可快速完成站点接管
 - 絮语草稿生成器：/bits 页面一键生成 Markdown（复制/下载），支持多图与自动读取尺寸
 - RSS：默认归档订阅 + 分栏订阅
@@ -142,7 +142,7 @@ npm run check:preview-admin
 - 站点配置：`site.config.mjs`
 - 内容集合：`src/content.config.ts`
 - 样式共享入口：`src/styles/global.css`
-- 页面 / 场景样式入口：`src/styles/home.css`、`src/styles/about.css`、`src/styles/memo.css`、`src/styles/article.css`、`src/styles/bits-page.css`
+- 页面 / 场景样式入口：`src/styles/home.css`、`src/styles/about.css`、`src/styles/reads.css`、`src/styles/article.css`、`src/styles/bits-page.css`
 - 后台样式入口：`src/styles/components/admin-shell.css` + 各 Admin 路由私有样式；不再提供全量 `admin.css` 聚合入口
 
 ### Admin Console（/admin）
@@ -216,14 +216,14 @@ Theme Console 主要面向**站点级**和**页面级**配置，支持内容：
 ### 内容与路由
 
 内容集合（Content Collections）：
-- 随笔：位于 `src/content/essay` 目录
+- 长文：位于 `src/content/longform` 目录
 - 絮语：位于 `src/content/bits` 目录
-- 小记：位于 `src/content/memo/index.md`
-- 归档：由随笔集合按 `archive` 字段生成目录视图
+- 阅读：位于 `src/content/reads/index.md`
+- 归档：由长文集合按 `archive` 字段生成目录视图
 
 主要路由：
-- 列表页：`/archive/`、`/essay/`、`/bits/`、`/memo/`、`/about/`
-- 详情页规范入口：/archive/[slug]（/essay/[slug] 保留兼容跳转）
+- 列表页：`/archive/`、`/longform/`、`/bits/`、`/reads/`、`/about/`
+- 详情页规范入口：/archive/[slug]（/longform/[slug] 保留兼容跳转）
 
 ### 图片资源
 
@@ -235,17 +235,17 @@ Theme Console 主要面向**站点级**和**页面级**配置，支持内容：
 
 ### 核心字段（Frontmatter）
 
-随笔：
+长文：
 ```yaml
 title: My Post
 date: 2026-01-01
 draft: false        # 草稿：上线后不会出现在列表/RSS（本地预览可见，默认是 false，可省略）
-archive: true       # 归档开关：false 不进 /archive 与 /archive/rss.xml（默认 true，详情与 /essay 仍可见，可省略）
+archive: true       # 归档开关：false 不进 /archive 与 /archive/rss.xml（默认 true，详情与 /longform 仍可见，可省略）
 slug: optional      # 自定义 URL slug（默认使用拍平后的内容路径，例如 2024/my-post → 2024-my-post）
-badge: optional     # 列表徽标；未填时列表显示“随笔”
+badge: optional     # 列表徽标；未填时列表显示“长文”
 ```
 
-`essay.date` 建议使用 `YYYY-MM-DD` 格式，用于归档、排序和页面日期展示。
+`longform.date` 建议使用 `YYYY-MM-DD` 格式，用于归档、排序和页面日期展示。
 
 旧内容中的 ISO 8601 datetime 仍会兼容读取。如果写成字符串，例如 `date: "2026-01-01T12:00:00+08:00"`，系统会按开头的日期部分处理为 `2026-01-01`。
 
@@ -369,7 +369,7 @@ HTML 示例：
 
 - `/rss.xml`（默认 RSS；与 `/archive/rss.xml` 使用同源归档数据）
 - `/archive/rss.xml`（归档订阅）
-- `/essay/rss.xml`
+- `/longform/rss.xml`
 
 部署时建议设置 `SITE_URL`（影响 RSS/OG/canonical 的绝对链接）。
 

@@ -1,12 +1,12 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('../src/lib/content', () => ({
-  getEssayDerivedText: vi.fn(),
-  getEssaySlug: vi.fn(),
-  getMemoDerivedText: vi.fn(),
+  getLongformDerivedText: vi.fn(),
+  getLongformSlug: vi.fn(),
+  getReadsDerivedText: vi.fn(),
   getPageSlice: vi.fn(),
   getPublished: vi.fn(),
-  getSortedEssays: vi.fn(),
+  getSortedLongforms: vi.fn(),
   getTotalPages: vi.fn()
 }));
 
@@ -29,21 +29,21 @@ const {
 
 type AdminContentIndexItem = import('../src/lib/admin-console/content').AdminContentIndexItem;
 
-const mockGetEssayDerivedText = vi.mocked(contentLib.getEssayDerivedText);
-const mockGetMemoDerivedText = vi.mocked(contentLib.getMemoDerivedText);
+const mockGetLongformDerivedText = vi.mocked(contentLib.getLongformDerivedText);
+const mockGetReadsDerivedText = vi.mocked(contentLib.getReadsDerivedText);
 const mockGetPublished = vi.mocked(contentLib.getPublished);
-const mockGetSortedEssays = vi.mocked(contentLib.getSortedEssays);
+const mockGetSortedLongforms = vi.mocked(contentLib.getSortedLongforms);
 const mockGetBitsDerivedText = vi.mocked(bitsLib.getBitsDerivedText);
 const mockGetBitsSearchIndex = vi.mocked(bitsLib.getBitsSearchIndex);
 const mockGetSortedBits = vi.mocked(bitsLib.getSortedBits);
 
 const createItem = (overrides: Partial<AdminContentIndexItem> = {}): AdminContentIndexItem => ({
-  collection: 'essay',
-  collectionLabel: '随笔',
-  id: 'essay/example.md',
+  collection: 'longform',
+  collectionLabel: '长文',
+  id: 'longform/example.md',
   title: 'Example Entry',
   slug: 'example-entry',
-  relativePath: 'src/content/essay/example.md',
+  relativePath: 'src/content/longform/example.md',
   publicHref: '/archive/example-entry/',
   excerpt: 'Example summary',
   isDraft: false,
@@ -70,7 +70,7 @@ describe('admin-console/content', () => {
       ['tag', 'astro'],
       ['year', '2026'],
       ['page', '3'],
-      ['entry', 'essay/example.md'],
+      ['entry', 'longform/example.md'],
       ['sort', 'title']
     ]));
 
@@ -80,7 +80,7 @@ describe('admin-console/content', () => {
     expect(state.tag).toBe('astro');
     expect(state.year).toBe(2026);
     expect(state.page).toBe(3);
-    expect(state.entry).toBe('essay/example.md');
+    expect(state.entry).toBe('longform/example.md');
     expect(state.sort).toBe('title');
   });
 
@@ -88,7 +88,7 @@ describe('admin-console/content', () => {
     const items = [
       createItem(),
       createItem({
-        id: 'essay/draft.md',
+        id: 'longform/draft.md',
         title: 'Draft Entry',
         slug: 'draft-entry',
         isDraft: true,
@@ -121,12 +121,12 @@ describe('admin-console/content', () => {
     });
 
     expect(filtered).toHaveLength(1);
-    expect(filtered[0]?.id).toBe('essay/example.md');
+    expect(filtered[0]?.id).toBe('longform/example.md');
   });
 
   it('builds overview summaries from metadata without deriving body text', async () => {
-    mockGetEssayDerivedText.mockImplementation(() => {
-      throw new Error('overview should not derive essay body text');
+    mockGetLongformDerivedText.mockImplementation(() => {
+      throw new Error('overview should not derive longform body text');
     });
     mockGetBitsDerivedText.mockImplementation(() => {
       throw new Error('overview should not derive bits body text');
@@ -135,16 +135,16 @@ describe('admin-console/content', () => {
       throw new Error('overview should not build bits search index');
     });
 
-    mockGetSortedEssays.mockResolvedValue([
+    mockGetSortedLongforms.mockResolvedValue([
       {
-        id: 'essay/latest.md',
+        id: 'longform/latest.md',
         data: {
           date: new Date('2026-04-03T08:00:00.000Z'),
           draft: false
         }
       } as never,
       {
-        id: 'essay/draft.md',
+        id: 'longform/draft.md',
         data: {
           date: new Date('2026-03-01T08:00:00.000Z'),
           draft: true
@@ -169,14 +169,14 @@ describe('admin-console/content', () => {
     ]);
     mockGetPublished.mockResolvedValue([
       {
-        id: 'memo/latest.md',
+        id: 'reads/latest.md',
         data: {
           date: new Date('2026-01-15T08:00:00.000Z'),
           draft: false
         }
       } as never,
       {
-        id: 'memo/draft.md',
+        id: 'reads/draft.md',
         data: {
           date: null,
           draft: true
@@ -187,9 +187,9 @@ describe('admin-console/content', () => {
     const overview = await getAdminContentOverviewData();
     const summaryByKey = Object.fromEntries(overview.summaries.map((summary) => [summary.key, summary]));
 
-    expect(summaryByKey.essay).toMatchObject({
-      key: 'essay',
-      label: '随笔',
+    expect(summaryByKey.longform).toMatchObject({
+      key: 'longform',
+      label: '长文',
       totalCount: 2,
       draftCount: 1
     });
@@ -199,18 +199,18 @@ describe('admin-console/content', () => {
       totalCount: 2,
       draftCount: 1
     });
-    expect(summaryByKey.memo).toMatchObject({
-      key: 'memo',
-      label: '小记',
+    expect(summaryByKey.reads).toMatchObject({
+      key: 'reads',
+      label: '阅读',
       totalCount: 2,
       draftCount: 1
     });
-    expect(summaryByKey.essay?.latestDateLabel).not.toBe('未设置日期');
+    expect(summaryByKey.longform?.latestDateLabel).not.toBe('未设置日期');
     expect(summaryByKey.bits?.latestDateLabel).not.toBe('未设置日期');
-    expect(summaryByKey.memo?.latestDateLabel).not.toBe('未设置日期');
+    expect(summaryByKey.reads?.latestDateLabel).not.toBe('未设置日期');
 
-    expect(mockGetEssayDerivedText).not.toHaveBeenCalled();
-    expect(mockGetMemoDerivedText).not.toHaveBeenCalled();
+    expect(mockGetLongformDerivedText).not.toHaveBeenCalled();
+    expect(mockGetReadsDerivedText).not.toHaveBeenCalled();
     expect(mockGetBitsDerivedText).not.toHaveBeenCalled();
     expect(mockGetBitsSearchIndex).not.toHaveBeenCalled();
   });
@@ -219,13 +219,13 @@ describe('admin-console/content', () => {
     expect(getAdminContentPublicFallbackLabel(createItem({ isDraft: true, publicHref: null }))).toContain('draft');
     expect(
       getAdminContentPublicFallbackLabel(createItem({
-        collection: 'memo',
-        collectionLabel: '小记',
-        id: 'memo/index.md',
+        collection: 'reads',
+        collectionLabel: '阅读',
+        id: 'reads/index.md',
         publicHref: null,
-        relativePath: 'src/content/memo/index.md'
+        relativePath: 'src/content/reads/index.md'
       }))
-    ).toContain('/memo/');
+    ).toContain('/reads/');
     expect(
       getAdminContentPublicFallbackLabel(createItem({
         collection: 'bits',

@@ -1,6 +1,7 @@
 import {
   getAdminRenderedImagePreviewSrc
 } from '../../lib/admin-console/image-params';
+import { DEFAULT_HERO_IMAGE_SRC } from '../../lib/default-assets';
 import { formatAdminImageMetaSummary, type AdminImageClientItem } from '../admin-shared/image-client';
 import type { AdminImagePickerController, AdminImagePickerField } from '../admin-shared/image-picker';
 
@@ -45,7 +46,7 @@ const FIELD_CONFIGS: readonly ThemeImageFieldConfig[] = [
     pickerDescription: '',
     pickerResetLabel: '恢复默认',
     pickerResetStatus: '已恢复 Hero 默认图',
-    pickerFallbackCurrentValue: 'src/assets/hero.png',
+    pickerFallbackCurrentValue: DEFAULT_HERO_IMAGE_SRC,
     pickerFallbackCurrentLabel: '默认图片'
   },
   {

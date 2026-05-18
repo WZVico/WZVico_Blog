@@ -12,8 +12,8 @@ interface Props {
   footerStartYearMin: number;
   footerStartYearMax: number;
   homeIntroMaxLength: number;
-  memoSubtitlePlaceholder: string;
-  memoTitlePlaceholder: string;
+  readsSubtitlePlaceholder: string;
+  readsTitlePlaceholder: string;
   navIdOrder: readonly SidebarNavId[];
   pageSubtitleMaxLength: number;
   pageTitleMaxLength: number;
@@ -26,8 +26,8 @@ const {
   footerStartYearMin,
   footerStartYearMax,
   homeIntroMaxLength,
-  memoSubtitlePlaceholder,
-  memoTitlePlaceholder,
+  readsSubtitlePlaceholder,
+  readsTitlePlaceholder,
   navIdOrder,
   pageSubtitleMaxLength,
   pageTitleMaxLength,
@@ -65,8 +65,8 @@ const {
     <AdminPageSection
       pageTitleMaxLength={pageTitleMaxLength}
       pageSubtitleMaxLength={pageSubtitleMaxLength}
-      memoTitlePlaceholder={memoTitlePlaceholder}
-      memoSubtitlePlaceholder={memoSubtitlePlaceholder}
+      readsTitlePlaceholder={readsTitlePlaceholder}
+      readsSubtitlePlaceholder={readsSubtitlePlaceholder}
     />
 
     <AdminUiSection />

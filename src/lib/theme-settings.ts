@@ -44,11 +44,11 @@ import {
 
 export type SettingSource = 'new' | 'legacy' | 'default';
 
-export type SidebarNavId = 'essay' | 'bits' | 'memo' | 'archive' | 'about';
-export type PageId = 'essay' | 'archive' | 'bits' | 'memo' | 'about';
+export type SidebarNavId = 'longform' | 'bits' | 'reads' | 'archive' | 'about';
+export type PageId = 'longform' | 'archive' | 'bits' | 'reads' | 'about';
 export type HeroPresetId = 'default' | 'none';
 export type SidebarDividerVariant = 'default' | 'subtle' | 'none';
-export type HomeIntroLinkKey = 'archive' | 'essay' | 'bits' | 'memo' | 'about' | 'tag';
+export type HomeIntroLinkKey = 'archive' | 'longform' | 'bits' | 'reads' | 'about' | 'tag';
 export type SiteSocialPresetId = 'github' | 'x' | 'email';
 export type SiteSocialKind = 'preset' | 'custom';
 export type SiteSocialIconKey =
@@ -149,7 +149,7 @@ export interface PageHeadingSettings {
   subtitle: string | null;
 }
 
-export interface MemoPageSettings extends PageHeadingSettings {}
+export interface ReadsPageSettings extends PageHeadingSettings {}
 
 export interface BitsDefaultAuthorSettings {
   name: string;
@@ -161,10 +161,10 @@ export interface BitsPageSettings extends PageHeadingSettings {
 }
 
 export interface PageSettings {
-  essay: PageHeadingSettings;
+  longform: PageHeadingSettings;
   archive: PageHeadingSettings;
   bits: BitsPageSettings;
-  memo: MemoPageSettings;
+  reads: ReadsPageSettings;
   about: PageHeadingSettings;
 }
 
@@ -240,16 +240,16 @@ export interface ThemeSettingsSources {
     heroImageAlt: SettingSource;
   };
   page: {
-    essayTitle: SettingSource;
-    essaySubtitle: SettingSource;
+    longformTitle: SettingSource;
+    longformSubtitle: SettingSource;
     archiveTitle: SettingSource;
     archiveSubtitle: SettingSource;
     bitsTitle: SettingSource;
     bitsSubtitle: SettingSource;
     bitsDefaultAuthorName: SettingSource;
     bitsDefaultAuthorAvatar: SettingSource;
-    memoTitle: SettingSource;
-    memoSubtitle: SettingSource;
+    readsTitle: SettingSource;
+    readsSubtitle: SettingSource;
     aboutTitle: SettingSource;
     aboutSubtitle: SettingSource;
   };
@@ -362,15 +362,15 @@ const THEME_SETTINGS_INVALID_MESSAGE =
   '检测到 settings JSON 配置文件损坏，Theme Console 已停止读取并禁止保存，请先修复对应文件后再重试';
 
 const LEGACY_INTRO_LEAD =
-  '这是一个开源写作主题与示例内容库:包含 随笔/essay、小记/memo、归档/archive 与 絮语/bits，使用与配置请见 README 。';
+  '这是一个开源写作主题与示例内容库:包含 长文/longform、阅读/reads、归档/archive 与 絮语/bits，使用与配置请见 README 。';
 const LEGACY_INTRO_MORE = '更多文章请访问';
-const LEGACY_ESSAY_TITLE = '随笔';
+const LEGACY_LONGFORM_TITLE = '长文';
 const LEGACY_ARCHIVE_TITLE = '归档';
-const LEGACY_ESSAY_SUBTITLE = '随笔与杂记';
+const LEGACY_LONGFORM_SUBTITLE = '长文与杂记';
 const LEGACY_BITS_TITLE = '絮语';
 const LEGACY_BITS_SUBTITLE = '生活不只是长篇';
 const LEGACY_ABOUT_TITLE = '关于';
-const LEGACY_QUOTE = 'A minimal Astro theme\nfor essays, notes, and docs.\nDesigned for reading,\nopen-source.';
+const LEGACY_QUOTE = 'A minimal Astro theme\nfor longforms, notes, and docs.\nDesigned for reading,\nopen-source.';
 const LEGACY_FOOTER_START_YEAR = 2025;
 const LEGACY_FOOTER_SHOW_CURRENT_YEAR = true;
 const LEGACY_FOOTER_COPYRIGHT = 'Whono · Theme Demo · by cxro';
@@ -388,9 +388,9 @@ const LEGACY_SOCIAL_LINKS: SiteSocialLinks = {
   resolvedSocialItems: []
 };
 const LEGACY_NAV: SidebarNavItem[] = [
-  { id: 'essay', label: '随笔', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 1 },
+  { id: 'longform', label: '长文', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 1 },
   { id: 'bits', label: '絮语', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 2 },
-  { id: 'memo', label: '小记', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 3 },
+  { id: 'reads', label: '阅读', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 3 },
   { id: 'archive', label: '归档', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 4 },
   { id: 'about', label: '关于', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 5 }
 ];
@@ -464,9 +464,9 @@ const DEFAULT_HOME: HomeSettings = {
 };
 
 const DEFAULT_PAGE: PageSettings = {
-  essay: {
-    title: LEGACY_ESSAY_TITLE,
-    subtitle: LEGACY_ESSAY_SUBTITLE
+  longform: {
+    title: LEGACY_LONGFORM_TITLE,
+    subtitle: LEGACY_LONGFORM_SUBTITLE
   },
   archive: {
     title: LEGACY_ARCHIVE_TITLE,
@@ -480,7 +480,7 @@ const DEFAULT_PAGE: PageSettings = {
       avatar: 'author/avatar.webp'
     }
   },
-  memo: {
+  reads: {
     title: null,
     subtitle: null
   },
@@ -514,7 +514,7 @@ const DEFAULT_UI: UiSettings = {
   }
 };
 
-const NAV_IDS: ReadonlySet<SidebarNavId> = new Set(['essay', 'bits', 'memo', 'archive', 'about']);
+const NAV_IDS: ReadonlySet<SidebarNavId> = new Set(['longform', 'bits', 'reads', 'archive', 'about']);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const GITHUB_HOSTS = ['github.com'];
 const X_HOSTS = ['x.com', 'twitter.com'];
@@ -530,9 +530,9 @@ const PRESET_SOCIAL_ITEMS: readonly {
 ];
 
 const SIDEBAR_HREFS: Record<SidebarNavId, string> = {
-  essay: '/essay/',
+  longform: '/longform/',
   bits: '/bits/',
-  memo: '/memo/',
+  reads: '/reads/',
   archive: '/archive/',
   about: '/about/'
 };
@@ -1104,11 +1104,11 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
   const siteAdminOverviewJson = isRecord(siteJson?.adminOverview) ? siteJson.adminOverview : undefined;
   const siteSocialLinksJson = isRecord(siteJson?.socialLinks) ? siteJson.socialLinks : undefined;
   const siteSocialPresetOrderJson = isRecord(siteSocialLinksJson?.presetOrder) ? siteSocialLinksJson.presetOrder : undefined;
-  const pageEssayJson = isRecord(pageJson?.essay) ? pageJson.essay : undefined;
+  const pageLongformJson = isRecord(pageJson?.longform) ? pageJson.longform : undefined;
   const pageArchiveJson = isRecord(pageJson?.archive) ? pageJson.archive : undefined;
   const pageBitsJson = isRecord(pageJson?.bits) ? pageJson.bits : undefined;
   const pageBitsDefaultAuthorJson = isRecord(pageBitsJson?.defaultAuthor) ? pageBitsJson.defaultAuthor : undefined;
-  const pageMemoJson = isRecord(pageJson?.memo) ? pageJson.memo : undefined;
+  const pageReadsJson = isRecord(pageJson?.reads) ? pageJson.reads : undefined;
   const pageAboutJson = isRecord(pageJson?.about) ? pageJson.about : undefined;
 
   const title = resolveValue(
@@ -1244,15 +1244,15 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
     DEFAULT_HOME.heroImageAlt
   );
 
-  const essayTitle = resolveValue(
-    asNullableString(pageEssayJson?.title),
+  const longformTitle = resolveValue(
+    asNullableString(pageLongformJson?.title),
     undefined,
-    DEFAULT_PAGE.essay.title
+    DEFAULT_PAGE.longform.title
   );
-  const essaySubtitle = resolveValue(
-    asNullableString(pageEssayJson?.subtitle),
-    LEGACY_ESSAY_SUBTITLE,
-    DEFAULT_PAGE.essay.subtitle
+  const longformSubtitle = resolveValue(
+    asNullableString(pageLongformJson?.subtitle),
+    LEGACY_LONGFORM_SUBTITLE,
+    DEFAULT_PAGE.longform.subtitle
   );
   const archiveTitle = resolveValue(
     asNullableString(pageArchiveJson?.title),
@@ -1284,15 +1284,15 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
     asBitsAvatarPath(legacySite.authorAvatar),
     DEFAULT_PAGE.bits.defaultAuthor.avatar
   );
-  const memoSubtitle = resolveValue<string | null>(
-    asNullableString(pageMemoJson?.subtitle),
+  const readsSubtitle = resolveValue<string | null>(
+    asNullableString(pageReadsJson?.subtitle),
     undefined,
-    DEFAULT_PAGE.memo.subtitle
+    DEFAULT_PAGE.reads.subtitle
   );
-  const memoTitle = resolveValue<string | null>(
-    asNullableString(pageMemoJson?.title),
+  const readsTitle = resolveValue<string | null>(
+    asNullableString(pageReadsJson?.title),
     undefined,
-    DEFAULT_PAGE.memo.title
+    DEFAULT_PAGE.reads.title
   );
   const aboutTitle = resolveValue(
     asNullableString(pageAboutJson?.title),
@@ -1428,9 +1428,9 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         heroImageAlt: heroImageAlt.value
       },
       page: {
-        essay: {
-          title: essayTitle.value,
-          subtitle: essaySubtitle.value
+        longform: {
+          title: longformTitle.value,
+          subtitle: longformSubtitle.value
         },
         archive: {
           title: archiveTitle.value,
@@ -1444,9 +1444,9 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
             avatar: bitsDefaultAuthorAvatar.value
           }
         },
-        memo: {
-          title: memoTitle.value,
-          subtitle: memoSubtitle.value
+        reads: {
+          title: readsTitle.value,
+          subtitle: readsSubtitle.value
         },
         about: {
           title: aboutTitle.value,
@@ -1511,16 +1511,16 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         heroImageAlt: heroImageAlt.source
       },
       page: {
-        essayTitle: essayTitle.source,
-        essaySubtitle: essaySubtitle.source,
+        longformTitle: longformTitle.source,
+        longformSubtitle: longformSubtitle.source,
         archiveTitle: archiveTitle.source,
         archiveSubtitle: archiveSubtitle.source,
         bitsTitle: bitsTitle.source,
         bitsSubtitle: bitsSubtitle.source,
         bitsDefaultAuthorName: bitsDefaultAuthorName.source,
         bitsDefaultAuthorAvatar: bitsDefaultAuthorAvatar.source,
-        memoTitle: memoTitle.source,
-        memoSubtitle: memoSubtitle.source,
+        readsTitle: readsTitle.source,
+        readsSubtitle: readsSubtitle.source,
         aboutTitle: aboutTitle.source,
         aboutSubtitle: aboutSubtitle.source
       },
@@ -1598,7 +1598,7 @@ const buildEditableThemeSettingsSnapshot = (
       introMoreLinks: cloneHomeIntroLinks(resolved.settings.home.introMoreLinks)
     },
     page: {
-      essay: { ...resolved.settings.page.essay },
+      longform: { ...resolved.settings.page.longform },
       archive: { ...resolved.settings.page.archive },
       bits: {
         title: resolved.settings.page.bits.title,
@@ -1607,7 +1607,7 @@ const buildEditableThemeSettingsSnapshot = (
           ...resolved.settings.page.bits.defaultAuthor
         }
       },
-      memo: { ...resolved.settings.page.memo },
+      reads: { ...resolved.settings.page.reads },
       about: { ...resolved.settings.page.about }
     },
     ui: {

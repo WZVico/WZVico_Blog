@@ -4,8 +4,8 @@ import {
   type CollectionKey
 } from 'astro:content';
 import {
-  ESSAY_PUBLIC_SLUG_RE,
-  RESERVED_ESSAY_SLUGS,
+  LONGFORM_PUBLIC_SLUG_RE,
+  RESERVED_LONGFORM_SLUGS,
   flattenEntryIdToSlug
 } from '../utils/slug-rules';
 import { deriveMarkdownText, truncateText } from '../utils/excerpt';
@@ -20,14 +20,14 @@ export type GetPublishedOptions<K extends CollectionKey> = {
 
 /**
  * Check whether a slug collides with sibling static routes under /archive/
- * or /essay/.  After the route narrowing (catch-all → single-segment), only
+ * or /longform/.  After the route narrowing (catch-all → single-segment), only
  * exact matches need to be checked.
  *
- * NOTE: The primary defence is `assertUniqueEssaySlugs` which throws at build
- * time.  This predicate is kept in `getVisibleEssays` / `getArchiveEssays` as
+ * NOTE: The primary defence is `assertUniqueLongformSlugs` which throws at build
+ * time.  This predicate is kept in `getVisibleLongforms` / `getArchiveLongforms` as
  * defense-in-depth — it is NOT the main enforcement point.
  */
-export const isReservedSlug = (slug: string) => RESERVED_ESSAY_SLUGS.has(slug);
+export const isReservedSlug = (slug: string) => RESERVED_LONGFORM_SLUGS.has(slug);
 
 export const getTotalPages = (itemCount: number, pageSize: number) =>
   Math.ceil(itemCount / pageSize);
@@ -57,55 +57,55 @@ export async function getPublished<K extends CollectionKey>(
   return items.slice().sort(opts.orderBy);
 }
 
-export type EssayEntry = CollectionEntry<'essay'>;
-export type MemoEntry = CollectionEntry<'memo'>;
-type EssayQueryOptions = Pick<GetPublishedOptions<'essay'>, 'includeDraft'>;
-export type EssayRouteEntry = {
+export type LongformEntry = CollectionEntry<'longform'>;
+export type ReadsEntry = CollectionEntry<'reads'>;
+type LongformQueryOptions = Pick<GetPublishedOptions<'longform'>, 'includeDraft'>;
+export type LongformRouteEntry = {
   slug: string;
-  entry: EssayEntry;
-  prev: EssayEntry | null;
-  next: EssayEntry | null;
+  entry: LongformEntry;
+  prev: LongformEntry | null;
+  next: LongformEntry | null;
 };
-export type EssayDerivedText = {
+export type LongformDerivedText = {
   plainText: string;
   text: string;
   excerpt: string;
 };
-export type MemoDerivedText = {
+export type ReadsDerivedText = {
   plainText: string;
   excerptText: string;
 };
 
-export const getEssaySlug = (entry: EssayEntry) =>
+export const getLongformSlug = (entry: LongformEntry) =>
   entry.data.slug ?? flattenEntryIdToSlug(entry.id);
 
-const assertUniqueEssaySlugs = (entries: readonly EssayEntry[]) => {
+const assertUniqueLongformSlugs = (entries: readonly LongformEntry[]) => {
   const seen = new Map<string, string>();
   const duplicates = new Map<string, string[]>();
 
   for (const entry of entries) {
-    const slug = getEssaySlug(entry);
+    const slug = getLongformSlug(entry);
     const slugSource = entry.data.slug ? 'frontmatter.slug' : `entry.id (flattened from "${entry.id}")`;
 
     // --- reserved-word check (primary defence) ---
     if (isReservedSlug(slug)) {
       throw new Error(
         [
-          'Essay route slug conflict detected.',
+          'Longform route slug conflict detected.',
           `  Entry:       ${entry.id}`,
           `  Public slug: ${slug}`,
           `  Source:      ${slugSource}`,
-          `  Reason:      "${slug}" is reserved for sibling static routes under /archive/ and /essay/.`,
+          `  Reason:      "${slug}" is reserved for sibling static routes under /archive/ and /longform/.`,
           '  How to fix:  change frontmatter.slug, or rename the file/path so the final public slug is no longer reserved.'
         ].join('\n')
       );
     }
 
     // --- format validity check (catches bad flattened results) ---
-    if (!ESSAY_PUBLIC_SLUG_RE.test(slug)) {
+    if (!LONGFORM_PUBLIC_SLUG_RE.test(slug)) {
       throw new Error(
         [
-          'Invalid public essay slug detected.',
+          'Invalid public longform slug detected.',
           `  Entry:       ${entry.id}`,
           `  Public slug: ${slug}`,
           `  Source:      ${slugSource}`,
@@ -134,115 +134,115 @@ const assertUniqueEssaySlugs = (entries: readonly EssayEntry[]) => {
     .join('; ');
 
   throw new Error(
-    `Duplicate essay slug detected. Public essay slugs must be unique after path flattening. ${detail}`
+    `Duplicate longform slug detected. Public longform slugs must be unique after path flattening. ${detail}`
   );
 };
 
-const orderByEssayDate = (a: EssayEntry, b: EssayEntry) => b.data.date.valueOf() - a.data.date.valueOf();
-const shouldMemoizeEssayQueries = import.meta.env.PROD;
-const shouldMemoizeMemoQueries = import.meta.env.PROD;
-const MAX_ESSAY_INDEX_TEXT = 600;
+const orderByLongformDate = (a: LongformEntry, b: LongformEntry) => b.data.date.valueOf() - a.data.date.valueOf();
+const shouldMemoizeLongformQueries = import.meta.env.PROD;
+const shouldMemoizeReadsQueries = import.meta.env.PROD;
+const MAX_LONGFORM_INDEX_TEXT = 600;
 
-let sortedEssaysPromise: Promise<EssayEntry[]> | null = null;
-let visibleEssaysPromise: Promise<EssayEntry[]> | null = null;
-let archiveEssaysPromise: Promise<EssayEntry[]> | null = null;
-const essayDerivedTextById = new Map<string, EssayDerivedText>();
-const memoDerivedTextById = new Map<string, MemoDerivedText>();
+let sortedLongformsPromise: Promise<LongformEntry[]> | null = null;
+let visibleLongformsPromise: Promise<LongformEntry[]> | null = null;
+let archiveLongformsPromise: Promise<LongformEntry[]> | null = null;
+const longformDerivedTextById = new Map<string, LongformDerivedText>();
+const readsDerivedTextById = new Map<string, ReadsDerivedText>();
 
-const cloneEssayEntries = (entries: readonly EssayEntry[]) => entries.slice();
+const cloneLongformEntries = (entries: readonly LongformEntry[]) => entries.slice();
 
-const shouldUseDefaultEssayCache = (includeDraft?: boolean) =>
-  shouldMemoizeEssayQueries && includeDraft !== true;
+const shouldUseDefaultLongformCache = (includeDraft?: boolean) =>
+  shouldMemoizeLongformQueries && includeDraft !== true;
 
-const loadSortedEssays = async ({ includeDraft }: EssayQueryOptions = {}) => {
-  const essays = await getPublished('essay', {
+const loadSortedLongforms = async ({ includeDraft }: LongformQueryOptions = {}) => {
+  const longforms = await getPublished('longform', {
     ...(includeDraft === undefined ? {} : { includeDraft }),
-    orderBy: orderByEssayDate
+    orderBy: orderByLongformDate
   });
-  assertUniqueEssaySlugs(essays);
-  return essays;
+  assertUniqueLongformSlugs(longforms);
+  return longforms;
 };
 
-const buildEssayDerivedText = (entry: EssayEntry): EssayDerivedText => {
+const buildLongformDerivedText = (entry: LongformEntry): LongformDerivedText => {
   const { plainText, excerptText } = deriveMarkdownText(entry.body ?? '');
 
   return {
     plainText,
-    text: plainText.length > MAX_ESSAY_INDEX_TEXT ? plainText.slice(0, MAX_ESSAY_INDEX_TEXT) : plainText,
+    text: plainText.length > MAX_LONGFORM_INDEX_TEXT ? plainText.slice(0, MAX_LONGFORM_INDEX_TEXT) : plainText,
     excerpt: truncateText(excerptText, 120)
   };
 };
 
-export function getEssayDerivedText(entry: EssayEntry): EssayDerivedText {
-  if (!shouldMemoizeEssayQueries) {
-    return buildEssayDerivedText(entry);
+export function getLongformDerivedText(entry: LongformEntry): LongformDerivedText {
+  if (!shouldMemoizeLongformQueries) {
+    return buildLongformDerivedText(entry);
   }
 
-  let derivedText = essayDerivedTextById.get(entry.id);
+  let derivedText = longformDerivedTextById.get(entry.id);
   if (!derivedText) {
-    derivedText = buildEssayDerivedText(entry);
-    essayDerivedTextById.set(entry.id, derivedText);
+    derivedText = buildLongformDerivedText(entry);
+    longformDerivedTextById.set(entry.id, derivedText);
   }
 
   return derivedText;
 }
 
-const buildMemoDerivedText = (entry: MemoEntry): MemoDerivedText =>
+const buildReadsDerivedText = (entry: ReadsEntry): ReadsDerivedText =>
   deriveMarkdownText(entry.body ?? '');
 
-export function getMemoDerivedText(entry: MemoEntry): MemoDerivedText {
-  if (!shouldMemoizeMemoQueries) {
-    return buildMemoDerivedText(entry);
+export function getReadsDerivedText(entry: ReadsEntry): ReadsDerivedText {
+  if (!shouldMemoizeReadsQueries) {
+    return buildReadsDerivedText(entry);
   }
 
-  let derivedText = memoDerivedTextById.get(entry.id);
+  let derivedText = readsDerivedTextById.get(entry.id);
   if (!derivedText) {
-    derivedText = buildMemoDerivedText(entry);
-    memoDerivedTextById.set(entry.id, derivedText);
+    derivedText = buildReadsDerivedText(entry);
+    readsDerivedTextById.set(entry.id, derivedText);
   }
 
   return derivedText;
 }
 
-export async function getSortedEssays(options: EssayQueryOptions = {}) {
-  if (!shouldUseDefaultEssayCache(options.includeDraft)) {
-    return loadSortedEssays(options);
+export async function getSortedLongforms(options: LongformQueryOptions = {}) {
+  if (!shouldUseDefaultLongformCache(options.includeDraft)) {
+    return loadSortedLongforms(options);
   }
 
-  sortedEssaysPromise ??= loadSortedEssays();
-  return cloneEssayEntries(await sortedEssaysPromise);
+  sortedLongformsPromise ??= loadSortedLongforms();
+  return cloneLongformEntries(await sortedLongformsPromise);
 }
 
-export async function getVisibleEssays(options: EssayQueryOptions = {}) {
-  if (!shouldUseDefaultEssayCache(options.includeDraft)) {
-    const essays = await getSortedEssays(options);
-    return essays.filter((entry) => !isReservedSlug(getEssaySlug(entry)));
+export async function getVisibleLongforms(options: LongformQueryOptions = {}) {
+  if (!shouldUseDefaultLongformCache(options.includeDraft)) {
+    const longforms = await getSortedLongforms(options);
+    return longforms.filter((entry) => !isReservedSlug(getLongformSlug(entry)));
   }
 
-  visibleEssaysPromise ??= getSortedEssays().then((essays) =>
-    essays.filter((entry) => !isReservedSlug(getEssaySlug(entry)))
+  visibleLongformsPromise ??= getSortedLongforms().then((longforms) =>
+    longforms.filter((entry) => !isReservedSlug(getLongformSlug(entry)))
   );
-  return cloneEssayEntries(await visibleEssaysPromise);
+  return cloneLongformEntries(await visibleLongformsPromise);
 }
 
-export async function getArchiveEssays(options: EssayQueryOptions = {}) {
-  if (!shouldUseDefaultEssayCache(options.includeDraft)) {
-    const essays = await getSortedEssays(options);
-    return essays.filter((entry) => entry.data.archive !== false && !isReservedSlug(getEssaySlug(entry)));
+export async function getArchiveLongforms(options: LongformQueryOptions = {}) {
+  if (!shouldUseDefaultLongformCache(options.includeDraft)) {
+    const longforms = await getSortedLongforms(options);
+    return longforms.filter((entry) => entry.data.archive !== false && !isReservedSlug(getLongformSlug(entry)));
   }
 
-  archiveEssaysPromise ??= getSortedEssays().then((essays) =>
-    essays.filter((entry) => entry.data.archive !== false && !isReservedSlug(getEssaySlug(entry)))
+  archiveLongformsPromise ??= getSortedLongforms().then((longforms) =>
+    longforms.filter((entry) => entry.data.archive !== false && !isReservedSlug(getLongformSlug(entry)))
   );
-  return cloneEssayEntries(await archiveEssaysPromise);
+  return cloneLongformEntries(await archiveLongformsPromise);
 }
 
-export async function getVisibleEssayRouteEntries(options: EssayQueryOptions = {}) {
-  const essays = await getVisibleEssays(options);
-  return essays.map((entry, index) => ({
-    slug: getEssaySlug(entry),
+export async function getVisibleLongformRouteEntries(options: LongformQueryOptions = {}) {
+  const longforms = await getVisibleLongforms(options);
+  return longforms.map((entry, index) => ({
+    slug: getLongformSlug(entry),
     entry,
-    prev: essays[index - 1] ?? null,
-    next: essays[index + 1] ?? null
-  })) satisfies EssayRouteEntry[];
+    prev: longforms[index - 1] ?? null,
+    next: longforms[index + 1] ?? null
+  })) satisfies LongformRouteEntry[];
 }

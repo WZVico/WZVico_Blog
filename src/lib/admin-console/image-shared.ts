@@ -186,9 +186,9 @@ const RELATIVE_CONTENT_ASSET_RE = /!\[[^\]]*]\(([^)]+)\)|<img[^>]+src=["']([^"']
 const ADMIN_IMAGE_SHORT_CACHE_TTL_MS = 3_000;
 const ADMIN_IMAGE_SHORT_CACHE_MAX_ENTRIES = 32;
 const CONTENT_COLLECTION_LABELS = {
-  essay: '随笔',
+  longform: '长文',
   bits: '絮语',
-  memo: '小记'
+  reads: '阅读'
 } as const;
 const OWNER_PATH_SEPARATORS = ['/', '.', '-', '_'] as const;
 const ADMIN_IMAGE_SCAN_ROOTS = [
@@ -602,10 +602,10 @@ const resolveBrowseMeta = (record: AdminImageAssetRecord): AdminImageAssetBrowse
     };
   }
 
-  if (record.path.startsWith('src/content/essay/')) {
+  if (record.path.startsWith('src/content/longform/')) {
     return {
-      browseGroup: 'essay',
-      browseGroupLabel: ADMIN_IMAGE_BROWSE_GROUP_LABELS.essay,
+      browseGroup: 'longform',
+      browseGroupLabel: ADMIN_IMAGE_BROWSE_GROUP_LABELS.longform,
       browseSubgroup: record.owner ?? '',
       browseSubgroupLabel: record.ownerLabel,
       preferredValue,
@@ -613,10 +613,10 @@ const resolveBrowseMeta = (record: AdminImageAssetRecord): AdminImageAssetBrowse
     };
   }
 
-  if (record.path.startsWith('src/content/memo/') || record.path.startsWith('public/images/memo/')) {
+  if (record.path.startsWith('src/content/reads/') || record.path.startsWith('public/images/reads/')) {
     return {
-      browseGroup: 'memo',
-      browseGroupLabel: ADMIN_IMAGE_BROWSE_GROUP_LABELS.memo,
+      browseGroup: 'reads',
+      browseGroupLabel: ADMIN_IMAGE_BROWSE_GROUP_LABELS.reads,
       browseSubgroup: '',
       browseSubgroupLabel: null,
       preferredValue,

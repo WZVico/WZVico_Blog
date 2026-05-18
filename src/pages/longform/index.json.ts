@@ -1,14 +1,14 @@
 import type { APIRoute } from 'astro';
-import { getEssayDerivedText, getEssaySlug, getVisibleEssays } from '../../lib/content';
+import { getLongformDerivedText, getLongformSlug, getVisibleLongforms } from '../../lib/content';
 
 export const prerender = true;
 
 export const GET: APIRoute = async () => {
-  const visibleEssays = await getVisibleEssays();
-  const index = visibleEssays.map((entry) => {
-    const { text } = getEssayDerivedText(entry);
+  const visibleLongforms = await getVisibleLongforms();
+  const index = visibleLongforms.map((entry) => {
+    const { text } = getLongformDerivedText(entry);
     return {
-      slug: getEssaySlug(entry),
+      slug: getLongformSlug(entry),
       title: entry.data.title ?? '',
       description: entry.data.description ?? '',
       tags: entry.data.tags ?? [],

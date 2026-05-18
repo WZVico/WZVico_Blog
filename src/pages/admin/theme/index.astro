@@ -47,9 +47,9 @@ const loadThemeDevState = async () => {
   const settingsEndpoint = withBase('/api/admin/settings/');
   const navIdOrder = ADMIN_NAV_IDS;
   const navLabelFallback = {
-    essay: '随笔',
+    longform: '长文',
     bits: '絮语',
-    memo: '小记',
+    reads: '阅读',
     archive: '归档',
     about: '关于'
   } as const;
@@ -59,10 +59,10 @@ const loadThemeDevState = async () => {
   const pageTitleMaxLength = ADMIN_PAGE_TITLE_MAX_LENGTH;
   const pageSubtitleMaxLength = ADMIN_PAGE_SUBTITLE_MAX_LENGTH;
   const socialCustomLimit = ADMIN_SOCIAL_CUSTOM_LIMIT;
-  const memoEntry = await getEntry('memo', 'index');
-  const memoTitlePlaceholder = typeof memoEntry?.data.title === 'string' ? memoEntry.data.title.trim() : '';
-  const memoSubtitlePlaceholder =
-    typeof memoEntry?.data.subtitle === 'string' ? memoEntry.data.subtitle.trim() : '';
+  const readsEntry = await getEntry('reads', 'index');
+  const readsTitlePlaceholder = typeof readsEntry?.data.title === 'string' ? readsEntry.data.title.trim() : '';
+  const readsSubtitlePlaceholder =
+    typeof readsEntry?.data.subtitle === 'string' ? readsEntry.data.subtitle.trim() : '';
 
   const initialState = getEditableThemeSettingsState();
   const bootstrapState = initialState.ok
@@ -109,8 +109,8 @@ const loadThemeDevState = async () => {
     footerStartYearMin,
     footerStartYearMax,
     homeIntroMaxLength,
-    memoSubtitlePlaceholder,
-    memoTitlePlaceholder,
+    readsSubtitlePlaceholder,
+    readsTitlePlaceholder,
     navIdOrder,
     pageSubtitleMaxLength,
     pageTitleMaxLength,
@@ -144,8 +144,8 @@ const AdminImagePicker = adminDevState?.AdminImagePicker;
           footerStartYearMin={adminDevState.footerStartYearMin}
           footerStartYearMax={adminDevState.footerStartYearMax}
           homeIntroMaxLength={adminDevState.homeIntroMaxLength}
-          memoSubtitlePlaceholder={adminDevState.memoSubtitlePlaceholder}
-          memoTitlePlaceholder={adminDevState.memoTitlePlaceholder}
+          readsSubtitlePlaceholder={adminDevState.readsSubtitlePlaceholder}
+          readsTitlePlaceholder={adminDevState.readsTitlePlaceholder}
           navIdOrder={adminDevState.navIdOrder}
           pageSubtitleMaxLength={adminDevState.pageSubtitleMaxLength}
           pageTitleMaxLength={adminDevState.pageTitleMaxLength}
