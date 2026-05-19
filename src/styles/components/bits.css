@@ -881,6 +881,13 @@
   font-size: 14px;
 }
 
+.bit-body.heti {
+  max-width: none;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: inherit;
+}
+
 .bit-media {
   margin: 12px 0;
   border-radius: 8px;

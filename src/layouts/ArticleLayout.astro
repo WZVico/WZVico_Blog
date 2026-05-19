@@ -107,7 +107,7 @@ const shouldShowMetaLine = articleMetaSettings.showDate
     ) : null}
   </div>
 
-  <div class="prose">
+  <div class="prose heti">
     <slot />
   </div>
   {(prev || next) ? (
@@ -144,8 +144,10 @@ const shouldShowMetaLine = articleMetaSettings.showDate
   />
 
   <script>
+    import { initHeti } from '../scripts/heti';
     import { initArticleLightbox, initCodeCopyButtons } from '../scripts/lightbox';
 
+    initHeti();
     initCodeCopyButtons();
     initArticleLightbox({
       dialogId: 'lightbox',

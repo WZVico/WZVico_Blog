@@ -277,8 +277,11 @@ const cards = await Promise.all(
 
   <script>
     import { createWithBase } from '../utils/format';
+    import { initHeti } from '../scripts/heti';
     import '../scripts/bits-search.ts';
     import '../scripts/bits-lightbox.ts';
+
+    initHeti();
 
     const openBtn = document.querySelector<HTMLButtonElement>('[data-new-bit]');
     const root = document.getElementById('bits-draft-root');

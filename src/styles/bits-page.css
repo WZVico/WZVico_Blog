@@ -1,3 +1,4 @@
 /* bits-page.css 聚合 /bits/ 页面专用样式，避免泄漏到其他公开页。 */
+@import "heti/umd/heti.min.css";
 @import "./components/bits.css";
 @import "./components/lightbox.css";

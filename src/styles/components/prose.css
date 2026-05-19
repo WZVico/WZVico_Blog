@@ -6,6 +6,13 @@
   overflow-wrap: anywhere;
 }
 
+.prose.heti {
+  max-width: none;
+  font-family: inherit;
+  font-size: 15px;
+  line-height: inherit;
+}
+
 .prose img {
   max-width: 75%;
   height: auto;

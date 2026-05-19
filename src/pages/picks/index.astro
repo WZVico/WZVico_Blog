@@ -134,7 +134,7 @@ for (const h of headings) {
       ))}
     </nav>
 
-    <div class="picks-content prose" id="picks-content">
+    <div class="picks-content prose heti" id="picks-content">
       <Content />
     </div>
   </div>
@@ -199,9 +199,11 @@ for (const h of headings) {
   />
 
   <script>
+    import { initHeti } from '../../scripts/heti';
     import { initArticleLightbox, initCodeCopyButtons } from '../../scripts/lightbox';
     import '../../scripts/picks-search';
 
+    initHeti();
     initCodeCopyButtons();
     initArticleLightbox({
       dialogId: 'lightbox',
