@@ -42,12 +42,12 @@ describe('admin-console/shared', () => {
       getAdminNavOrderIssues([
         { key: 'longform', order: 1 },
         { key: 'bits', order: 1 },
-        { key: 'reads', order: 0 }
+        { key: 'picks', order: 0 }
       ])
     ).toEqual([
       { type: 'duplicate', key: 'longform', order: 1 },
       { type: 'duplicate', key: 'bits', order: 1 },
-      { type: 'range', key: 'reads', order: 0 }
+      { type: 'range', key: 'picks', order: 0 }
     ]);
   });
 

@@ -53,7 +53,7 @@ Theme Console 当前适合处理以下几类配置：
 - 侧栏站点名、引用文案、导航顺序与显隐
 - 侧栏动作图标（阅读模式 / RSS / 主题切换 / 站点概览入口）
 - 首页 Hero、首页导语及首页内部入口
-- `/longform/`、`/archive/`、`/bits/`、`/reads/`、`/about/` 的主副标题
+- `/longform/`、`/archive/`、`/bits/`、`/picks/`、`/about/` 的主副标题
 - 文章元信息显示选项
 - 代码块行号
 
@@ -119,7 +119,7 @@ Theme Console 管理的是仓库内的主题配置，相关改动仍可通过 Gi
 
 > ![Home 分组截图](./theme-console/theme-console-home.webp)
 
-首页补充导语仍采用固定句式，后台只开放了文案和入口选择，尽量保持首页结构稳定。当前可选入口包括 `archive`、`longform`、`bits`、`reads`、`about` 和 `tag`。
+首页补充导语仍采用固定句式，后台只开放了文案和入口选择，尽量保持首页结构稳定。当前可选入口包括 `archive`、`longform`、`bits`、`picks`、`about` 和 `tag`。
 
 
 ### Inner Pages
@@ -129,7 +129,7 @@ Theme Console 管理的是仓库内的主题配置，相关改动仍可通过 Gi
 - `/longform/` 页面主副标题
 - `/archive/` 页面主副标题
 - `/bits/` 页面主副标题
-- `/reads/` 页面主副标题
+- `/picks/` 页面主副标题
 - `/about/` 页面主副标题
 - 文章元信息是否显示日期、标签、字数、阅读时长
 - `/bits/` 默认作者名与头像

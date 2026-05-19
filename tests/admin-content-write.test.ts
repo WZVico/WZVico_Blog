@@ -22,7 +22,7 @@ describe('admin content write api', () => {
 
     await mkdir(path.join(tempRoot, 'src', 'content', 'longform'), { recursive: true });
     await mkdir(path.join(tempRoot, 'src', 'content', 'bits'), { recursive: true });
-    await mkdir(path.join(tempRoot, 'src', 'content', 'reads'), { recursive: true });
+    await mkdir(path.join(tempRoot, 'src', 'content', 'picks'), { recursive: true });
     await mkdir(path.join(tempRoot, 'public', 'author'), { recursive: true });
 
     await writeFile(path.join(tempRoot, 'public', 'author', 'alice.webp'), 'avatar');
@@ -55,8 +55,8 @@ describe('admin content write api', () => {
       'utf8'
     );
     await writeFile(
-      path.join(tempRoot, 'src', 'content', 'reads', 'index.md'),
-      ['---', 'title: reads', 'date: 2026-01-10', '---', '', 'reads body', ''].join('\n'),
+      path.join(tempRoot, 'src', 'content', 'picks', 'index.md'),
+      ['---', 'title: picks', 'date: 2026-01-10', '---', '', 'picks body', ''].join('\n'),
       'utf8'
     );
   });
@@ -105,14 +105,14 @@ describe('admin content write api', () => {
     }
   });
 
-  it('rejects reads writes while still exposing readonly schema info', async () => {
+  it('rejects picks writes while still exposing readonly schema info', async () => {
     const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
-    const payload = await readAdminContentEntryEditorPayload('reads', 'index');
+    const payload = await readAdminContentEntryEditorPayload('picks', 'index');
 
     expect(payload.writable).toBe(false);
     expect(payload.readonlyReason).toContain('Phase 2B');
-    expect(payload.collection).toBe('reads');
-    if (payload.collection === 'reads') {
+    expect(payload.collection).toBe('picks');
+    if (payload.collection === 'picks') {
       expect(payload.values.slug).toBe('');
     }
   });
@@ -128,7 +128,7 @@ describe('admin content write api', () => {
         message: '不支持的 content collection'
       },
       {
-        body: { collection: 'reads', entryId: 'index', revision: 'stale', frontmatter: {} },
+        body: { collection: 'picks', entryId: 'index', revision: 'stale', frontmatter: {} },
         status: 400,
         issuePath: 'collection',
         message: '只读'

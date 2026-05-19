@@ -169,14 +169,14 @@ describe('admin-console/content', () => {
     ]);
     mockGetPublished.mockResolvedValue([
       {
-        id: 'reads/latest.md',
+        id: 'picks/latest.md',
         data: {
           date: new Date('2026-01-15T08:00:00.000Z'),
           draft: false
         }
       } as never,
       {
-        id: 'reads/draft.md',
+        id: 'picks/draft.md',
         data: {
           date: null,
           draft: true
@@ -199,15 +199,15 @@ describe('admin-console/content', () => {
       totalCount: 2,
       draftCount: 1
     });
-    expect(summaryByKey.reads).toMatchObject({
-      key: 'reads',
-      label: '阅读',
+    expect(summaryByKey.picks).toMatchObject({
+      key: 'picks',
+      label: '拾选',
       totalCount: 2,
       draftCount: 1
     });
     expect(summaryByKey.longform?.latestDateLabel).not.toBe('未设置日期');
     expect(summaryByKey.bits?.latestDateLabel).not.toBe('未设置日期');
-    expect(summaryByKey.reads?.latestDateLabel).not.toBe('未设置日期');
+    expect(summaryByKey.picks?.latestDateLabel).not.toBe('未设置日期');
 
     expect(mockGetLongformDerivedText).not.toHaveBeenCalled();
     expect(mockGetReadsDerivedText).not.toHaveBeenCalled();
@@ -219,13 +219,13 @@ describe('admin-console/content', () => {
     expect(getAdminContentPublicFallbackLabel(createItem({ isDraft: true, publicHref: null }))).toContain('draft');
     expect(
       getAdminContentPublicFallbackLabel(createItem({
-        collection: 'reads',
-        collectionLabel: '阅读',
-        id: 'reads/index.md',
+        collection: 'picks',
+        collectionLabel: '拾选',
+        id: 'picks/index.md',
         publicHref: null,
-        relativePath: 'src/content/reads/index.md'
+        relativePath: 'src/content/picks/index.md'
       }))
-    ).toContain('/reads/');
+    ).toContain('/picks/');
     expect(
       getAdminContentPublicFallbackLabel(createItem({
         collection: 'bits',

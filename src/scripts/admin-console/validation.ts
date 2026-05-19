@@ -74,7 +74,7 @@ type ValidationContext = {
 
 const CUSTOM_ITEM_PATH_RE = /^site\.socialLinks\.custom\[(\d+)\](?:\.(id|label|href|iconKey|order|visible))?$/;
 const NAV_PATH_RE = /^shell\.nav(?:(?:\.([a-z]+))|\[(\d+)\])(?:\.(id|label|ornament|order|visible))?$/;
-const PAGE_TITLE_INPUT_KEYS = ['longform', 'archive', 'bits', 'reads', 'about'] as const;
+const PAGE_TITLE_INPUT_KEYS = ['longform', 'archive', 'bits', 'picks', 'about'] as const;
 
 export const createValidation = ({
   form,
@@ -156,14 +156,14 @@ export const createValidation = ({
     longform: () => inputPageLongformTitle,
     archive: () => inputPageArchiveTitle,
     bits: () => inputPageBitsTitle,
-    reads: () => inputPageReadsTitle,
+    picks: () => inputPageReadsTitle,
     about: () => inputPageAboutTitle
   };
   const pageSubtitleTargets: Record<(typeof PAGE_TITLE_INPUT_KEYS)[number], () => HTMLElement | null> = {
     longform: () => inputPageLongformSubtitle,
     archive: () => inputPageArchiveSubtitle,
     bits: () => inputPageBitsSubtitle,
-    reads: () => inputPageReadsSubtitle,
+    picks: () => inputPageReadsSubtitle,
     about: () => inputPageAboutSubtitle
   };
 

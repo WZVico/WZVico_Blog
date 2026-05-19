@@ -43,11 +43,11 @@ const bit = (id: string, options: Record<string, unknown> = {}) => ({
   }
 });
 
-const reads = (id: string, options: Record<string, unknown> = {}) => ({
+const picks = (id: string, options: Record<string, unknown> = {}) => ({
   id,
-  collection: 'reads',
+  collection: 'picks',
   data: {
-    title: `reads ${id}`,
+    title: `picks ${id}`,
     date: date('2026-01-08T00:00:00.000Z'),
     draft: false,
     ...options
@@ -86,7 +86,7 @@ describe('admin-console/overview', () => {
         longform('archive-longform', { tags: ['Design', 'Astro'] })
       ],
       bits: [bit('published-bit', { date: date('2026-01-12T12:00:00.000Z') })],
-      reads: [reads('published-reads')],
+      picks: [picks('published-picks')],
       bitsHrefById: new Map([['published-bit', '/bits/#bit-published-bit']])
     } as unknown as AdminOverviewPublicSource;
 
@@ -131,12 +131,12 @@ describe('admin-console/overview', () => {
     const publicWordCount = [
       '中文 alpha 123',
       'beta test 42',
-      'かな reads'
+      'かな picks'
     ].reduce((total, body) => total + countAdminOverviewWords(body), 0);
     const draftWordCount = [
       '草稿 draft 999',
       '草稿 bit 888',
-      '草稿 reads 777'
+      '草稿 picks 777'
     ].reduce((total, body) => total + countAdminOverviewWords(body), 0);
 
     mockCollections({
@@ -148,9 +148,9 @@ describe('admin-console/overview', () => {
         withBody(bit('published-bit'), 'beta test 42'),
         withBody(bit('draft-bit', { draft: true }), '草稿 bit 888')
       ],
-      reads: [
-        withBody(reads('published-reads'), 'かな reads'),
-        withBody(reads('draft-reads', { draft: true }), '草稿 reads 777')
+      picks: [
+        withBody(picks('published-picks'), 'かな picks'),
+        withBody(picks('draft-picks', { draft: true }), '草稿 picks 777')
       ]
     });
 
@@ -179,7 +179,7 @@ describe('admin-console/overview', () => {
           date: date('2026-01-12T12:00:00.000Z')
         })
       ],
-      reads: []
+      picks: []
     } as unknown as AdminOverviewMaintainerSource;
 
     const summary = buildAdminOverviewMaintainerSummary(

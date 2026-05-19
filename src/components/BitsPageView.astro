@@ -71,6 +71,40 @@ const cards = await Promise.all(
       <h1 class="page-title">{pageTitleText}</h1>
       {subtitleText ? <span class="page-subtitle">{subtitleText}</span> : null}
     </div>
+    <div class="bits-header-actions">
+      <div class="bits-controls__search-cluster" data-has-year-filter={yearOptions.length > 0 ? 'true' : 'false'}>
+        <form class="bits-search" role="search" data-bits-search-form data-bits-client-control>
+          <label class="sr-only" for="bits-search">搜索絮语</label>
+          <input
+            id="bits-search"
+            type="search"
+            placeholder="搜索：关键词 / 标签"
+            autocomplete="off"
+            enterkeyhint="search"
+            aria-controls="bits-search-results-panel"
+          />
+          <button class="bits-search-btn" id="bits-search-btn" type="submit" aria-controls="bits-search-results-panel">
+            搜索
+          </button>
+        </form>
+        {yearOptions.length > 0 ? (
+          <div class="bits-year-select-wrap" data-bits-client-control>
+            <label class="sr-only" for="bits-year-select">按年份筛选絮语</label>
+            <select
+              class="bits-year-select"
+              id="bits-year-select"
+              data-bits-year-select
+              aria-label="按年份筛选絮语"
+            >
+              <option value="">全部</option>
+              {yearOptions.map((option) => (
+                <option value={option.value}>{option.value}</option>
+              ))}
+            </select>
+          </div>
+        ) : null}
+      </div>
+    </div>
   </div>
 
   <div class="bits-toolbar">
@@ -148,38 +182,6 @@ const cards = await Promise.all(
       ) : null}
 
       <div class="bits-controls__actions">
-        <div class="bits-controls__search-cluster" data-has-year-filter={yearOptions.length > 0 ? 'true' : 'false'}>
-          <form class="bits-search" role="search" data-bits-search-form data-bits-client-control>
-            <label class="sr-only" for="bits-search">搜索絮语</label>
-            <input
-              id="bits-search"
-              type="search"
-              placeholder="搜索：关键词 / 标签"
-              autocomplete="off"
-              enterkeyhint="search"
-              aria-controls="bits-search-results-panel"
-            />
-            <button class="bits-search-btn" id="bits-search-btn" type="submit" aria-controls="bits-search-results-panel">
-              搜索
-            </button>
-          </form>
-          {yearOptions.length > 0 ? (
-            <div class="bits-year-select-wrap" data-bits-client-control>
-              <label class="sr-only" for="bits-year-select">按年份筛选絮语</label>
-              <select
-                class="bits-year-select"
-                id="bits-year-select"
-                data-bits-year-select
-                aria-label="按年份筛选絮语"
-              >
-                <option value="">全部</option>
-                {yearOptions.map((option) => (
-                  <option value={option.value}>{option.value}</option>
-                ))}
-              </select>
-            </div>
-          ) : null}
-        </div>
         <button
           class="new"
           id="bits-new-btn"

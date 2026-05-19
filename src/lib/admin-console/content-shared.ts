@@ -20,10 +20,10 @@ import {
   splitMarkdownFrontmatter
 } from './frontmatter';
 
-export type AdminContentCollectionKey = 'longform' | 'bits' | 'reads';
+export type AdminContentCollectionKey = 'longform' | 'bits' | 'picks';
 export type AdminContentWriteCollectionKey = 'longform' | 'bits';
 
-export const ADMIN_CONTENT_COLLECTION_KEYS = ['longform', 'bits', 'reads'] as const satisfies readonly AdminContentCollectionKey[];
+export const ADMIN_CONTENT_COLLECTION_KEYS = ['longform', 'bits', 'picks'] as const satisfies readonly AdminContentCollectionKey[];
 export const ADMIN_CONTENT_WRITE_COLLECTION_KEYS = ['longform', 'bits'] as const satisfies readonly AdminContentWriteCollectionKey[];
 
 export const isAdminContentCollectionKey = (value: string): value is AdminContentCollectionKey =>
@@ -107,7 +107,7 @@ export type AdminBitsEditorPayload = {
 };
 
 export type AdminReadsEditorPayload = {
-  collection: 'reads';
+  collection: 'picks';
   entryId: string;
   revision: string;
   relativePath: string;
@@ -500,8 +500,8 @@ const toReadsEditorValues = (state: AdminContentSourceState): AdminReadsEditorVa
 };
 
 export const getAdminContentReadOnlyReason = (collection: AdminContentCollectionKey): string | null =>
-  collection === 'reads'
-    ? 'Phase 2B 首批仅开放 longform / bits frontmatter 写回；reads 仍保持只读，并单独保留 date 可选 / slug 不走 slugRule 的 schema 差异。'
+  collection === 'picks'
+    ? 'Phase 2B 首批仅开放 longform / bits frontmatter 写回；picks 仍保持只读，并单独保留 date 可选 / slug 不走 slugRule 的 schema 差异。'
     : null;
 
 export const readAdminContentEntryEditorPayload = async (
@@ -871,7 +871,7 @@ export const buildAdminContentWritePlan = async (
     issues: [
       createIssue(
         'collection',
-        'Phase 2B 首批仅开放 longform / bits frontmatter 写回；reads 仍保持只读。'
+        'Phase 2B 首批仅开放 longform / bits frontmatter 写回；picks 仍保持只读。'
       )
     ],
     changedFields: [],

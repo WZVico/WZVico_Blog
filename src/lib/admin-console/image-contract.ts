@@ -1,5 +1,5 @@
 export type AdminImageOrigin = 'public' | 'src/assets' | 'src/content';
-export type AdminImageBrowseGroup = 'all' | 'longform' | 'bits' | 'reads' | 'assets' | 'pages' | 'uncategorized';
+export type AdminImageBrowseGroup = 'all' | 'longform' | 'bits' | 'picks' | 'assets' | 'pages' | 'uncategorized';
 export type AdminImageScopeKey = 'recent';
 
 export const ADMIN_IMAGE_DEFAULT_LIST_LIMIT = 20;
@@ -8,7 +8,7 @@ export const ADMIN_IMAGE_BROWSE_GROUP_LABELS = {
   all: '全部',
   longform: '长文',
   bits: 'Bits',
-  reads: 'reads',
+  picks: 'picks',
   assets: '配置素材',
   pages: '页面插图',
   uncategorized: '未归类'
@@ -18,7 +18,7 @@ export const ADMIN_IMAGE_BROWSE_GROUP_ORDER = [
   'all',
   'longform',
   'bits',
-  'reads',
+  'picks',
   'assets',
   'pages',
   'uncategorized'

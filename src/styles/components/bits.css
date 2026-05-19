@@ -4,6 +4,43 @@
 
 /* Bits（絮语） */
 
+.page-header.page-header--bits {
+  --bits-control-h: 32px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 0;
+}
+
+.page-header.page-header--bits .page-heading {
+  flex: 1 1 auto;
+  align-items: center;
+}
+
+.page-header.page-header--bits .page-title {
+  line-height: 32px;
+}
+
+.page-header.page-header--bits .page-subtitle {
+  line-height: 20px;
+}
+
+.bits-header-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex: 0 1 300px;
+  width: clamp(220px, 30vw, 336px);
+  min-width: 220px;
+  max-width: 336px;
+  margin-left: auto;
+}
+
+.bits-header-actions .bits-controls__search-cluster {
+  flex: 1 1 100%;
+  width: 100%;
+  min-width: 0;
+}
+
 .bits-toolbar {
   display: flex;
   flex-direction: column;
@@ -260,7 +297,7 @@
   border: 1px solid var(--border);
   border-radius: 6px;
   background: var(--bg);
-  height: var(--bits-control-h);
+  height: var(--bits-control-h, 36px);
 }
 
 .bits-search:focus-within {
@@ -272,10 +309,10 @@
   flex: 1 1 auto;
   min-width: 0;
   height: 100%;
-  padding: 0 10px;
+  padding: 0 9px;
   border: 0;
   background: transparent;
-  font-size: 15px;
+  font-size: 14px;
   outline: none;
   line-height: 1;
 }
@@ -291,13 +328,13 @@
   flex: 0 0 auto;
   height: 100%;
   margin: 0;
-  padding: 0 14px;
+  padding: 0 12px;
   min-width: 56px;
   border-radius: 0 6px 6px 0;
   border: 0;
   border-left: 1px solid var(--border);
   background: var(--panel);
-  font-size: 13px;
+  font-size: 12px;
   line-height: 1;
   cursor: pointer;
   display: inline-flex;
@@ -1044,6 +1081,27 @@
 }
 
 @media (max-width: 900px) {
+  .page-header.page-header--bits {
+    --bits-control-h: 36px;
+    align-items: stretch;
+  }
+
+  .page-header.page-header--bits .page-heading {
+    align-items: flex-start;
+  }
+
+  .bits-header-actions {
+    flex: 0 0 auto;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
+    margin-left: 0;
+  }
+
+  .bits-header-actions .bits-controls__search-cluster {
+    flex: 0 0 auto;
+  }
+
   .bits-toolbar {
     align-items: flex-start;
     margin: 10px 0 4px;
@@ -1068,6 +1126,8 @@
 
   .bits-search {
     flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
     max-width: none;
   }
 
@@ -1145,6 +1205,13 @@
     width: clamp(220px, 27vw, 244px);
     min-width: 220px;
     max-width: 244px;
+  }
+
+  .bits-header-actions .bits-search {
+    flex: 1 1 auto;
+    width: 100%;
+    min-width: 0;
+    max-width: none;
   }
 
   .bits-search-btn {

@@ -83,32 +83,32 @@ const {
         />
       </span>
     </label>
-    <label class="admin-field admin-field--full admin-field--reads">
+    <label class="admin-field admin-field--full admin-field--picks">
       <span class="admin-label">
         <span class="admin-label__main">
-          <code>/reads/</code> 页面主 <span class="admin-label__pipe" aria-hidden="true">|</span> 副标题
+          <code>/picks/</code> 页面主 <span class="admin-label__pipe" aria-hidden="true">|</span> 副标题
         </span>
-        <span class="admin-label__hint">（填写后覆盖对应字段，留空则沿用 src/content/reads/index.md）</span>
+        <span class="admin-label__hint">（填写后覆盖对应字段，留空则沿用 src/content/picks/index.md）</span>
       </span>
-      <span class="admin-title-pair" role="group" aria-label="/reads/ 页面主标题与副标题">
+      <span class="admin-title-pair" role="group" aria-label="/picks/ 页面主标题与副标题">
         <input
-          id="page-reads-title"
+          id="page-picks-title"
           class="admin-title-pair__input admin-title-pair__input--title"
           type="text"
           maxlength={pageTitleMaxLength}
           autocomplete="off"
           placeholder={readsTitlePlaceholder || undefined}
-          aria-label="/reads/ 页面主标题"
+          aria-label="/picks/ 页面主标题"
         />
         <span class="admin-title-pair__sep" aria-hidden="true">|</span>
         <input
-          id="page-reads-subtitle"
+          id="page-picks-subtitle"
           class="admin-title-pair__input admin-title-pair__input--subtitle"
           type="text"
           maxlength={pageSubtitleMaxLength}
           autocomplete="off"
           placeholder={readsSubtitlePlaceholder || undefined}
-          aria-label="/reads/ 页面副标题"
+          aria-label="/picks/ 页面副标题"
         />
       </span>
     </label>

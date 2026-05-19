@@ -26,7 +26,7 @@ A minimal two-column Astro theme for personal writing and lightweight publishing
 
 - Two-column layout (sidebar navigation + content area)
 - Responsive design for mobile devices
-- Content collections: longform / bits / reads (archive is generated from longform)
+- Content collections: longform / bits / picks (archive is generated from longform)
 - Built-in local Admin Console (`/admin`): use Theme / Images / Checks / Data Console in development to manage site settings and assets, and take over the theme after forking or cloning
 - Bits draft generator on `/bits/`: one-click Markdown output (copy/download), with multi-image support and automatic image dimension detection
 - RSS: default archive feed + section feeds
@@ -141,7 +141,7 @@ npm run check:preview-admin
 - Site config: `site.config.mjs`
 - Content collections: `src/content.config.ts`
 - Shared style entry: `src/styles/global.css`
-- Page / scene style entries: `src/styles/home.css`, `src/styles/about.css`, `src/styles/reads.css`, `src/styles/article.css`, `src/styles/bits-page.css`
+- Page / scene style entries: `src/styles/home.css`, `src/styles/about.css`, `src/styles/picks.css`, `src/styles/article.css`, `src/styles/bits-page.css`
 - Admin style entry: `src/styles/components/admin-shell.css` + route-specific Admin styles; the full `admin.css` aggregate is no longer provided
 
 ### Admin Console (`/admin`)
@@ -218,11 +218,11 @@ For more details, see the [Theme Console configuration guide](https://astro.whon
 Content Collections:
 - Longform: `src/content/longform`
 - Bits: `src/content/bits`
-- reads: `src/content/reads/index.md`
+- picks: `src/content/picks/index.md`
 - Archive: generated from longform entries via the `archive` field
 
 Main routes:
-- List pages: `/archive/`, `/longform/`, `/bits/`, `/reads/`, `/about/`
+- List pages: `/archive/`, `/longform/`, `/bits/`, `/picks/`, `/about/`
 - Canonical detail route: `/archive/[slug]` (`/longform/[slug]` remains as a compatibility redirect)
 
 ### Image Assets

@@ -128,8 +128,8 @@ describe('admin-console/frontmatter', () => {
     ]);
   });
 
-  it('supports deleting optional reads date fields', () => {
-    const source = ['---', 'title: reads', 'date: 2026-01-10', '---', '', 'reads body', ''].join('\n');
+  it('supports deleting optional picks date fields', () => {
+    const source = ['---', 'title: picks', 'date: 2026-01-10', '---', '', 'picks body', ''].join('\n');
 
     const next = patchMarkdownFrontmatter(source, [
       { path: ['date'], action: 'delete' }
@@ -138,13 +138,13 @@ describe('admin-console/frontmatter', () => {
     expect(getFrontmatter(next).date).toBeUndefined();
   });
 
-  it('supports reads slug values without applying longform slugRule restrictions', () => {
-    const source = ['---', 'title: reads', '---', '', 'reads body', ''].join('\n');
+  it('supports picks slug values without applying longform slugRule restrictions', () => {
+    const source = ['---', 'title: picks', '---', '', 'picks body', ''].join('\n');
 
     const next = patchMarkdownFrontmatter(source, [
-      { path: ['slug'], value: 'reads/自由记录', action: 'set' }
+      { path: ['slug'], value: 'picks/自由记录', action: 'set' }
     ]);
 
-    expect(getFrontmatter(next).slug).toBe('reads/自由记录');
+    expect(getFrontmatter(next).slug).toBe('picks/自由记录');
   });
 });

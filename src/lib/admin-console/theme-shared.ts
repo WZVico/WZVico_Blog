@@ -24,8 +24,8 @@ export {
   normalizeAdminHeroImageSrc
 };
 
-export const ADMIN_NAV_IDS = ['longform', 'bits', 'reads', 'archive', 'about'] as const satisfies readonly SidebarNavId[];
-export const ADMIN_PAGE_IDS = ['longform', 'archive', 'bits', 'reads', 'about'] as const satisfies readonly PageId[];
+export const ADMIN_NAV_IDS = ['longform', 'bits', 'picks', 'archive', 'about'] as const satisfies readonly SidebarNavId[];
+export const ADMIN_PAGE_IDS = ['longform', 'archive', 'bits', 'picks', 'about'] as const satisfies readonly PageId[];
 export const ADMIN_SOCIAL_CUSTOM_LIMIT = 8;
 
 export const ADMIN_HERO_PRESETS = ['default', 'none'] as const satisfies readonly HeroPresetId[];
@@ -56,7 +56,7 @@ export const ADMIN_HOME_INTRO_LINK_KEYS = [
   'archive',
   'longform',
   'bits',
-  'reads',
+  'picks',
   'about',
   'tag'
 ] as const satisfies readonly HomeIntroLinkKey[];
@@ -67,7 +67,7 @@ export const ADMIN_HOME_INTRO_LINK_OPTIONS = [
   { id: 'archive', label: '归档', href: '/archive/' },
   { id: 'longform', label: '长文', href: '/longform/' },
   { id: 'bits', label: '絮语', href: '/bits/' },
-  { id: 'reads', label: '阅读', href: '/reads/' },
+  { id: 'picks', label: '拾选', href: '/picks/' },
   { id: 'about', label: '关于', href: '/about/' },
   { id: 'tag', label: '#标签', href: '/archive/?picker=tag' }
 ] as const satisfies readonly {
@@ -519,9 +519,9 @@ export const canonicalizeAdminThemeSettings = (
           avatar: normalizeTrimmed(bitsDefaultAuthor.avatar)
         }
       },
-      reads: {
-        title: normalizeOptionalSingleLine(String(isRecord(page.reads) ? page.reads.title ?? '' : '')),
-        subtitle: normalizeOptionalSingleLine(String(isRecord(page.reads) ? page.reads.subtitle ?? '' : ''))
+      picks: {
+        title: normalizeOptionalSingleLine(String(isRecord(page.picks) ? page.picks.title ?? '' : '')),
+        subtitle: normalizeOptionalSingleLine(String(isRecord(page.picks) ? page.picks.subtitle ?? '' : ''))
       },
       about: {
         title: normalizeOptionalSingleLine(String(isRecord(page.about) ? page.about.title ?? '' : '')),
@@ -604,7 +604,7 @@ export const createAdminWritableThemeSettingsGroups = (
         ...settings.page.bits.defaultAuthor
       }
     },
-    reads: { ...settings.page.reads },
+    picks: { ...settings.page.picks },
     about: { ...settings.page.about }
   },
   ui: {
@@ -865,7 +865,7 @@ export const validateAdminThemeSettings = (
     [settings.page.longform?.title, '/longform/ 页面主标题', 'page.longform.title'],
     [settings.page.archive?.title, '/archive/ 页面主标题', 'page.archive.title'],
     [settings.page.bits?.title, '/bits/ 页面主标题', 'page.bits.title'],
-    [settings.page.reads?.title, '/reads/ 页面主标题', 'page.reads.title'],
+    [settings.page.picks?.title, '/picks/ 页面主标题', 'page.picks.title'],
     [settings.page.about?.title, '/about/ 页面主标题', 'page.about.title']
   ];
 
@@ -887,7 +887,7 @@ export const validateAdminThemeSettings = (
     [settings.page.longform?.subtitle, '/longform/ 页面副标题', 'page.longform.subtitle'],
     [settings.page.archive?.subtitle, '/archive/ 页面副标题', 'page.archive.subtitle'],
     [settings.page.bits?.subtitle, '/bits/ 页面副标题', 'page.bits.subtitle'],
-    [settings.page.reads?.subtitle, '/reads/ 页面副标题', 'page.reads.subtitle'],
+    [settings.page.picks?.subtitle, '/picks/ 页面副标题', 'page.picks.subtitle'],
     [settings.page.about?.subtitle, '/about/ 页面副标题', 'page.about.subtitle']
   ];
 

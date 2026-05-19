@@ -27,7 +27,7 @@
 
 - 双栏布局（侧栏导航 + 内容区）
 - 移动端适配
-- 内容集合：长文 / 絮语 / 阅读（归档为目录视图）
+- 内容集合：长文 / 絮语 / 拾选（归档为目录视图）
 - 内置本地 Admin Console（/admin）：开发环境下可使用 Theme / Images / Checks / Data Console 管理站点配置与资源，fork / clone 后可快速完成站点接管
 - 絮语草稿生成器：/bits 页面一键生成 Markdown（复制/下载），支持多图与自动读取尺寸
 - RSS：默认归档订阅 + 分栏订阅
@@ -142,7 +142,7 @@ npm run check:preview-admin
 - 站点配置：`site.config.mjs`
 - 内容集合：`src/content.config.ts`
 - 样式共享入口：`src/styles/global.css`
-- 页面 / 场景样式入口：`src/styles/home.css`、`src/styles/about.css`、`src/styles/reads.css`、`src/styles/article.css`、`src/styles/bits-page.css`
+- 页面 / 场景样式入口：`src/styles/home.css`、`src/styles/about.css`、`src/styles/picks.css`、`src/styles/article.css`、`src/styles/bits-page.css`
 - 后台样式入口：`src/styles/components/admin-shell.css` + 各 Admin 路由私有样式；不再提供全量 `admin.css` 聚合入口
 
 ### Admin Console（/admin）
@@ -218,11 +218,11 @@ Theme Console 主要面向**站点级**和**页面级**配置，支持内容：
 内容集合（Content Collections）：
 - 长文：位于 `src/content/longform` 目录
 - 絮语：位于 `src/content/bits` 目录
-- 阅读：位于 `src/content/reads/index.md`
+- 拾选：位于 `src/content/picks/index.md`
 - 归档：由长文集合按 `archive` 字段生成目录视图
 
 主要路由：
-- 列表页：`/archive/`、`/longform/`、`/bits/`、`/reads/`、`/about/`
+- 列表页：`/archive/`、`/longform/`、`/bits/`、`/picks/`、`/about/`
 - 详情页规范入口：/archive/[slug]（/longform/[slug] 保留兼容跳转）
 
 ### 图片资源
@@ -264,7 +264,7 @@ publishedAt: 2026-01-01T12:00:00+08:00
 date: 2026-01-01T12:00:00+08:00 # 示例；生成器按本地时区输出
 tags:                           # 可选标签（默认空数组，可省略）
   - loc:深圳                    # 地点标签写法：loc:<地点>，仅展示第一个
-  - 阅读
+  - 拾选
 images:                         # 可选：多图（自动读取图片尺寸，用于减少页面跳动 CLS）
   - src: bits/demo-01.webp      # 支持相对路径 bits/... 或绝对 URL https://...
     width: 800                  # 可选；建议填写，生成器 / 图片选择器会自动回填

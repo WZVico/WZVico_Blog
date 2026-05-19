@@ -17,8 +17,8 @@
       "visible": true
     },
     {
-      "id": "reads",
-      "label": "阅读",
+      "id": "picks",
+      "label": "拾选",
       "ornament": "·",
       "order": 3,
       "visible": true

@@ -42,7 +42,7 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/admin/content/index.html',
     'dist/admin/content/longform/index.html',
     'dist/admin/content/bits/index.html',
-    'dist/admin/content/reads/index.html',
+    'dist/admin/content/picks/index.html',
     'dist/admin/images/index.html',
     'dist/admin/checks/index.html',
     'dist/bits/index.html',
@@ -104,7 +104,7 @@ export const runProductionArtifactCheck = async (options = {}) => {
   const adminContentHtml = readText('dist/admin/content/index.html');
   const adminContentLongformHtml = readText('dist/admin/content/longform/index.html');
   const adminContentBitsHtml = readText('dist/admin/content/bits/index.html');
-  const adminContentReadsHtml = readText('dist/admin/content/reads/index.html');
+  const adminContentReadsHtml = readText('dist/admin/content/picks/index.html');
   const adminImageHtml = readText('dist/admin/images/index.html');
   const adminChecksHtml = readText('dist/admin/checks/index.html');
   const adminThemeHtml = readText('dist/admin/theme/index.html');
@@ -113,7 +113,7 @@ export const runProductionArtifactCheck = async (options = {}) => {
     ['dist/admin/content/index.html', adminContentHtml, 'Content Console'],
     ['dist/admin/content/longform/index.html', adminContentLongformHtml, 'Content Console'],
     ['dist/admin/content/bits/index.html', adminContentBitsHtml, 'Content Console'],
-    ['dist/admin/content/reads/index.html', adminContentReadsHtml, 'Content Console'],
+    ['dist/admin/content/picks/index.html', adminContentReadsHtml, 'Content Console'],
     ['dist/admin/images/index.html', adminImageHtml, 'Images Console'],
     ['dist/admin/checks/index.html', adminChecksHtml, 'Checks Console'],
     ['dist/admin/theme/index.html', adminThemeHtml, 'Theme Console'],

@@ -26,8 +26,8 @@ import {
   tokenizeSearchQuery
 } from '../../utils/format';
 
-export type ReadsEntry = CollectionEntry<'reads'>;
-export type AdminContentCollectionKey = 'longform' | 'bits' | 'reads';
+export type ReadsEntry = CollectionEntry<'picks'>;
+export type AdminContentCollectionKey = 'longform' | 'bits' | 'picks';
 export type AdminContentDraftFilter = 'all' | 'draft' | 'published';
 export type AdminContentSortKey = 'recent' | 'title';
 export type AdminContentField = {
@@ -102,7 +102,7 @@ export type AdminContentOverviewData = {
   summaries: AdminContentCollectionSummary[];
 };
 
-export const ADMIN_CONTENT_COLLECTIONS = ['longform', 'bits', 'reads'] as const satisfies readonly AdminContentCollectionKey[];
+export const ADMIN_CONTENT_COLLECTIONS = ['longform', 'bits', 'picks'] as const satisfies readonly AdminContentCollectionKey[];
 
 export const ADMIN_CONTENT_SORT_OPTIONS = [
   { value: 'recent', label: '最近更新' },
@@ -118,13 +118,13 @@ export const ADMIN_CONTENT_DRAFT_OPTIONS = [
 const COLLECTION_LABELS: Record<AdminContentCollectionKey, string> = {
   longform: '长文',
   bits: '絮语',
-  reads: '阅读'
+  picks: '拾选'
 };
 
 const ADMIN_CONTENT_PAGE_SIZES: Record<AdminContentCollectionKey, number> = {
   longform: 12,
   bits: 18,
-  reads: 12
+  picks: 12
 };
 
 const EMPTY_VALUE = '(空)';
@@ -334,13 +334,13 @@ const createReadsIndexItem = (entry: ReadsEntry): AdminContentIndexItem => {
   const title = normalizeFieldValue(entry.data.title, entry.id);
   const { label, value, year } = formatNullableDate(entry.data.date ?? null);
   const slug = normalizeOptionalText(entry.data.slug) || null;
-  const relativePath = buildRelativePath('reads', entry.id);
-  const publicHref = entry.data.draft === true ? null : '/reads/';
+  const relativePath = buildRelativePath('picks', entry.id);
+  const publicHref = entry.data.draft === true ? null : '/picks/';
   const subtitle = normalizeOptionalText(entry.data.subtitle);
 
   return {
-    collection: 'reads',
-    collectionLabel: COLLECTION_LABELS.reads,
+    collection: 'picks',
+    collectionLabel: COLLECTION_LABELS.picks,
     id: entry.id,
     title,
     slug,
@@ -360,7 +360,7 @@ const createReadsIndexItem = (entry: ReadsEntry): AdminContentIndexItem => {
       buildEntryField('date', value, '未设置日期'),
       buildEntryField('draft', String(entry.data.draft === true)),
       buildEntryField('slug', slug, MISSING_VALUE),
-      buildEntryField('public route', '/reads/')
+      buildEntryField('public route', '/picks/')
     ],
     searchHaystack: buildSearchHaystack([
       title,
@@ -383,8 +383,8 @@ const loadCollectionItems = async (collection: AdminContentCollectionKey): Promi
       ]);
       return entries.map((entry) => createBitsIndexItem(entry, publicHrefById));
     }
-    case 'reads':
-      return (await getPublished('reads', { includeDraft: true, orderBy: orderByReadsDate }))
+    case 'picks':
+      return (await getPublished('picks', { includeDraft: true, orderBy: orderByReadsDate }))
         .map((entry) => createReadsIndexItem(entry));
     default:
       throw new Error(`Unsupported admin content collection: ${String(collection)}`);
@@ -419,8 +419,8 @@ const loadCollectionSummary = async (
         latestDateLabel: latestDate ? formatDateTime(latestDate) : '未设置日期'
       };
     }
-    case 'reads': {
-      const entries = await getPublished('reads', { includeDraft: true, orderBy: orderByReadsDate });
+    case 'picks': {
+      const entries = await getPublished('picks', { includeDraft: true, orderBy: orderByReadsDate });
       const latestDate = entries.find((entry) => entry.data.date !== null)?.data.date ?? null;
 
       return {
@@ -537,8 +537,8 @@ export const getAdminContentPublicFallbackLabel = (item: AdminContentIndexItem):
     return 'draft 条目默认不暴露公开页';
   }
 
-  if (item.collection === 'reads') {
-    return 'reads 当前使用固定公开路由 /reads/';
+  if (item.collection === 'picks') {
+    return 'picks 当前使用固定公开路由 /picks/';
   }
 
   if (item.collection === 'bits') {

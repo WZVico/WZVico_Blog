@@ -44,11 +44,11 @@ import {
 
 export type SettingSource = 'new' | 'legacy' | 'default';
 
-export type SidebarNavId = 'longform' | 'bits' | 'reads' | 'archive' | 'about';
-export type PageId = 'longform' | 'archive' | 'bits' | 'reads' | 'about';
+export type SidebarNavId = 'longform' | 'bits' | 'picks' | 'archive' | 'about';
+export type PageId = 'longform' | 'archive' | 'bits' | 'picks' | 'about';
 export type HeroPresetId = 'default' | 'none';
 export type SidebarDividerVariant = 'default' | 'subtle' | 'none';
-export type HomeIntroLinkKey = 'archive' | 'longform' | 'bits' | 'reads' | 'about' | 'tag';
+export type HomeIntroLinkKey = 'archive' | 'longform' | 'bits' | 'picks' | 'about' | 'tag';
 export type SiteSocialPresetId = 'github' | 'x' | 'email';
 export type SiteSocialKind = 'preset' | 'custom';
 export type SiteSocialIconKey =
@@ -164,7 +164,7 @@ export interface PageSettings {
   longform: PageHeadingSettings;
   archive: PageHeadingSettings;
   bits: BitsPageSettings;
-  reads: ReadsPageSettings;
+  picks: ReadsPageSettings;
   about: PageHeadingSettings;
 }
 
@@ -362,7 +362,7 @@ const THEME_SETTINGS_INVALID_MESSAGE =
   '检测到 settings JSON 配置文件损坏，Theme Console 已停止读取并禁止保存，请先修复对应文件后再重试';
 
 const LEGACY_INTRO_LEAD =
-  '这是一个开源写作主题与示例内容库:包含 长文/longform、阅读/reads、归档/archive 与 絮语/bits，使用与配置请见 README 。';
+  '这是一个开源写作主题与示例内容库:包含 长文/longform、拾选/picks、归档/archive 与 絮语/bits，使用与配置请见 README 。';
 const LEGACY_INTRO_MORE = '更多文章请访问';
 const LEGACY_LONGFORM_TITLE = '长文';
 const LEGACY_ARCHIVE_TITLE = '归档';
@@ -390,7 +390,7 @@ const LEGACY_SOCIAL_LINKS: SiteSocialLinks = {
 const LEGACY_NAV: SidebarNavItem[] = [
   { id: 'longform', label: '长文', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 1 },
   { id: 'bits', label: '絮语', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 2 },
-  { id: 'reads', label: '阅读', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 3 },
+  { id: 'picks', label: '拾选', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 3 },
   { id: 'archive', label: '归档', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 4 },
   { id: 'about', label: '关于', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 5 }
 ];
@@ -480,7 +480,7 @@ const DEFAULT_PAGE: PageSettings = {
       avatar: 'author/avatar.webp'
     }
   },
-  reads: {
+  picks: {
     title: null,
     subtitle: null
   },
@@ -514,7 +514,7 @@ const DEFAULT_UI: UiSettings = {
   }
 };
 
-const NAV_IDS: ReadonlySet<SidebarNavId> = new Set(['longform', 'bits', 'reads', 'archive', 'about']);
+const NAV_IDS: ReadonlySet<SidebarNavId> = new Set(['longform', 'bits', 'picks', 'archive', 'about']);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const GITHUB_HOSTS = ['github.com'];
 const X_HOSTS = ['x.com', 'twitter.com'];
@@ -532,7 +532,7 @@ const PRESET_SOCIAL_ITEMS: readonly {
 const SIDEBAR_HREFS: Record<SidebarNavId, string> = {
   longform: '/longform/',
   bits: '/bits/',
-  reads: '/reads/',
+  picks: '/picks/',
   archive: '/archive/',
   about: '/about/'
 };
@@ -1108,7 +1108,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
   const pageArchiveJson = isRecord(pageJson?.archive) ? pageJson.archive : undefined;
   const pageBitsJson = isRecord(pageJson?.bits) ? pageJson.bits : undefined;
   const pageBitsDefaultAuthorJson = isRecord(pageBitsJson?.defaultAuthor) ? pageBitsJson.defaultAuthor : undefined;
-  const pageReadsJson = isRecord(pageJson?.reads) ? pageJson.reads : undefined;
+  const pageReadsJson = isRecord(pageJson?.picks) ? pageJson.picks : undefined;
   const pageAboutJson = isRecord(pageJson?.about) ? pageJson.about : undefined;
 
   const title = resolveValue(
@@ -1287,12 +1287,12 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
   const readsSubtitle = resolveValue<string | null>(
     asNullableString(pageReadsJson?.subtitle),
     undefined,
-    DEFAULT_PAGE.reads.subtitle
+    DEFAULT_PAGE.picks.subtitle
   );
   const readsTitle = resolveValue<string | null>(
     asNullableString(pageReadsJson?.title),
     undefined,
-    DEFAULT_PAGE.reads.title
+    DEFAULT_PAGE.picks.title
   );
   const aboutTitle = resolveValue(
     asNullableString(pageAboutJson?.title),
@@ -1444,7 +1444,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
             avatar: bitsDefaultAuthorAvatar.value
           }
         },
-        reads: {
+        picks: {
           title: readsTitle.value,
           subtitle: readsSubtitle.value
         },
@@ -1607,7 +1607,7 @@ const buildEditableThemeSettingsSnapshot = (
           ...resolved.settings.page.bits.defaultAuthor
         }
       },
-      reads: { ...resolved.settings.page.reads },
+      picks: { ...resolved.settings.page.picks },
       about: { ...resolved.settings.page.about }
     },
     ui: {

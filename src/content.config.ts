@@ -114,8 +114,8 @@ const bits = defineCollection({
   })
 });
 
-const reads = defineCollection({
-  loader: glob({ pattern: '**/*.md', base: './src/content/reads' }),
+const picks = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/picks' }),
   schema: z.object({
     title: z.string(),
     subtitle: z.string().optional(),
@@ -125,4 +125,4 @@ const reads = defineCollection({
   })
 });
 
-export const collections = { longform, bits, reads };
+export const collections = { longform, bits, picks };

@@ -188,7 +188,7 @@ const ADMIN_IMAGE_SHORT_CACHE_MAX_ENTRIES = 32;
 const CONTENT_COLLECTION_LABELS = {
   longform: '长文',
   bits: '絮语',
-  reads: '阅读'
+  picks: '拾选'
 } as const;
 const OWNER_PATH_SEPARATORS = ['/', '.', '-', '_'] as const;
 const ADMIN_IMAGE_SCAN_ROOTS = [
@@ -613,10 +613,10 @@ const resolveBrowseMeta = (record: AdminImageAssetRecord): AdminImageAssetBrowse
     };
   }
 
-  if (record.path.startsWith('src/content/reads/') || record.path.startsWith('public/images/reads/')) {
+  if (record.path.startsWith('src/content/picks/') || record.path.startsWith('public/images/picks/')) {
     return {
-      browseGroup: 'reads',
-      browseGroupLabel: ADMIN_IMAGE_BROWSE_GROUP_LABELS.reads,
+      browseGroup: 'picks',
+      browseGroupLabel: ADMIN_IMAGE_BROWSE_GROUP_LABELS.picks,
       browseSubgroup: '',
       browseSubgroupLabel: null,
       preferredValue,

@@ -58,7 +58,7 @@ export async function getPublished<K extends CollectionKey>(
 }
 
 export type LongformEntry = CollectionEntry<'longform'>;
-export type ReadsEntry = CollectionEntry<'reads'>;
+export type ReadsEntry = CollectionEntry<'picks'>;
 type LongformQueryOptions = Pick<GetPublishedOptions<'longform'>, 'includeDraft'>;
 export type LongformRouteEntry = {
   slug: string;

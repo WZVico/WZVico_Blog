@@ -481,7 +481,7 @@ export const createFormCodec = ({
             avatar: inputPageBitsAuthorAvatar.value.trim()
           }
         },
-        reads: {
+        picks: {
           title: normalizeOptionalSingleLine(inputPageReadsTitle.value),
           subtitle: normalizeOptionalSingleLine(inputPageReadsSubtitle.value)
         },
@@ -561,8 +561,8 @@ export const createFormCodec = ({
     inputPageArchiveSubtitle.value = settings.page.archive?.subtitle || '';
     inputPageBitsTitle.value = settings.page.bits?.title || '';
     inputPageBitsSubtitle.value = settings.page.bits?.subtitle || '';
-    inputPageReadsTitle.value = settings.page.reads?.title || '';
-    inputPageReadsSubtitle.value = settings.page.reads?.subtitle || '';
+    inputPageReadsTitle.value = settings.page.picks?.title || '';
+    inputPageReadsSubtitle.value = settings.page.picks?.subtitle || '';
     inputPageAboutTitle.value = settings.page.about?.title || '';
     inputPageAboutSubtitle.value = settings.page.about?.subtitle || '';
     inputPageBitsAuthorName.value = settings.page.bits?.defaultAuthor?.name || '';
