@@ -35,6 +35,10 @@ if (!root) {
   const panel = searchRoot?.querySelector<HTMLElement>('[data-entry-search-panel]') ?? null;
   const feedbackEl = searchRoot?.querySelector<HTMLParagraphElement>('[data-entry-search-feedback]') ?? null;
   const liveEl = searchRoot?.querySelector<HTMLParagraphElement>('[data-entry-search-live]') ?? null;
+  const resultsRoot = root.querySelector<HTMLElement>('[data-entry-search-results]');
+  const resultsSummaryEl = root.querySelector<HTMLElement>('[data-entry-search-results-summary]');
+  const resultsListEl = root.querySelector<HTMLElement>('[data-entry-search-results-list]');
+  const clearBtn = root.querySelector<HTMLButtonElement>('[data-entry-search-clear]');
   const tagTrigger = root.querySelector<HTMLAnchorElement>('[data-entry-tag-trigger]');
   const tagDialog = root.querySelector<HTMLDialogElement>('[data-entry-tag-dialog]');
   const tagCloseBtn = root.querySelector<HTMLButtonElement>('[data-entry-tag-close]');
@@ -97,6 +101,25 @@ if (!root) {
     item.el.hidden = !visible;
   };
 
+  const hideEmptyResults = () => {
+    resultsRoot?.setAttribute('hidden', 'true');
+    if (resultsListEl) {
+      resultsListEl.innerHTML = '';
+    }
+    if (resultsSummaryEl) {
+      resultsSummaryEl.textContent = '搜索结果';
+    }
+  };
+
+  const showEmptyResults = () => {
+    if (!resultsRoot || !resultsListEl) return;
+    if (resultsSummaryEl) {
+      resultsSummaryEl.textContent = '无匹配结果';
+    }
+    resultsListEl.innerHTML = '<p class="entry-search-results__empty">未找到相关内容，换个关键词试一试。</p>';
+    resultsRoot.removeAttribute('hidden');
+  };
+
   const syncLegacyTagParam = () => {
     const url = new URL(window.location.href);
     const rawTag = (url.searchParams.get('tag') ?? '').trim();
@@ -137,6 +160,7 @@ if (!root) {
     for (const item of items) {
       setItemVisible(item, true);
     }
+    hideEmptyResults();
   };
 
   const syncSections = (hasActiveFilter: boolean) => {
@@ -234,15 +258,18 @@ if (!root) {
     }
 
     if (totalMatches === 0) {
-      setStatus('未找到匹配内容');
+      showEmptyResults();
+      setStatus('无匹配结果', { visible: false });
       return;
     }
+    hideEmptyResults();
     if (visibleMatches === totalMatches) {
       setStatus(query && !activeTagKey ? `命中 ${totalMatches} 条` : prefix);
       return;
     }
     if (visibleMatches === 0) {
-      setStatus(`${prefix}（当前页无结果，可翻页继续查看）`);
+      showEmptyResults();
+      setStatus(`${prefix}（当前页无结果，可翻页继续查看）`, { visible: false });
       return;
     }
     setStatus(`${prefix}（当前页 ${visibleMatches} 条，可翻页查看更多）`);
@@ -456,6 +483,11 @@ if (!root) {
 
   tagCloseBtn?.addEventListener('click', () => {
     closeTagDialog();
+  });
+
+  clearBtn?.addEventListener('click', () => {
+    resetSearch();
+    openSearchInteractive({ focusInput: true });
   });
 
   tagDialog?.addEventListener('cancel', () => {

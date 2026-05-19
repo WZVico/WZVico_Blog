@@ -60,18 +60,37 @@ for (const h of headings) {
     </div>
     <div class="picks-header-actions">
       <div class="picks-search-cluster">
-        <form class="picks-search" role="search" data-picks-search-form>
-          <label class="sr-only" for="picks-search">搜索拾选</label>
-          <input
-            id="picks-search"
-            type="search"
-            placeholder="搜索：关键词 / 标签"
-            autocomplete="off"
-            enterkeyhint="search"
-            aria-controls="picks-search-results-panel"
-          />
-          <button class="picks-search-btn" type="submit">搜索</button>
-        </form>
+        <div class="entry-search picks-entry-search" data-picks-search-root>
+          <form
+            class="entry-search-panel picks-search-panel"
+            role="search"
+            data-picks-search-form
+            data-picks-search-panel
+            aria-hidden="true"
+          >
+            <label class="sr-only" for="picks-search">搜索拾选</label>
+            <input
+              id="picks-search"
+              type="search"
+              placeholder="搜索：关键词 / 标签"
+              autocomplete="off"
+              enterkeyhint="search"
+              aria-controls="picks-search-results-panel"
+              tabindex="-1"
+            />
+          </form>
+          <span class="entry-search-bridge" aria-hidden="true"></span>
+          <button
+            class="entry-search-toggle"
+            data-picks-search-toggle
+            type="button"
+            aria-label="搜索拾选"
+            aria-expanded="false"
+            aria-controls="picks-search"
+          >
+            <UiIcon name="search" class="icon" />
+          </button>
+        </div>
       </div>
     </div>
     <button

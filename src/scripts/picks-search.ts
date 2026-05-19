@@ -6,7 +6,10 @@ import {
 
 const form = document.querySelector<HTMLFormElement>('[data-picks-search-form]');
 const input = document.getElementById('picks-search') as HTMLInputElement | null;
-const btn = form?.querySelector<HTMLButtonElement>('.picks-search-btn') ?? null;
+const searchRoot = document.querySelector<HTMLElement>('[data-picks-search-root]');
+const searchPanel = document.querySelector<HTMLElement>('[data-picks-search-panel]');
+const searchToggleBtn = document.querySelector<HTMLButtonElement>('[data-picks-search-toggle]');
+const btn = searchToggleBtn;
 const statusEl = document.getElementById('picks-search-status') as HTMLDivElement | null;
 const liveEl = document.getElementById('picks-search-live') as HTMLParagraphElement | null;
 const browseRoot = document.querySelector<HTMLElement>('[data-picks-browse]');
@@ -17,6 +20,8 @@ const resultsListEl = document.querySelector<HTMLElement>('[data-picks-search-re
 const clearBtn = document.querySelector<HTMLButtonElement>('[data-picks-search-clear]');
 
 const FILTER_DEBOUNCE_MS = 120;
+const HOVER_PREVIEW_CLOSE_DELAY_MS = 48;
+const HOVER_PREVIEW_MEDIA_QUERY = '(hover: hover) and (pointer: fine)';
 const MAX_VISIBLE_RESULTS = 50;
 const QUERY_PARAM_QUERY = 'q';
 
@@ -31,8 +36,64 @@ type PicksItem = {
 };
 
 const filterRunner = createDebouncedAsyncRunner(() => applyFilter(), FILTER_DEBOUNCE_MS);
+let hoverCloseTimer: number | null = null;
+let hoverPreviewActive = false;
+const hoverPreviewMedia = window.matchMedia(HOVER_PREVIEW_MEDIA_QUERY);
 
 const getTrimmedQuery = () => (input?.value || '').trim();
+const isSearchOpen = () => searchRoot?.classList.contains('is-open') ?? false;
+const hasSearchValue = () => Boolean(getTrimmedQuery());
+const isInputFocused = () => document.activeElement === input;
+const supportsHoverPreview = () => hoverPreviewMedia.matches;
+
+const setSearchOpen = (open: boolean) => {
+  if (!searchRoot) return;
+  searchRoot.classList.toggle('is-open', open);
+  searchToggleBtn?.setAttribute('aria-expanded', String(open));
+  searchPanel?.setAttribute('aria-hidden', String(!open));
+  if (input) input.tabIndex = open ? 0 : -1;
+};
+
+const clearHoverCloseTimer = () => {
+  if (hoverCloseTimer === null) return;
+  window.clearTimeout(hoverCloseTimer);
+  hoverCloseTimer = null;
+};
+
+const openSearch = (options: { focusInput?: boolean } = {}) => {
+  clearHoverCloseTimer();
+  hoverPreviewActive = false;
+  setSearchOpen(true);
+  if (options.focusInput) {
+    window.setTimeout(() => input?.focus(), 0);
+  }
+};
+
+const closeSearch = () => {
+  clearHoverCloseTimer();
+  hoverPreviewActive = false;
+  if (hasSearchValue()) return;
+  setSearchOpen(false);
+};
+
+const openSearchHoverPreview = () => {
+  if (!supportsHoverPreview() || !indexItems.length) return;
+  clearHoverCloseTimer();
+  if (isSearchOpen() && !hoverPreviewActive) return;
+  hoverPreviewActive = true;
+  setSearchOpen(true);
+};
+
+const scheduleHoverPreviewClose = () => {
+  if (!supportsHoverPreview() || !hoverPreviewActive) return;
+  clearHoverCloseTimer();
+  hoverCloseTimer = window.setTimeout(() => {
+    hoverCloseTimer = null;
+    if (!hoverPreviewActive || hasSearchValue() || isInputFocused()) return;
+    closeSearch();
+  }, HOVER_PREVIEW_CLOSE_DELAY_MS);
+};
+
 const escapeHtml = (value: string) =>
   value
     .replaceAll('&', '&amp;')
@@ -326,9 +387,16 @@ const resetFilters = (options: { focusInput?: boolean } = {}) => {
   setStatus('');
   syncUrlState('');
   if (options.focusInput) {
+    openSearch();
     input?.focus();
+  } else {
+    closeSearch();
   }
 };
+
+input?.addEventListener('focus', () => {
+  openSearch();
+});
 
 input?.addEventListener('input', () => {
   scheduleApplyFilter();
@@ -337,7 +405,7 @@ input?.addEventListener('input', () => {
 input?.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     event.preventDefault();
-    resetFilters({ focusInput: true });
+    resetFilters();
     return;
   }
   if (event.key !== 'ArrowDown' || !isResultsVisible()) return;
@@ -350,6 +418,44 @@ input?.addEventListener('keydown', (event) => {
 form?.addEventListener('submit', (event) => {
   event.preventDefault();
   applyFilter();
+});
+
+searchToggleBtn?.addEventListener('click', () => {
+  if (hoverPreviewActive) {
+    openSearch({ focusInput: true });
+    return;
+  }
+  if (!isSearchOpen()) {
+    openSearch({ focusInput: true });
+    return;
+  }
+  if (!hasSearchValue()) {
+    setSearchOpen(false);
+    return;
+  }
+  resetFilters();
+});
+
+const handleHoverPreviewEnter = () => {
+  openSearchHoverPreview();
+};
+
+const handleHoverPreviewLeave = (event: PointerEvent) => {
+  const nextTarget = event.relatedTarget as Node | null;
+  if (nextTarget && searchRoot?.contains(nextTarget)) return;
+  scheduleHoverPreviewClose();
+};
+
+searchRoot?.addEventListener('pointerenter', handleHoverPreviewEnter);
+searchRoot?.addEventListener('pointerleave', handleHoverPreviewLeave);
+
+document.addEventListener('click', (event) => {
+  const target = event.target as Node | null;
+  if (!target) return;
+  if (!isSearchOpen()) return;
+  if (searchRoot?.contains(target)) return;
+  if (hasSearchValue()) return;
+  closeSearch();
 });
 
 clearBtn?.addEventListener('click', () => {
@@ -401,6 +507,7 @@ if (input && initialQuery) {
   input.value = initialQuery;
 }
 syncUrlState(initialQuery);
+setSearchOpen(Boolean(initialQuery));
 
 if (initialQuery) {
   applyFilter();

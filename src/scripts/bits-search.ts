@@ -9,6 +9,9 @@ import {
 const form = document.querySelector<HTMLFormElement>('[data-bits-search-form]');
 const input = document.getElementById('bits-search') as HTMLInputElement | null;
 const btn = document.getElementById('bits-search-btn') as HTMLButtonElement | null;
+const searchRoot = document.querySelector<HTMLElement>('[data-bits-search-root]');
+const searchPanel = document.querySelector<HTMLElement>('[data-bits-search-panel]');
+const searchToggleBtn = document.querySelector<HTMLButtonElement>('[data-bits-search-toggle]');
 const statusEl = document.getElementById('bits-search-status') as HTMLDivElement | null;
 const liveEl = document.getElementById('bits-search-live') as HTMLParagraphElement | null;
 const browseRoot = document.querySelector<HTMLElement>('[data-bits-browse]');
@@ -32,6 +35,8 @@ const withBase = createWithBase(base);
 const indexUrl = withBase('bits/index.json');
 
 const FILTER_DEBOUNCE_MS = 120;
+const HOVER_PREVIEW_CLOSE_DELAY_MS = 48;
+const HOVER_PREVIEW_MEDIA_QUERY = '(hover: hover) and (pointer: fine)';
 const MAX_VISIBLE_RESULTS = 50;
 const QUERY_PARAM_QUERY = 'q';
 const QUERY_PARAM_YEAR = 'year';
@@ -86,10 +91,68 @@ let filterRunId = 0;
 let activeYear: number | null = null;
 let isMoreMenuOpen = false;
 let statusTimer: number | null = null;
+let hoverCloseTimer: number | null = null;
+let hoverPreviewActive = false;
+const hoverPreviewMedia = window.matchMedia(HOVER_PREVIEW_MEDIA_QUERY);
 const filterRunner = createDebouncedAsyncRunner(() => applyFilter(), FILTER_DEBOUNCE_MS);
 
 const getTrimmedQuery = () => (input?.value || '').trim();
 const getNormalizedQuery = () => getTrimmedQuery().toLowerCase();
+const isSearchOpen = () => searchRoot?.classList.contains('is-open') ?? false;
+const hasSearchValue = () => Boolean(getTrimmedQuery());
+const isInputFocused = () => document.activeElement === input;
+const supportsHoverPreview = () => hoverPreviewMedia.matches;
+
+const setSearchOpen = (open: boolean) => {
+  if (!searchRoot) return;
+  searchRoot.classList.toggle('is-open', open);
+  searchToggleBtn?.setAttribute('aria-expanded', String(open));
+  searchPanel?.setAttribute('aria-hidden', String(!open));
+  if (input) input.tabIndex = open ? 0 : -1;
+};
+
+const clearHoverCloseTimer = () => {
+  if (hoverCloseTimer === null) return;
+  window.clearTimeout(hoverCloseTimer);
+  hoverCloseTimer = null;
+};
+
+const openSearch = (options: { focusInput?: boolean; preloadIndex?: boolean } = {}) => {
+  clearHoverCloseTimer();
+  hoverPreviewActive = false;
+  setSearchOpen(true);
+  if (options.focusInput) {
+    window.setTimeout(() => input?.focus(), 0);
+  }
+  if (options.preloadIndex) {
+    void loadIndex();
+  }
+};
+
+const closeSearch = () => {
+  clearHoverCloseTimer();
+  hoverPreviewActive = false;
+  if (hasSearchValue()) return;
+  setSearchOpen(false);
+};
+
+const openSearchHoverPreview = () => {
+  if (!supportsHoverPreview() || indexLoader.hasFailed()) return;
+  clearHoverCloseTimer();
+  if (isSearchOpen() && !hoverPreviewActive) return;
+  hoverPreviewActive = true;
+  setSearchOpen(true);
+};
+
+const scheduleHoverPreviewClose = () => {
+  if (!supportsHoverPreview() || !hoverPreviewActive) return;
+  clearHoverCloseTimer();
+  hoverCloseTimer = window.setTimeout(() => {
+    hoverCloseTimer = null;
+    if (!hoverPreviewActive || hasSearchValue() || isInputFocused()) return;
+    closeSearch();
+  }, HOVER_PREVIEW_CLOSE_DELAY_MS);
+};
 
 const clearStatusTimer = () => {
   if (statusTimer !== null) {
@@ -503,7 +566,10 @@ const resetFilters = (options: { focusInput?: boolean } = {}) => {
   setStatus('');
   syncUrlState('', null);
   if (options.focusInput) {
+    openSearch();
     input?.focus();
+  } else {
+    closeSearch();
   }
 };
 
@@ -517,6 +583,7 @@ const setDegradedMode = () => {
     btn.disabled = true;
     btn.setAttribute('aria-disabled', 'true');
   }
+  setSearchOpen(true);
   yearButtons.forEach((button) => {
     button.setAttribute('aria-disabled', 'true');
     button.setAttribute('disabled', 'true');
@@ -608,6 +675,7 @@ const applyFilter = async (preloadedIndex: IndexItem[] | null = null) => {
 };
 
 input?.addEventListener('focus', () => {
+  openSearch();
   void loadIndex();
 });
 
@@ -618,7 +686,7 @@ input?.addEventListener('input', () => {
 input?.addEventListener('keydown', (event) => {
   if (event.key === 'Escape') {
     event.preventDefault();
-    resetFilters({ focusInput: true });
+    resetFilters();
     return;
   }
   if (event.key !== 'ArrowDown' || !isResultsVisible()) return;
@@ -631,6 +699,45 @@ input?.addEventListener('keydown', (event) => {
 form?.addEventListener('submit', (event) => {
   event.preventDefault();
   void applyFilter();
+});
+
+searchToggleBtn?.addEventListener('click', () => {
+  if (hoverPreviewActive) {
+    openSearch({ focusInput: true, preloadIndex: true });
+    return;
+  }
+  if (!isSearchOpen()) {
+    openSearch({ focusInput: true, preloadIndex: true });
+    return;
+  }
+  if (!hasSearchValue()) {
+    setSearchOpen(false);
+    return;
+  }
+  resetFilters();
+});
+
+const handleHoverPreviewEnter = () => {
+  openSearchHoverPreview();
+};
+
+const handleHoverPreviewLeave = (event: PointerEvent) => {
+  const nextTarget = event.relatedTarget as Node | null;
+  if (nextTarget && searchRoot?.contains(nextTarget)) return;
+  scheduleHoverPreviewClose();
+};
+
+searchRoot?.addEventListener('pointerenter', handleHoverPreviewEnter);
+searchRoot?.addEventListener('pointerleave', handleHoverPreviewLeave);
+
+document.addEventListener('click', (event) => {
+  const target = event.target as Node | null;
+  if (!target) return;
+  if (!isSearchOpen()) return;
+  if (indexLoader.hasFailed()) return;
+  if (searchRoot?.contains(target)) return;
+  if (hasSearchValue()) return;
+  closeSearch();
 });
 
 clearBtn?.addEventListener('click', () => {
@@ -797,6 +904,7 @@ if (input && initialState.query) {
 }
 setActiveYearState(initialState.year);
 syncUrlState(initialState.query, initialState.year);
+setSearchOpen(Boolean(initialState.query));
 
 if (initialState.query || initialState.year !== null) {
   void applyFilter();

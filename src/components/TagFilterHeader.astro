@@ -113,6 +113,21 @@ const tagTriggerText = currentTag ? '切换标签' : '#标签';
   </div>
 </div>
 
+<section
+  class="entry-search-results"
+  data-entry-search-results
+  aria-label="搜索结果"
+  hidden
+>
+  <div class="entry-search-results__header">
+    <p class="entry-search-results__summary" data-entry-search-results-summary role="status" aria-live="polite">
+      搜索结果
+    </p>
+    <button class="entry-search-results__clear" type="button" data-entry-search-clear>重置筛选</button>
+  </div>
+  <div class="entry-search-results__list" data-entry-search-results-list></div>
+</section>
+
 {hasTagEntry ? (
   <>
     <dialog class="entry-tags-dialog" data-entry-tag-dialog aria-labelledby={dialogTitleId}>

@@ -116,11 +116,28 @@
   pointer-events: auto;
 }
 
+.entry-search:hover .entry-search-bridge {
+  pointer-events: auto;
+}
+
 .entry-search.is-open .entry-search-panel {
   visibility: visible;
   transform: translate(0, 0);
   pointer-events: auto;
   transition-delay: 0s;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .entry-search:hover .entry-search-panel {
+    visibility: visible;
+    transform: translate(0, 0);
+    pointer-events: auto;
+    transition-delay: 0s;
+  }
+
+  .entry-search:hover .entry-search-toggle {
+    color: var(--text);
+  }
 }
 
 .entry-search-panel input {
@@ -161,6 +178,65 @@
 .entry-search-feedback[hidden] {
   display: block;
   visibility: hidden;
+}
+
+.entry-search-results {
+  margin-top: 18px;
+}
+
+.entry-search-results[hidden] {
+  display: none;
+}
+
+.entry-search-results__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-inline-start: 16px;
+  margin-bottom: 10px;
+}
+
+.entry-search-results__summary {
+  margin: 0;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.entry-search-results__clear {
+  flex: 0 0 auto;
+  height: 30px;
+  padding: 0 10px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.entry-search-results__clear:hover,
+.entry-search-results__clear:focus-visible {
+  color: var(--text);
+  border-color: var(--text);
+  outline: none;
+}
+
+.entry-search-results__list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.entry-search-results__empty {
+  margin: 0;
+  padding: 16px 18px;
+  border-radius: 10px;
+  font-size: 12px;
+  line-height: 1.6;
+  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--panel) 38%, var(--bg));
 }
 
 [data-entry-item][hidden],

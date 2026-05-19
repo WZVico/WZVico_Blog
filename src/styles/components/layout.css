@@ -241,16 +241,16 @@
 .bits-header-actions {
   display: flex;
   justify-content: flex-end;
-  flex: 0 1 300px;
-  width: clamp(220px, 30vw, 336px);
-  min-width: 220px;
-  max-width: 336px;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  max-width: none;
   margin-left: auto;
 }
 
 .bits-header-actions .bits-controls__search-cluster {
-  flex: 1 1 100%;
-  width: 100%;
+  flex: 0 0 auto;
+  width: auto;
   min-width: 0;
 }
 
@@ -269,18 +269,19 @@
 .picks-header-actions {
   display: flex;
   justify-content: flex-end;
-  flex: 0 1 300px;
-  width: clamp(220px, 30vw, 336px);
-  min-width: 220px;
-  max-width: 336px;
+  flex: 0 0 auto;
+  width: auto;
+  min-width: 0;
+  max-width: none;
   margin-left: auto;
 }
 
 .picks-search-cluster {
   display: flex;
   align-items: center;
-  flex: 1 1 100%;
-  width: 100%;
+  justify-content: flex-end;
+  flex: 0 0 auto;
+  width: auto;
   min-width: 0;
 }
 
@@ -518,10 +519,10 @@
 
   .bits-header-actions {
     flex: 0 0 auto;
-    width: 100%;
+    width: auto;
     min-width: 0;
     max-width: none;
-    margin-left: 0;
+    margin-left: auto;
   }
 
   .bits-header-actions .bits-controls__search-cluster {
@@ -538,10 +539,10 @@
 
   .picks-header-actions {
     flex: 0 0 auto;
-    width: 100%;
+    width: auto;
     min-width: 0;
     max-width: none;
-    margin-left: 0;
+    margin-left: auto;
   }
 
   .picks-search-cluster {
