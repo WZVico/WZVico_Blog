@@ -467,7 +467,7 @@
 }
 
 .longform-page .pagination__inner {
-  padding: 0 14px;
+  padding: 0;
 }
 
 @media (max-width: 900px) {
@@ -476,7 +476,7 @@
   }
 
   .longform-page .pagination__inner {
-    padding: 0 2px;
+    padding: 0;
   }
 }
 

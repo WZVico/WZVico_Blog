@@ -225,10 +225,6 @@
   display: block;
 }
 
-.page-header.page-header--longform {
-  padding-left: 14px;
-}
-
 .page-header.page-header--bits {
   --bits-control-h: 32px;
   align-items: center;
@@ -478,10 +474,6 @@
   .page-header .page-actions {
     margin-left: 0;
     align-self: flex-start;
-  }
-
-  .page-header.page-header--longform {
-    padding-left: 0;
   }
 
   .page-header.page-header--bits {
