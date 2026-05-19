@@ -14,15 +14,7 @@
 
 .page-header.page-header--bits .page-heading {
   flex: 1 1 auto;
-  align-items: center;
-}
-
-.page-header.page-header--bits .page-title {
-  line-height: 32px;
-}
-
-.page-header.page-header--bits .page-subtitle {
-  line-height: 20px;
+  align-items: baseline;
 }
 
 .bits-header-actions {

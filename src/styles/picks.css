@@ -21,15 +21,7 @@
 
 .page-header.page-header--picks .page-heading {
   flex: 1 1 auto;
-  align-items: center;
-}
-
-.page-header.page-header--picks .page-title {
-  line-height: 32px;
-}
-
-.page-header.page-header--picks .page-subtitle {
-  line-height: 20px;
+  align-items: baseline;
 }
 
 .picks-header-actions {
