@@ -73,6 +73,8 @@ export type AdminThemeControls = RequiredElements<{
   inputPageLongformSubtitle: HTMLInputElement | null;
   inputPageArchiveTitle: HTMLInputElement | null;
   inputPageArchiveSubtitle: HTMLInputElement | null;
+  inputPageMaterialsTitle: HTMLInputElement | null;
+  inputPageMaterialsSubtitle: HTMLInputElement | null;
   inputPageBitsTitle: HTMLInputElement | null;
   inputPageBitsSubtitle: HTMLInputElement | null;
   inputPageReadsTitle: HTMLInputElement | null;
@@ -158,6 +160,8 @@ export const queryAdminThemeControls = (): AdminThemeControls | null => {
     inputPageLongformSubtitle: byId<HTMLInputElement>('page-longform-subtitle'),
     inputPageArchiveTitle: byId<HTMLInputElement>('page-archive-title'),
     inputPageArchiveSubtitle: byId<HTMLInputElement>('page-archive-subtitle'),
+    inputPageMaterialsTitle: byId<HTMLInputElement>('page-materials-title'),
+    inputPageMaterialsSubtitle: byId<HTMLInputElement>('page-materials-subtitle'),
     inputPageBitsTitle: byId<HTMLInputElement>('page-bits-title'),
     inputPageBitsSubtitle: byId<HTMLInputElement>('page-bits-subtitle'),
     inputPageReadsTitle: byId<HTMLInputElement>('page-picks-title'),

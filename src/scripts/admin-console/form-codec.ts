@@ -76,6 +76,8 @@ type FormCodecContext = {
   inputPageLongformSubtitle: HTMLInputElement;
   inputPageArchiveTitle: HTMLInputElement;
   inputPageArchiveSubtitle: HTMLInputElement;
+  inputPageMaterialsTitle: HTMLInputElement;
+  inputPageMaterialsSubtitle: HTMLInputElement;
   inputPageBitsTitle: HTMLInputElement;
   inputPageBitsSubtitle: HTMLInputElement;
   inputPageReadsTitle: HTMLInputElement;
@@ -190,6 +192,8 @@ export const createFormCodec = ({
   inputPageLongformSubtitle,
   inputPageArchiveTitle,
   inputPageArchiveSubtitle,
+  inputPageMaterialsTitle,
+  inputPageMaterialsSubtitle,
   inputPageBitsTitle,
   inputPageBitsSubtitle,
   inputPageReadsTitle,
@@ -490,6 +494,10 @@ export const createFormCodec = ({
           title: normalizeOptionalSingleLine(inputPageArchiveTitle.value),
           subtitle: normalizeOptionalSingleLine(inputPageArchiveSubtitle.value)
         },
+        materials: {
+          title: normalizeOptionalSingleLine(inputPageMaterialsTitle.value),
+          subtitle: normalizeOptionalSingleLine(inputPageMaterialsSubtitle.value)
+        },
         bits: {
           title: normalizeOptionalSingleLine(inputPageBitsTitle.value),
           subtitle: normalizeOptionalSingleLine(inputPageBitsSubtitle.value),
@@ -579,6 +587,8 @@ export const createFormCodec = ({
     inputPageLongformSubtitle.value = settings.page.longform?.subtitle || '';
     inputPageArchiveTitle.value = settings.page.archive?.title || '';
     inputPageArchiveSubtitle.value = settings.page.archive?.subtitle || '';
+    inputPageMaterialsTitle.value = settings.page.materials?.title || '';
+    inputPageMaterialsSubtitle.value = settings.page.materials?.subtitle || '';
     inputPageBitsTitle.value = settings.page.bits?.title || '';
     inputPageBitsSubtitle.value = settings.page.bits?.subtitle || '';
     inputPageReadsTitle.value = settings.page.picks?.title || '';

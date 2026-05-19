@@ -21,7 +21,7 @@ const {
   headerClass = 'page-header page-header--with-search',
   pageTitleText,
   pickerHref,
-  rssHref,
+  rssHref = null,
   searchAriaLabel,
   subtitleText = null,
   tagOptions = []
@@ -32,7 +32,7 @@ const {
   headerClass?: string;
   pageTitleText: string;
   pickerHref: string;
-  rssHref: string;
+  rssHref?: string | null;
   searchAriaLabel: string;
   subtitleText?: string | null;
   tagOptions?: TagOption[];
@@ -55,7 +55,7 @@ const tagTriggerText = currentTag ? '切换标签' : '#标签';
     </div>
     <span class:list={['page-subtitle', 'page-subtitle--entry-filters', currentTag && 'page-subtitle--with-current-tag']}>
       {subtitleText ? <span class="page-subtitle__text">{subtitleText}</span> : null}
-      {!currentTag ? <a class="page-subtitle__link page-subtitle__item" href={rssHref}>RSS</a> : null}
+      {!currentTag && rssHref ? <a class="page-subtitle__link page-subtitle__item" href={rssHref}>RSS</a> : null}
       {hasTagEntry ? (
         currentTag ? (
           <span class="page-subtitle__item page-subtitle__actions">

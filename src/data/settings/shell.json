@@ -31,10 +31,17 @@
       "visible": true
     },
     {
+      "id": "materials",
+      "label": "资料",
+      "ornament": "·",
+      "order": 5,
+      "visible": true
+    },
+    {
       "id": "about",
       "label": "关于",
       "ornament": "·",
-      "order": 5,
+      "order": 6,
       "visible": true
     }
   ]

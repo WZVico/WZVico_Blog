@@ -14,7 +14,7 @@ const getSchemaAttrs = (tagName) => {
 };
 
 const mergeAttrs = (...lists) => Array.from(new Set(lists.flat()));
-const SITEMAP_ROUTE_ROOTS = new Set(['about', 'admin', 'archive', 'bits', 'checks', 'longform', 'picks']);
+const SITEMAP_ROUTE_ROOTS = new Set(['about', 'admin', 'archive', 'bits', 'checks', 'longform', 'Materials', 'picks']);
 
 const normalizeSitemapPathname = (page) => {
   let pathname = '/';

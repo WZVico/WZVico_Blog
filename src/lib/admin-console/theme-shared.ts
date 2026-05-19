@@ -24,8 +24,8 @@ export {
   normalizeAdminHeroImageSrc
 };
 
-export const ADMIN_NAV_IDS = ['longform', 'bits', 'picks', 'archive', 'about'] as const satisfies readonly SidebarNavId[];
-export const ADMIN_PAGE_IDS = ['longform', 'archive', 'bits', 'picks', 'about'] as const satisfies readonly PageId[];
+export const ADMIN_NAV_IDS = ['longform', 'bits', 'picks', 'archive', 'materials', 'about'] as const satisfies readonly SidebarNavId[];
+export const ADMIN_PAGE_IDS = ['longform', 'archive', 'bits', 'picks', 'materials', 'about'] as const satisfies readonly PageId[];
 export const ADMIN_SOCIAL_CUSTOM_LIMIT = 8;
 
 export const ADMIN_HERO_PRESETS = ['default', 'none'] as const satisfies readonly HeroPresetId[];
@@ -57,6 +57,7 @@ export const ADMIN_HOME_INTRO_LINK_KEYS = [
   'longform',
   'bits',
   'picks',
+  'materials',
   'about',
   'tag'
 ] as const satisfies readonly HomeIntroLinkKey[];
@@ -68,6 +69,7 @@ export const ADMIN_HOME_INTRO_LINK_OPTIONS = [
   { id: 'longform', label: '长文', href: '/longform/' },
   { id: 'bits', label: '絮语', href: '/bits/' },
   { id: 'picks', label: '拾选', href: '/picks/' },
+  { id: 'materials', label: '资料', href: '/Materials/' },
   { id: 'about', label: '关于', href: '/about/' },
   { id: 'tag', label: '#标签', href: '/archive/?picker=tag' }
 ] as const satisfies readonly {
@@ -531,6 +533,10 @@ export const canonicalizeAdminThemeSettings = (
         title: normalizeOptionalSingleLine(String(isRecord(page.picks) ? page.picks.title ?? '' : '')),
         subtitle: normalizeOptionalSingleLine(String(isRecord(page.picks) ? page.picks.subtitle ?? '' : ''))
       },
+      materials: {
+        title: normalizeOptionalSingleLine(String(isRecord(page.materials) ? page.materials.title ?? '' : '')),
+        subtitle: normalizeOptionalSingleLine(String(isRecord(page.materials) ? page.materials.subtitle ?? '' : ''))
+      },
       about: {
         title: normalizeOptionalSingleLine(String(isRecord(page.about) ? page.about.title ?? '' : '')),
         subtitle: normalizeOptionalSingleLine(String(isRecord(page.about) ? page.about.subtitle ?? '' : ''))
@@ -616,6 +622,7 @@ export const createAdminWritableThemeSettingsGroups = (
       }
     },
     picks: { ...settings.page.picks },
+    materials: { ...settings.page.materials },
     about: { ...settings.page.about }
   },
   ui: {
@@ -905,6 +912,7 @@ export const validateAdminThemeSettings = (
     [settings.page.archive?.title, '/archive/ 页面主标题', 'page.archive.title'],
     [settings.page.bits?.title, '/bits/ 页面主标题', 'page.bits.title'],
     [settings.page.picks?.title, '/picks/ 页面主标题', 'page.picks.title'],
+    [settings.page.materials?.title, '/Materials/ 页面主标题', 'page.materials.title'],
     [settings.page.about?.title, '/about/ 页面主标题', 'page.about.title']
   ];
 
@@ -927,6 +935,7 @@ export const validateAdminThemeSettings = (
     [settings.page.archive?.subtitle, '/archive/ 页面副标题', 'page.archive.subtitle'],
     [settings.page.bits?.subtitle, '/bits/ 页面副标题', 'page.bits.subtitle'],
     [settings.page.picks?.subtitle, '/picks/ 页面副标题', 'page.picks.subtitle'],
+    [settings.page.materials?.subtitle, '/Materials/ 页面副标题', 'page.materials.subtitle'],
     [settings.page.about?.subtitle, '/about/ 页面副标题', 'page.about.subtitle']
   ];
 
@@ -1267,6 +1276,46 @@ const fillAdminThemeSettingsUiCompatibilityDefaults = (
   };
 };
 
+const fillAdminThemeSettingsShellCompatibilityDefaults = (
+  rawShell: LooseRecord,
+  canonicalShell: LooseRecord
+): LooseRecord => {
+  const canonicalNav = Array.isArray(canonicalShell.nav) ? canonicalShell.nav : null;
+  const rawNav = Array.isArray(rawShell.nav) ? rawShell.nav : null;
+  if (!canonicalNav || !rawNav) return rawShell;
+
+  const rawIds = new Set(
+    rawNav
+      .filter(isRecord)
+      .map((item) => normalizeTrimmed(item.id))
+      .filter(Boolean)
+  );
+  const missingNavItems = canonicalNav
+    .filter(isRecord)
+    .filter((item) => !rawIds.has(normalizeTrimmed(item.id)));
+
+  if (!missingNavItems.length) return rawShell;
+
+  return {
+    ...rawShell,
+    nav: [
+      ...rawNav,
+      ...missingNavItems
+    ]
+  };
+};
+
+const fillAdminThemeSettingsPageCompatibilityDefaults = (
+  rawPage: LooseRecord,
+  canonicalPage: LooseRecord
+): LooseRecord => {
+  if (rawPage.materials !== undefined || !isRecord(canonicalPage.materials)) return rawPage;
+  return {
+    ...rawPage,
+    materials: canonicalPage.materials
+  };
+};
+
 export const fillAdminThemeSettingsGroupCompatibilityDefaults = (
   group: ThemeSettingsFileGroup,
   rawGroup: unknown,
@@ -1274,6 +1323,8 @@ export const fillAdminThemeSettingsGroupCompatibilityDefaults = (
 ): unknown => {
   if (!isRecord(rawGroup) || !isRecord(canonicalGroup)) return rawGroup;
   if (group === 'site') return fillAdminThemeSettingsSiteCompatibilityDefaults(rawGroup, canonicalGroup);
+  if (group === 'shell') return fillAdminThemeSettingsShellCompatibilityDefaults(rawGroup, canonicalGroup);
+  if (group === 'page') return fillAdminThemeSettingsPageCompatibilityDefaults(rawGroup, canonicalGroup);
   if (group === 'ui') return fillAdminThemeSettingsUiCompatibilityDefaults(rawGroup, canonicalGroup);
   return rawGroup;
 };
@@ -1291,6 +1342,22 @@ export const fillAdminThemeSettingsCompatibilityDefaults = (
           site: fillAdminThemeSettingsSiteCompatibilityDefaults(
             settings.site,
             canonicalSettings.site as unknown as LooseRecord
+          )
+        }
+      : {}),
+    ...(isRecord(settings.shell)
+      ? {
+          shell: fillAdminThemeSettingsShellCompatibilityDefaults(
+            settings.shell,
+            canonicalSettings.shell as unknown as LooseRecord
+          )
+        }
+      : {}),
+    ...(isRecord(settings.page)
+      ? {
+          page: fillAdminThemeSettingsPageCompatibilityDefaults(
+            settings.page,
+            canonicalSettings.page as unknown as LooseRecord
           )
         }
       : {}),

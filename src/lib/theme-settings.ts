@@ -45,11 +45,11 @@ import {
 
 export type SettingSource = 'new' | 'legacy' | 'default';
 
-export type SidebarNavId = 'longform' | 'bits' | 'picks' | 'archive' | 'about';
-export type PageId = 'longform' | 'archive' | 'bits' | 'picks' | 'about';
+export type SidebarNavId = 'longform' | 'bits' | 'picks' | 'archive' | 'materials' | 'about';
+export type PageId = 'longform' | 'archive' | 'bits' | 'picks' | 'materials' | 'about';
 export type HeroPresetId = 'default' | 'none';
 export type SidebarDividerVariant = 'default' | 'subtle' | 'none';
-export type HomeIntroLinkKey = 'archive' | 'longform' | 'bits' | 'picks' | 'about' | 'tag';
+export type HomeIntroLinkKey = 'archive' | 'longform' | 'bits' | 'picks' | 'materials' | 'about' | 'tag';
 export type SiteSocialPresetId = 'github' | 'x' | 'email';
 export type SiteSocialKind = 'preset' | 'custom';
 export type SiteSocialIconKey =
@@ -175,6 +175,7 @@ export interface PageSettings {
   archive: PageHeadingSettings;
   bits: BitsPageSettings;
   picks: ReadsPageSettings;
+  materials: PageHeadingSettings;
   about: PageHeadingSettings;
 }
 
@@ -260,6 +261,8 @@ export interface ThemeSettingsSources {
     bitsDefaultAuthorAvatar: SettingSource;
     readsTitle: SettingSource;
     readsSubtitle: SettingSource;
+    materialsTitle: SettingSource;
+    materialsSubtitle: SettingSource;
     aboutTitle: SettingSource;
     aboutSubtitle: SettingSource;
   };
@@ -380,6 +383,7 @@ const LEGACY_ARCHIVE_TITLE = '归档';
 const LEGACY_LONGFORM_SUBTITLE = '长文与杂记';
 const LEGACY_BITS_TITLE = '絮语';
 const LEGACY_BITS_SUBTITLE = '生活不只是长篇';
+const LEGACY_MATERIALS_TITLE = '资料';
 const LEGACY_ABOUT_TITLE = '关于';
 const LEGACY_QUOTE = 'A minimal Astro theme\nfor longforms, notes, and docs.\nDesigned for reading,\nopen-source.';
 const LEGACY_FOOTER_START_YEAR = 2025;
@@ -409,7 +413,8 @@ const LEGACY_NAV: SidebarNavItem[] = [
   { id: 'bits', label: '絮语', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 2 },
   { id: 'picks', label: '拾选', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 3 },
   { id: 'archive', label: '归档', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 4 },
-  { id: 'about', label: '关于', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 5 }
+  { id: 'materials', label: '资料', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 5 },
+  { id: 'about', label: '关于', ornament: ADMIN_NAV_ORNAMENT_DEFAULT, visible: true, order: 6 }
 ];
 const LEGACY_NAV_ORDER = new Map<SidebarNavId, number>(LEGACY_NAV.map((item) => [item.id, item.order]));
 
@@ -508,6 +513,10 @@ const DEFAULT_PAGE: PageSettings = {
     title: null,
     subtitle: null
   },
+  materials: {
+    title: LEGACY_MATERIALS_TITLE,
+    subtitle: '视频与文件资料索引'
+  },
   about: {
     title: LEGACY_ABOUT_TITLE,
     subtitle: null
@@ -538,7 +547,7 @@ const DEFAULT_UI: UiSettings = {
   }
 };
 
-const NAV_IDS: ReadonlySet<SidebarNavId> = new Set(['longform', 'bits', 'picks', 'archive', 'about']);
+const NAV_IDS: ReadonlySet<SidebarNavId> = new Set(['longform', 'bits', 'picks', 'archive', 'materials', 'about']);
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const GITHUB_HOSTS = ['github.com'];
 const X_HOSTS = ['x.com', 'twitter.com'];
@@ -558,6 +567,7 @@ const SIDEBAR_HREFS: Record<SidebarNavId, string> = {
   bits: '/bits/',
   picks: '/picks/',
   archive: '/archive/',
+  materials: '/Materials/',
   about: '/about/'
 };
 
@@ -1138,6 +1148,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
   const pageBitsJson = isRecord(pageJson?.bits) ? pageJson.bits : undefined;
   const pageBitsDefaultAuthorJson = isRecord(pageBitsJson?.defaultAuthor) ? pageBitsJson.defaultAuthor : undefined;
   const pageReadsJson = isRecord(pageJson?.picks) ? pageJson.picks : undefined;
+  const pageMaterialsJson = isRecord(pageJson?.materials) ? pageJson.materials : undefined;
   const pageAboutJson = isRecord(pageJson?.about) ? pageJson.about : undefined;
 
   const title = resolveValue(
@@ -1338,6 +1349,16 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
     undefined,
     DEFAULT_PAGE.picks.title
   );
+  const materialsTitle = resolveValue(
+    asNullableString(pageMaterialsJson?.title),
+    undefined,
+    DEFAULT_PAGE.materials.title
+  );
+  const materialsSubtitle = resolveValue<string | null>(
+    asNullableString(pageMaterialsJson?.subtitle),
+    undefined,
+    DEFAULT_PAGE.materials.subtitle
+  );
   const aboutTitle = resolveValue(
     asNullableString(pageAboutJson?.title),
     undefined,
@@ -1502,6 +1523,10 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
           title: readsTitle.value,
           subtitle: readsSubtitle.value
         },
+        materials: {
+          title: materialsTitle.value,
+          subtitle: materialsSubtitle.value
+        },
         about: {
           title: aboutTitle.value,
           subtitle: aboutSubtitle.value
@@ -1575,6 +1600,8 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         bitsDefaultAuthorAvatar: bitsDefaultAuthorAvatar.source,
         readsTitle: readsTitle.source,
         readsSubtitle: readsSubtitle.source,
+        materialsTitle: materialsTitle.source,
+        materialsSubtitle: materialsSubtitle.source,
         aboutTitle: aboutTitle.source,
         aboutSubtitle: aboutSubtitle.source
       },
@@ -1663,6 +1690,7 @@ const buildEditableThemeSettingsSnapshot = (
         }
       },
       picks: { ...resolved.settings.page.picks },
+      materials: { ...resolved.settings.page.materials },
       about: { ...resolved.settings.page.about }
     },
     ui: {

@@ -144,6 +144,34 @@ const {
     <label class="admin-field">
       <span class="admin-label">
         <span class="admin-label__main">
+          <code>/Materials/</code> 页面主 <span class="admin-label__pipe" aria-hidden="true">|</span> 副标题
+        </span>
+      </span>
+      <span class="admin-title-pair" role="group" aria-label="/Materials/ 页面主标题与副标题">
+        <input
+          id="page-materials-title"
+          class="admin-title-pair__input admin-title-pair__input--title"
+          type="text"
+          maxlength={pageTitleMaxLength}
+          autocomplete="off"
+          placeholder="资料"
+          aria-label="/Materials/ 页面主标题"
+        />
+        <span class="admin-title-pair__sep" aria-hidden="true">|</span>
+        <input
+          id="page-materials-subtitle"
+          class="admin-title-pair__input admin-title-pair__input--subtitle"
+          type="text"
+          maxlength={pageSubtitleMaxLength}
+          autocomplete="off"
+          placeholder="视频与文件资料索引"
+          aria-label="/Materials/ 页面副标题"
+        />
+      </span>
+    </label>
+    <label class="admin-field">
+      <span class="admin-label">
+        <span class="admin-label__main">
           <code>/about/</code> 页面主 <span class="admin-label__pipe" aria-hidden="true">|</span> 副标题
         </span>
       </span>

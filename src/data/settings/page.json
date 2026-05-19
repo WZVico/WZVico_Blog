@@ -19,6 +19,10 @@
     "title": null,
     "subtitle": null
   },
+  "materials": {
+    "title": "资料",
+    "subtitle": "视频与文件资料索引"
+  },
   "about": {
     "title": "关于",
     "subtitle": null

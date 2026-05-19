@@ -220,10 +220,26 @@ Theme Console 主要面向**站点级**和**页面级**配置，支持内容：
 - 絮语：位于 `src/content/bits` 目录
 - 拾选：位于 `src/content/picks/index.md`
 - 归档：由长文集合按 `archive` 字段生成目录视图
+- 资料：位于 `src/data/materials.json`，用于维护视频或文件链接
 
 主要路由：
-- 列表页：`/archive/`、`/longform/`、`/bits/`、`/picks/`、`/about/`
+- 列表页：`/archive/`、`/longform/`、`/bits/`、`/picks/`、`/Materials/`、`/about/`
 - 详情页规范入口：/archive/[slug]（/longform/[slug] 保留兼容跳转）
+
+资料链接示例：
+```json
+{
+  "items": [
+    {
+      "title": "示例视频",
+      "href": "https://example.com/video",
+      "date": "2026-05-19",
+      "label": "视频",
+      "description": "可选的简短说明"
+    }
+  ]
+}
+```
 
 ### 图片资源
 

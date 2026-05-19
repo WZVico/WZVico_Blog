@@ -43,11 +43,13 @@ type ValidationContext = {
   inputHeroImageAlt: HTMLInputElement;
   inputPageLongformTitle: HTMLInputElement;
   inputPageArchiveTitle: HTMLInputElement;
+  inputPageMaterialsTitle: HTMLInputElement;
   inputPageBitsTitle: HTMLInputElement;
   inputPageReadsTitle: HTMLInputElement;
   inputPageAboutTitle: HTMLInputElement;
   inputPageLongformSubtitle: HTMLInputElement;
   inputPageArchiveSubtitle: HTMLInputElement;
+  inputPageMaterialsSubtitle: HTMLInputElement;
   inputPageBitsSubtitle: HTMLInputElement;
   inputPageReadsSubtitle: HTMLInputElement;
   inputPageAboutSubtitle: HTMLInputElement;
@@ -77,7 +79,7 @@ type ValidationContext = {
 
 const CUSTOM_ITEM_PATH_RE = /^site\.socialLinks\.custom\[(\d+)\](?:\.(id|label|href|displayText|iconKey|order|visible))?$/;
 const NAV_PATH_RE = /^shell\.nav(?:(?:\.([a-z]+))|\[(\d+)\])(?:\.(id|label|ornament|order|visible))?$/;
-const PAGE_TITLE_INPUT_KEYS = ['longform', 'archive', 'bits', 'picks', 'about'] as const;
+const PAGE_TITLE_INPUT_KEYS = ['longform', 'archive', 'bits', 'picks', 'materials', 'about'] as const;
 
 export const createValidation = ({
   form,
@@ -110,11 +112,13 @@ export const createValidation = ({
   inputHeroImageAlt,
   inputPageLongformTitle,
   inputPageArchiveTitle,
+  inputPageMaterialsTitle,
   inputPageBitsTitle,
   inputPageReadsTitle,
   inputPageAboutTitle,
   inputPageLongformSubtitle,
   inputPageArchiveSubtitle,
+  inputPageMaterialsSubtitle,
   inputPageBitsSubtitle,
   inputPageReadsSubtitle,
   inputPageAboutSubtitle,
@@ -163,6 +167,7 @@ export const createValidation = ({
     archive: () => inputPageArchiveTitle,
     bits: () => inputPageBitsTitle,
     picks: () => inputPageReadsTitle,
+    materials: () => inputPageMaterialsTitle,
     about: () => inputPageAboutTitle
   };
   const pageSubtitleTargets: Record<(typeof PAGE_TITLE_INPUT_KEYS)[number], () => HTMLElement | null> = {
@@ -170,6 +175,7 @@ export const createValidation = ({
     archive: () => inputPageArchiveSubtitle,
     bits: () => inputPageBitsSubtitle,
     picks: () => inputPageReadsSubtitle,
+    materials: () => inputPageMaterialsSubtitle,
     about: () => inputPageAboutSubtitle
   };
 

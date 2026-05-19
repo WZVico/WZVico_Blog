@@ -1,0 +1,80 @@
+---
+import BaseLayout from '../../layouts/BaseLayout.astro';
+import TagFilterHeader from '../../components/TagFilterHeader.astro';
+import { createWithBase, joinPageSubtitleText } from '../../utils/format';
+import { groupMaterials, getMaterials } from '../../lib/materials';
+import { getThemeSettings } from '../../lib/theme-settings';
+
+const base = import.meta.env.BASE_URL ?? '/';
+const withBase = createWithBase(base);
+const {
+  settings: {
+    page
+  }
+} = getThemeSettings();
+
+const items = getMaterials();
+const groups = groupMaterials(items);
+const pageTitleText = page.materials.title || '资料';
+const subtitleText = joinPageSubtitleText(page.materials.subtitle, `共 ${items.length} 条`);
+const pageDescription = joinPageSubtitleText(`${pageTitleText}列表`, page.materials.subtitle, `共 ${items.length} 条`)
+  ?? `${pageTitleText}列表`;
+
+const isExternalHref = (href: string): boolean => /^https?:\/\//i.test(href);
+---
+
+<BaseLayout title={pageTitleText} description={pageDescription} activeNavId="materials">
+  <div
+    class="entry-filters"
+    data-entry-filters
+    data-index-url="/Materials/index.json"
+    data-section-selector="[data-entry-section]"
+  >
+    <TagFilterHeader
+      pageTitleText={pageTitleText}
+      subtitleText={subtitleText}
+      rssHref={null}
+      pickerHref="#materials-list"
+      fallbackListId="materials-list"
+      dialogTitleId="materials-tag-dialog-title"
+      searchAriaLabel={`搜索${pageTitleText}`}
+    />
+  </div>
+
+  {groups.length ? (
+    groups.map((group) => (
+      <section data-entry-section>
+        <h2 class="archive-year">{group.title}</h2>
+        <div class="archive-list">
+          {group.list.map((item) => {
+            const href = withBase(item.href);
+            const isExternal = isExternalHref(item.href);
+            return (
+              <div class="archive-row" data-entry-item data-slug={item.slug}>
+                <div class="archive-title">
+                  <a href={href} rel={isExternal ? 'noreferrer' : undefined}>
+                    {item.title}
+                  </a>
+                  {item.description ? <p class="materials-description">{item.description}</p> : null}
+                </div>
+                <div class="archive-meta">
+                  <div class="archive-date">
+                    <span class="archive-date-md">{item.displayDate}</span>
+                    <span class="archive-date-full">{item.date ?? item.displayDate}</span>
+                  </div>
+                  {item.label ? <div class="archive-tag">{item.label}</div> : null}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </section>
+    ))
+  ) : (
+    <p id="materials-list" class="materials-empty">暂无资料链接。</p>
+  )}
+
+  <script>
+    import '../../scripts/entry-search.ts';
+  </script>
+</BaseLayout>

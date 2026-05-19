@@ -281,6 +281,19 @@
   grid-row: 1;
 }
 
+.materials-description,
+.materials-empty {
+  margin: 6px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.6;
+  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+}
+
+.materials-empty {
+  margin-top: 24px;
+}
+
 .archive-meta {
   display: contents;
 }
