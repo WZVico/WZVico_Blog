@@ -149,6 +149,16 @@ img {
   height: auto;
 }
 
+html {
+  scrollbar-gutter: stable;
+}
+
+@supports not (scrollbar-gutter: stable) {
+  html {
+    overflow-y: scroll;
+  }
+}
+
 a {
   color: var(--text);
   text-decoration: none;
