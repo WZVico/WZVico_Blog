@@ -8,9 +8,7 @@
   }
 
   .admin-images-browser__detail-media {
-    aspect-ratio: auto;
-    min-height: 200px;
-    max-height: 300px;
+    block-size: clamp(200px, 56vw, 300px);
     border-inline-end: 0;
     border-radius: var(--admin-control-radius) var(--admin-control-radius) 0 0;
   }
