@@ -56,6 +56,7 @@ export const bindAdminThemeFieldEvents = ({
     inputHomeShowHero
   } = controls;
   const {
+    moveNavRowUp,
     refreshArticleMetaPreview,
     refreshHomeIntroPreview,
     syncAdminOverviewControls,
@@ -111,6 +112,20 @@ export const bindAdminThemeFieldEvents = ({
     refreshDirty();
   });
 
+  form.addEventListener('click', (event) => {
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+
+    const moveButton = target.closest('[data-nav-action="move-up"]');
+    if (!(moveButton instanceof HTMLButtonElement)) return;
+
+    const row = moveButton.closest('[data-nav-id]');
+    if (moveNavRowUp(row)) {
+      refreshDirty();
+      moveButton.focus();
+    }
+  });
+
   if ('IntersectionObserver' in window) {
     const adminActionsObserver = new IntersectionObserver(
       (entries) => {
@@ -152,6 +167,7 @@ export const bindAdminThemeSocialEvents = ({
     getNextSocialOrder,
     syncPresetRow,
     normalizeSocialOrders,
+    moveSocialRowUp,
     syncCustomRow,
     updateCustomRowsUi,
     createCustomRow,
@@ -186,7 +202,7 @@ export const bindAdminThemeSocialEvents = ({
 
     const presetRow = target.closest('[data-social-preset-row]');
     if (presetRow) {
-      if (target.matches('[data-social-preset-field="order"], [data-social-preset-field="href"]')) {
+      if (target.matches('[data-social-preset-field="href"]')) {
         normalizeSocialOrders();
       }
       syncPresetRow(presetRow);
@@ -199,10 +215,6 @@ export const bindAdminThemeSocialEvents = ({
     if (target.matches('[data-social-custom-field="iconKey"]')) {
       syncCustomRow(row, { syncId: true, syncLabel: true });
       return;
-    }
-
-    if (target.matches('[data-social-custom-field="order"]')) {
-      normalizeSocialOrders();
     }
   });
 
@@ -259,6 +271,14 @@ export const bindAdminThemeSocialEvents = ({
       if (!(presetRow instanceof HTMLElement)) return;
       const action = presetActionBtn.getAttribute('data-social-preset-action');
 
+      if (action === 'move-up') {
+        if (moveSocialRowUp(presetRow)) {
+          refreshDirty();
+          presetActionBtn.focus();
+        }
+        return;
+      }
+
       if (action === 'toggle-visible') {
         const hrefInput = getPresetRowHrefInput(presetRow);
         const orderInput = getPresetRowOrderInput(presetRow);
@@ -286,6 +306,14 @@ export const bindAdminThemeSocialEvents = ({
     const row = actionBtn.closest('[data-social-custom-row]');
     if (!(row instanceof HTMLElement)) return;
     const action = actionBtn.getAttribute('data-social-custom-action');
+
+    if (action === 'move-up') {
+      if (moveSocialRowUp(row)) {
+        refreshDirty();
+        actionBtn.focus();
+      }
+      return;
+    }
 
     if (action === 'remove') {
       row.remove();

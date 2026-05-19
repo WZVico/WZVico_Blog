@@ -1,9 +1,6 @@
 ---
 import type { SiteSocialIconKey } from '../../lib/theme-settings';
-import {
-  ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH,
-  ADMIN_SOCIAL_ORDER_MAX
-} from '../../lib/admin-console/theme-shared';
+import { ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH } from '../../lib/admin-console/theme-shared';
 import BrandIcon from '../BrandIcon.astro';
 import AdminIcon from './AdminIcon.astro';
 
@@ -24,23 +21,20 @@ const { socialIconOptions, customSocialIconOptions, defaultCustomSocialIconKey }
 
 <template id="site-social-custom-row-template">
   <article class="admin-row admin-row--interactive admin-row--table admin-social-row" data-social-custom-row>
-    <label class="admin-field admin-social-field admin-social-field--order">
-      <span class="admin-social-cell-label">位置</span>
-      <span class="admin-social-order-frame">
-        <span class="admin-social-order-frame__mark" aria-hidden="true">[</span>
-        <input
-          class="admin-field__control"
-          data-social-custom-field="order"
-          name="site-social-custom-order[]"
-          type="number"
-          min="1"
-          max={String(ADMIN_SOCIAL_ORDER_MAX)}
-          step="1"
-          inputmode="numeric"
-        />
-        <span class="admin-social-order-frame__mark" aria-hidden="true">]</span>
-      </span>
-    </label>
+    <div class="admin-field admin-social-field admin-social-field--order">
+      <span class="admin-social-cell-label">上移</span>
+      <button
+        class="admin-btn admin-btn--tool admin-btn--compact admin-btn--icon admin-social-action admin-social-action--move"
+        type="button"
+        data-social-custom-action="move-up"
+        aria-label="链接上移"
+        title="链接上移"
+      >
+        <AdminIcon name="arrow-up" class="admin-social-action__icon" size={15} />
+        <span class="sr-only">链接上移</span>
+      </button>
+      <input data-social-custom-field="order" name="site-social-custom-order[]" type="hidden" />
+    </div>
 
     <label class="admin-field admin-social-field admin-social-field--platform">
       <span class="admin-social-cell-label">平台</span>

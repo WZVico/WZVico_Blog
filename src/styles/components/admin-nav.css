@@ -108,6 +108,7 @@
 }
 
 .admin-nav-field--order {
+  display: grid;
   justify-items: center;
 }
 
@@ -155,6 +156,15 @@
 .admin-nav-field--order .admin-field__control:focus-visible {
   outline: none;
   box-shadow: none;
+}
+
+.admin-nav-action {
+  --admin-btn-icon-glyph-size: 15px;
+  justify-self: center;
+}
+
+.admin-nav-action__icon {
+  display: block;
 }
 
 .admin-nav-row .admin-toggle {

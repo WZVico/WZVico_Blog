@@ -128,6 +128,9 @@ if (!root) {
       field: 'label' | 'ornament' | 'order' | 'visible'
     ): (() => HTMLElement | null) => () => {
       const row = query<HTMLElement>(root, `[data-nav-id="${id}"]`);
+      if (field === 'order') {
+        return row ? query<HTMLElement>(row, '[data-nav-action="move-up"]') : null;
+      }
       return row ? query<HTMLElement>(row, `[data-nav-field="${field}"]`) : null;
     };
 

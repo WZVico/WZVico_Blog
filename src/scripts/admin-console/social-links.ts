@@ -47,6 +47,8 @@ export const createSocialLinks = ({
   inputSiteSocialXOrder,
   inputSiteSocialEmailOrder
 }: SocialLinksContext) => {
+  const getSocialRows = (): HTMLElement[] =>
+    queryAll<HTMLElement>(socialCustomList, '[data-social-preset-row], [data-social-custom-row]');
   const getPresetRows = (): HTMLElement[] => queryAll<HTMLElement>(socialCustomList, '[data-social-preset-row]');
   const getCustomRows = (): HTMLElement[] => queryAll<HTMLElement>(socialCustomList, '[data-social-custom-row]');
 
@@ -107,6 +109,9 @@ export const createSocialLinks = ({
 
   const getPresetFieldTarget = (id: SiteSocialPresetId, field: 'order' | 'href') => (): HTMLElement | null => {
     const row = getPresetRows().find((currentRow) => getPresetRowId(currentRow) === id) ?? null;
+    if (field === 'order') {
+      return row ? query<HTMLElement>(row, '[data-social-preset-action="move-up"]') : null;
+    }
     return row ? query<HTMLElement>(row, `[data-social-preset-field="${field}"]`) : null;
   };
 
@@ -115,6 +120,9 @@ export const createSocialLinks = ({
     field: 'order' | 'iconKey' | 'id' | 'label' | 'href' | 'displayText'
   ) => (): HTMLElement | null => {
     const row = getCustomRows()[index] ?? null;
+    if (field === 'order') {
+      return row ? query<HTMLElement>(row, '[data-social-custom-action="move-up"]') : null;
+    }
     return row ? query<HTMLElement>(row, `[data-social-custom-field="${field}"]`) : null;
   };
 
@@ -151,6 +159,60 @@ export const createSocialLinks = ({
     return hrefInput instanceof HTMLInputElement && hrefInput.value.trim().length > 0;
   };
 
+  const getSocialRowMoveButton = (row: Element | null): HTMLButtonElement | null => {
+    if (!row) return null;
+    return query<HTMLButtonElement>(
+      row,
+      '[data-social-preset-action="move-up"], [data-social-custom-action="move-up"]'
+    );
+  };
+
+  const getSocialRowLabel = (row: Element | null): string => {
+    if (!row) return '链接';
+    if (row.matches('[data-social-preset-row]')) {
+      const presetId = getPresetRowId(row);
+      return presetId === 'x' ? 'X' : presetId === 'email' ? 'Email' : 'GitHub';
+    }
+    return getDefaultCustomSocialLabel(getCustomRowIconKey(row));
+  };
+
+  const syncSocialOrderControls = (): void => {
+    getSocialRows().forEach((row, index) => {
+      const moveButton = getSocialRowMoveButton(row);
+      if (!(moveButton instanceof HTMLButtonElement)) return;
+
+      const label = getSocialRowLabel(row);
+      const disabled = index === 0;
+      moveButton.disabled = disabled;
+      moveButton.setAttribute('aria-label', disabled ? `${label} 已在最上方` : `${label} 上移`);
+      moveButton.setAttribute('title', disabled ? `${label} 已在最上方` : `${label} 上移`);
+    });
+  };
+
+  const setSocialRowOrder = (row: HTMLElement, order: number): void => {
+    const orderInput = row.matches('[data-social-preset-row]')
+      ? getPresetRowOrderInput(row)
+      : query<HTMLInputElement>(row, '[data-social-custom-field="order"]');
+    if (orderInput instanceof HTMLInputElement) orderInput.value = String(order);
+  };
+
+  const renumberSocialOrders = (): void => {
+    getSocialRows().forEach((row, index) => {
+      setSocialRowOrder(row, index + 1);
+    });
+    syncSocialOrderControls();
+  };
+
+  const moveSocialRowUp = (row: Element | null): boolean => {
+    if (!(row instanceof HTMLElement)) return false;
+    const previousRow = row.previousElementSibling;
+    if (!(previousRow instanceof HTMLElement)) return false;
+
+    socialCustomList.insertBefore(row, previousRow);
+    renumberSocialOrders();
+    return true;
+  };
+
   const syncPresetRow = (row: Element | null): void => {
     if (!row) return;
     const toggleBtn = query<HTMLButtonElement>(row, '[data-social-preset-action="toggle-visible"]');
@@ -168,49 +230,28 @@ export const createSocialLinks = ({
   const normalizeSocialOrders = (): void => {
     type SocialOrderItem = {
       row: HTMLElement;
-      type: 'preset' | 'custom';
-      visible: boolean;
       order: number;
       tie: number;
     };
 
-    const presetRows = getPresetRows();
-    const customRows = getCustomRows();
-    const items: SocialOrderItem[] = [
-      ...presetRows.map((row, index) => ({
-        row,
-        type: 'preset' as const,
-        visible: isPresetRowVisible(row),
-        order: parseOrder(
-          getPresetRowOrderInput(row)?.value || '',
-          ADMIN_SOCIAL_PRESET_ORDER_DEFAULT[getPresetRowId(row)]
-        ),
-        tie: index
-      })),
-      ...customRows.map((row, index) => ({
-        row,
-        type: 'custom' as const,
-        visible: Boolean(query<HTMLInputElement>(row, '[data-social-custom-field="visible"]')?.checked),
-        order: parseOrder(query<HTMLInputElement>(row, '[data-social-custom-field="order"]')?.value || '', index + 1),
-        tie: presetRows.length + index
-      }))
-    ];
+    const items: SocialOrderItem[] = getSocialRows().map((row, index) => ({
+      row,
+      order: row.matches('[data-social-preset-row]')
+        ? parseOrder(
+            getPresetRowOrderInput(row)?.value || '',
+            ADMIN_SOCIAL_PRESET_ORDER_DEFAULT[getPresetRowId(row)]
+          )
+        : parseOrder(query<HTMLInputElement>(row, '[data-social-custom-field="order"]')?.value || '', index + 1),
+      tie: index
+    }));
 
-    const orderedItems = [
-      ...items.filter((item) => item.visible).sort((a, b) => a.order - b.order || a.tie - b.tie),
-      ...items.filter((item) => !item.visible).sort((a, b) => a.order - b.order || a.tie - b.tie)
-    ];
-
-    orderedItems.forEach((item, index) => {
-      const nextValue = String(index + 1);
-      if (item.type === 'preset') {
-        const orderInput = getPresetRowOrderInput(item.row);
-        if (orderInput instanceof HTMLInputElement) orderInput.value = nextValue;
-      } else {
-        const orderInput = query<HTMLInputElement>(item.row, '[data-social-custom-field="order"]');
-        if (orderInput instanceof HTMLInputElement) orderInput.value = nextValue;
-      }
-    });
+    items
+      .sort((a, b) => a.order - b.order || a.tie - b.tie)
+      .forEach((item, index) => {
+        socialCustomList.appendChild(item.row);
+        setSocialRowOrder(item.row, index + 1);
+      });
+    syncSocialOrderControls();
   };
 
   const normalizeCustomSocialLabel = (value: unknown, iconKey: SiteSocialIconKey): string => {
@@ -420,6 +461,7 @@ export const createSocialLinks = ({
     syncCustomLabelField(row, { syncValue: syncLabel });
     syncCustomIconPreview(row);
     syncCustomVisibilityButton(row);
+    syncSocialOrderControls();
   };
 
   const updateCustomRowsUi = (): void => {
@@ -427,6 +469,7 @@ export const createSocialLinks = ({
     socialCustomHead.hidden = false;
     socialCustomCountEl.textContent = `(新增 ${rows.length} / ${ADMIN_SOCIAL_CUSTOM_LIMIT})`;
     socialCustomAddBtn.disabled = rows.length >= ADMIN_SOCIAL_CUSTOM_LIMIT;
+    syncSocialOrderControls();
   };
 
   const createCustomRow = (
@@ -500,6 +543,7 @@ export const createSocialLinks = ({
 
   return {
     defaultCustomSocialIconKey,
+    getSocialRows,
     getPresetRows,
     getCustomRows,
     getPresetFieldTarget,
@@ -516,6 +560,8 @@ export const createSocialLinks = ({
     normalizeCustomSocialLabel,
     syncPresetRow,
     normalizeSocialOrders,
+    renumberSocialOrders,
+    moveSocialRowUp,
     syncCustomRow,
     updateCustomRowsUi,
     createCustomRow,

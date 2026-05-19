@@ -393,6 +393,67 @@ export const createFormCodec = ({
     footerYearRangeEl.dataset.currentYearEnabled = String(Boolean(inputSiteFooterShowCurrentYear.checked));
   };
 
+  const getNavRowLabel = (row: HTMLElement): string => {
+    const rawId = row.getAttribute('data-nav-id')?.trim() ?? '';
+    const labelInput = query<HTMLInputElement>(row, '[data-nav-field="label"]');
+    return labelInput?.value.trim() || rawId || '导航项';
+  };
+
+  const getNavRowMoveButton = (row: HTMLElement): HTMLButtonElement | null =>
+    query<HTMLButtonElement>(row, '[data-nav-action="move-up"]');
+
+  const setNavRowOrder = (row: HTMLElement, order: number): void => {
+    const orderInput = query<HTMLInputElement>(row, '[data-nav-field="order"]');
+    if (orderInput instanceof HTMLInputElement) orderInput.value = String(order);
+  };
+
+  const syncNavOrderControls = (): void => {
+    getNavRows().forEach((row, index) => {
+      const moveButton = getNavRowMoveButton(row);
+      if (!(moveButton instanceof HTMLButtonElement)) return;
+
+      const label = getNavRowLabel(row);
+      const disabled = index === 0;
+      moveButton.disabled = disabled;
+      moveButton.setAttribute('aria-label', disabled ? `${label} 已在最上方` : `${label} 上移`);
+      moveButton.setAttribute('title', disabled ? `${label} 已在最上方` : `${label} 上移`);
+    });
+  };
+
+  const normalizeNavOrders = (): void => {
+    const rows = getNavRows();
+    const parent = rows[0]?.parentElement;
+    if (!parent) return;
+
+    rows
+      .map((row, index) => {
+        const orderInput = query<HTMLInputElement>(row, '[data-nav-field="order"]');
+        return {
+          row,
+          order: parseOrder(orderInput?.value || '', index + 1),
+          tie: index
+        };
+      })
+      .sort((a, b) => a.order - b.order || a.tie - b.tie)
+      .forEach((item, index) => {
+        parent.appendChild(item.row);
+        setNavRowOrder(item.row, index + 1);
+      });
+
+    syncNavOrderControls();
+  };
+
+  const moveNavRowUp = (row: Element | null): boolean => {
+    if (!(row instanceof HTMLElement)) return false;
+    const previousRow = row.previousElementSibling;
+    if (!(previousRow instanceof HTMLElement) || !previousRow.matches('[data-nav-id]')) return false;
+
+    row.parentElement?.insertBefore(row, previousRow);
+    getNavRows().forEach((currentRow, index) => setNavRowOrder(currentRow, index + 1));
+    syncNavOrderControls();
+    return true;
+  };
+
   const canonicalize = (settings: unknown): EditableSettings =>
     canonicalizeAdminThemeSettings(settings, {
       footerStartYearMax,
@@ -631,6 +692,7 @@ export const createFormCodec = ({
       if (orderInput) orderInput.value = String(current?.order ?? (index + 1));
       if (visibleInput) visibleInput.checked = Boolean(current?.visible);
     });
+    normalizeNavOrders();
   };
 
   return {
@@ -645,6 +707,8 @@ export const createFormCodec = ({
     syncHomeIntroLinkControls,
     syncHeroControls,
     refreshFooterPreview,
-    syncFooterYearControls
+    syncFooterYearControls,
+    normalizeNavOrders,
+    moveNavRowUp
   };
 };

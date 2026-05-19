@@ -137,7 +137,7 @@ const { navIdOrder } = Astro.props;
       </p>
       <div class="admin-nav-grid admin-nav-grid--compact">
         <div class="admin-nav-header" aria-hidden="true">
-          <span>排序</span>
+          <span>上移</span>
           <span>页面 ID</span>
           <span>导航名称</span>
           <span>导航后缀</span>
@@ -146,24 +146,20 @@ const { navIdOrder } = Astro.props;
         {
           navIdOrder.map((id, index) => (
             <div class="admin-row admin-row--interactive admin-row--table admin-nav-row" data-nav-id={id}>
-              <label class="admin-field admin-nav-field admin-nav-field--order">
-                <span class="admin-nav-cell-label">排序</span>
-                <span class="sr-only">{id} 排序</span>
-                <span class="admin-social-order-frame admin-nav-order-frame">
-                  <span class="admin-social-order-frame__mark" aria-hidden="true">[</span>
-                  <input
-                    class="admin-field__control"
-                    data-nav-field="order"
-                    name={`shell-nav-${id}-order`}
-                    type="number"
-                    min="1"
-                    step="1"
-                    inputmode="numeric"
-                    value={index + 1}
-                  />
-                  <span class="admin-social-order-frame__mark" aria-hidden="true">]</span>
-                </span>
-              </label>
+              <div class="admin-field admin-nav-field admin-nav-field--order">
+                <span class="admin-nav-cell-label">上移</span>
+                <button
+                  class="admin-btn admin-btn--tool admin-btn--compact admin-btn--icon admin-nav-action"
+                  type="button"
+                  data-nav-action="move-up"
+                  aria-label={`${id} 上移`}
+                  title={`${id} 上移`}
+                >
+                  <AdminIcon name="arrow-up" class="admin-nav-action__icon" size={15} />
+                  <span class="sr-only">{id} 上移</span>
+                </button>
+                <input data-nav-field="order" name={`shell-nav-${id}-order`} type="hidden" value={index + 1} />
+              </div>
               <p class="admin-nav-id">
                 <span class="admin-nav-cell-label">页面 ID</span>
                 <span class="admin-nav-id__text">{id}</span>

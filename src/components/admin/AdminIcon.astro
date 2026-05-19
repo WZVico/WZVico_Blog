@@ -1,6 +1,7 @@
 ---
 import type { AstroComponent } from '@lucide/astro';
 import Activity from '@lucide/astro/icons/activity';
+import ArrowUp from '@lucide/astro/icons/arrow-up';
 import Check from '@lucide/astro/icons/check';
 import ChevronDown from '@lucide/astro/icons/chevron-down';
 import CodeXml from '@lucide/astro/icons/code-xml';
@@ -36,6 +37,7 @@ type AdminIconName =
   | 'admin-sidebar'
   | 'admin-site'
   | 'activity'
+  | 'arrow-up'
   | 'branch-nodes'
   | 'check'
   | 'chevron-down'
@@ -82,6 +84,7 @@ const adminIconComponents = {
   'admin-sidebar': PanelLeft,
   'admin-site': Globe,
   activity: Activity,
+  'arrow-up': ArrowUp,
   'branch-nodes': GitBranch,
   check: Check,
   'chevron-down': ChevronDown,

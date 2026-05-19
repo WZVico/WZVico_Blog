@@ -130,6 +130,7 @@
 
 .admin-social-field--order {
   grid-column: 1;
+  display: grid;
   justify-items: center;
 }
 
@@ -331,6 +332,10 @@
 
 .admin-social-action {
   --admin-btn-icon-glyph-size: var(--admin-social-action-glyph-size);
+}
+
+.admin-social-field--order .admin-social-action {
+  justify-self: center;
 }
 
 .admin-social-action[data-state='hidden'] {

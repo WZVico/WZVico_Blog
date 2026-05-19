@@ -1,10 +1,7 @@
 ---
 import BrandIcon from '../BrandIcon.astro';
 import AdminIcon from './AdminIcon.astro';
-import {
-  ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH,
-  ADMIN_SOCIAL_ORDER_MAX
-} from '../../lib/admin-console/theme-shared';
+import { ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH } from '../../lib/admin-console/theme-shared';
 
 interface Props {
   row: {
@@ -25,24 +22,20 @@ const removeLabel = `${row.label} 为固定项，不可删除`;
 ---
 
 <article class="admin-row admin-row--interactive admin-row--table admin-social-row admin-social-row--preset" data-social-preset-row data-social-preset-id={row.id}>
-  <label class="admin-field admin-social-field admin-social-field--order">
-    <span class="admin-social-cell-label">位置</span>
-    <span class="admin-social-order-frame">
-      <span class="admin-social-order-frame__mark" aria-hidden="true">[</span>
-      <input
-        class="admin-field__control"
-        id={row.orderInputId}
-        data-social-preset-field="order"
-        type="number"
-        min="1"
-        max={String(ADMIN_SOCIAL_ORDER_MAX)}
-        step="1"
-        inputmode="numeric"
-        aria-label={`${row.label} 位置排序`}
-      />
-      <span class="admin-social-order-frame__mark" aria-hidden="true">]</span>
-    </span>
-  </label>
+  <div class="admin-field admin-social-field admin-social-field--order">
+    <span class="admin-social-cell-label">上移</span>
+    <button
+      class="admin-btn admin-btn--tool admin-btn--compact admin-btn--icon admin-social-action admin-social-action--move"
+      type="button"
+      data-social-preset-action="move-up"
+      aria-label={`${row.label} 上移`}
+      title={`${row.label} 上移`}
+    >
+      <AdminIcon name="arrow-up" class="admin-social-action__icon" size={15} />
+      <span class="sr-only">{row.label} 上移</span>
+    </button>
+    <input id={row.orderInputId} data-social-preset-field="order" type="hidden" />
+  </div>
 
   <div class="admin-field admin-social-field admin-social-field--platform admin-social-field--static">
     <span class="admin-social-cell-label">平台</span>
