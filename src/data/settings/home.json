@@ -1,9 +1,8 @@
 {
-  "introLead": "这是一个开源写作主题与示例内容库:包含 长文/longform、拾选/picks、归档/archive 与 絮语/bits，使用与配置请见 README 。",
-  "introMore": "更多文章请访问",
+  "introLead": "这里收留一些较长的思考，也存放一些短促的日常。\n有时写文章，有时做摘记；有时整理资料，有时只是把喜欢的书、电影、音乐和片刻留下来。\n它不是一个只为结论而存在的地方，更像是一间慢慢堆放文字、线索和生活痕迹的房间。",
+  "introMore": "更多介绍请访问",
   "introMoreLinks": [
-    "archive",
-    "tag"
+    "about"
   ],
   "showIntroLead": true,
   "showIntroMore": true,

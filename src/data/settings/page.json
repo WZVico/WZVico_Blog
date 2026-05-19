@@ -1,30 +1,30 @@
 {
   "longform": {
     "title": "长文",
-    "subtitle": "原创与翻译"
+    "subtitle": "给复杂一点时间"
   },
   "archive": {
     "title": "归档",
-    "subtitle": null
+    "subtitle": "时间替文字排队"
   },
   "bits": {
     "title": "絮语",
     "subtitle": "生活不只是长篇",
     "defaultAuthor": {
-      "name": "Whono",
+      "name": "未可",
       "avatar": "author/Avatar.webp"
     }
   },
   "picks": {
-    "title": null,
-    "subtitle": null
+    "title": "拾选",
+    "subtitle": "从书影音里捡一点光"
   },
   "materials": {
     "title": "资料",
-    "subtitle": "视频与文件资料索引"
+    "subtitle": "链接、文件与旁证"
   },
   "about": {
     "title": "关于",
-    "subtitle": null
+    "subtitle": "这里是谁，又为何写"
   }
 }

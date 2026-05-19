@@ -1,7 +1,7 @@
 ---
 title: "拾选"
-subtitle: "书单与简短理由"
-date: 2026-01-10
+subtitle: "从书影音里捡一点光"
+date: 2026-05-19
 draft: false
 ---
 
