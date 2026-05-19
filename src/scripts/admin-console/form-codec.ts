@@ -56,10 +56,13 @@ type FormCodecContext = {
   inputSiteAdminOverviewHiddenMessage: HTMLInputElement;
   inputSiteSocialGithubOrder: HTMLInputElement;
   inputSiteSocialGithub: HTMLInputElement;
+  inputSiteSocialGithubDisplayText: HTMLInputElement;
   inputSiteSocialXOrder: HTMLInputElement;
   inputSiteSocialX: HTMLInputElement;
+  inputSiteSocialXDisplayText: HTMLInputElement;
   inputSiteSocialEmailOrder: HTMLInputElement;
   inputSiteSocialEmail: HTMLInputElement;
+  inputSiteSocialEmailDisplayText: HTMLInputElement;
   inputShellBrandTitle: HTMLInputElement;
   inputShellQuote: HTMLTextAreaElement;
   inputHomeShowIntroLead: HTMLInputElement;
@@ -127,6 +130,10 @@ const parseInteger = (value: string | number | null | undefined): number | null 
 
 const normalizeTrimmed = (value: unknown): string => String(value ?? '').trim();
 
+const normalizeSocialDisplayText = (value: unknown): string | null => {
+  return normalizeOptionalSingleLine(String(value ?? ''));
+};
+
 const normalizeHeroImageInput = (value: unknown): string | null => {
   const rawValue = normalizeTrimmed(value);
   if (!rawValue) return null;
@@ -163,10 +170,13 @@ export const createFormCodec = ({
   inputSiteAdminOverviewHiddenMessage,
   inputSiteSocialGithubOrder,
   inputSiteSocialGithub,
+  inputSiteSocialGithubDisplayText,
   inputSiteSocialXOrder,
   inputSiteSocialX,
+  inputSiteSocialXDisplayText,
   inputSiteSocialEmailOrder,
   inputSiteSocialEmail,
+  inputSiteSocialEmailDisplayText,
   inputShellBrandTitle,
   inputShellQuote,
   inputHomeShowIntroLead,
@@ -408,6 +418,7 @@ export const createFormCodec = ({
       const idInput = query<HTMLInputElement>(row, '[data-social-custom-field="id"]');
       const labelInput = getCustomRowLabelInput(row);
       const hrefInput = query<HTMLInputElement>(row, '[data-social-custom-field="href"]');
+      const displayTextInput = query<HTMLInputElement>(row, '[data-social-custom-field="displayText"]');
       const iconInput = query<HTMLSelectElement>(row, '[data-social-custom-field="iconKey"]');
       const orderInput = query<HTMLInputElement>(row, '[data-social-custom-field="order"]');
       const visibleInput = query<HTMLInputElement>(row, '[data-social-custom-field="visible"]');
@@ -417,6 +428,7 @@ export const createFormCodec = ({
         label: normalizeCustomSocialLabel(labelInput?.value, iconKey),
         href: hrefInput?.value.trim() || '',
         iconKey,
+        displayText: normalizeSocialDisplayText(displayTextInput?.value),
         order: parseOrder(orderInput?.value || '', index + 1),
         visible: Boolean(visibleInput?.checked)
       };
@@ -446,6 +458,11 @@ export const createFormCodec = ({
           x: inputSiteSocialX.value.trim() || null,
           email: normalizeEmail(inputSiteSocialEmail.value.trim()) || null,
           presetOrder: getPresetSocialOrder(),
+          displayText: {
+            github: normalizeSocialDisplayText(inputSiteSocialGithubDisplayText.value),
+            x: normalizeSocialDisplayText(inputSiteSocialXDisplayText.value),
+            email: normalizeSocialDisplayText(inputSiteSocialEmailDisplayText.value)
+          },
           custom
         }
       },
@@ -539,6 +556,9 @@ export const createFormCodec = ({
       settings.site.socialLinks?.presetOrder?.email ?? ADMIN_SOCIAL_PRESET_ORDER_DEFAULT.email
     );
     inputSiteSocialEmail.value = settings.site.socialLinks?.email || '';
+    inputSiteSocialGithubDisplayText.value = settings.site.socialLinks?.displayText?.github || '';
+    inputSiteSocialXDisplayText.value = settings.site.socialLinks?.displayText?.x || '';
+    inputSiteSocialEmailDisplayText.value = settings.site.socialLinks?.displayText?.email || '';
     replaceCustomRows(settings.site.socialLinks?.custom || []);
     normalizeSocialOrders();
     inputShellBrandTitle.value = settings.shell.brandTitle || '';

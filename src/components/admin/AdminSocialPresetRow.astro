@@ -1,7 +1,10 @@
 ---
 import BrandIcon from '../BrandIcon.astro';
 import AdminIcon from './AdminIcon.astro';
-import { ADMIN_SOCIAL_ORDER_MAX } from '../../lib/admin-console/theme-shared';
+import {
+  ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH,
+  ADMIN_SOCIAL_ORDER_MAX
+} from '../../lib/admin-console/theme-shared';
 
 interface Props {
   row: {
@@ -72,6 +75,20 @@ const removeLabel = `${row.label} 为固定项，不可删除`;
       inputmode={row.inputMode}
       autocomplete={row.autoComplete}
       placeholder={row.placeholder}
+    />
+  </label>
+
+  <label class="admin-field admin-social-field admin-social-field--display">
+    <span class="admin-social-cell-label">详细显示</span>
+    <input
+      class="admin-field__control admin-field__control--soft"
+      id={`site-social-${row.id}-display-text`}
+      data-social-preset-field="displayText"
+      type="text"
+      autocomplete="off"
+      spellcheck="false"
+      maxlength={String(ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH)}
+      placeholder={row.id === 'email' ? '邮箱昵称或显示文案' : '平台昵称'}
     />
   </label>
 

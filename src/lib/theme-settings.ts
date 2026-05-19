@@ -23,6 +23,7 @@ import {
   ADMIN_NAV_ORNAMENT_MAX_LENGTH,
   ADMIN_OVERVIEW_HIDDEN_MESSAGE_DEFAULT,
   ADMIN_OVERVIEW_HIDDEN_MESSAGE_MAX_LENGTH,
+  ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH,
   ADMIN_HERO_PRESET_SET,
   ADMIN_SOCIAL_ORDER_MAX,
   ADMIN_SOCIAL_ORDER_MIN,
@@ -84,6 +85,7 @@ export interface SiteSocialCustomItem {
   label: string;
   href: string;
   iconKey: SiteSocialIconKey;
+  displayText: string | null;
   visible: boolean;
   order: number;
 }
@@ -94,11 +96,18 @@ export interface SiteSocialPresetOrder {
   email: number;
 }
 
+export interface SiteSocialPresetDisplayText {
+  github: string | null;
+  x: string | null;
+  email: string | null;
+}
+
 export interface ResolvedSocialItem {
   id: string;
   label: string;
   href: string;
   iconKey: SiteSocialIconKey;
+  displayText: string | null;
   kind: SiteSocialKind;
   visible: boolean;
   order: number;
@@ -109,6 +118,7 @@ export interface SiteSocialLinks {
   x: string | null;
   email: string | null;
   presetOrder: SiteSocialPresetOrder;
+  displayText: SiteSocialPresetDisplayText;
   custom: SiteSocialCustomItem[];
   resolvedSocialItems: ResolvedSocialItem[];
 }
@@ -284,6 +294,7 @@ export interface EditableSiteSocialLinks {
   x: string | null;
   email: string | null;
   presetOrder: SiteSocialPresetOrder;
+  displayText: SiteSocialPresetDisplayText;
   custom: SiteSocialCustomItem[];
 }
 
@@ -379,11 +390,17 @@ const DEFAULT_PRESET_SOCIAL_ORDER: SiteSocialPresetOrder = {
   x: 2,
   email: 3
 };
+const DEFAULT_PRESET_SOCIAL_DISPLAY_TEXT: SiteSocialPresetDisplayText = {
+  github: null,
+  x: null,
+  email: null
+};
 const LEGACY_SOCIAL_LINKS: SiteSocialLinks = {
   github: 'https://github.com/cxro/astro-whono',
   x: 'https://twitter.com/yourname',
   email: 'Whono@linux.do',
   presetOrder: { ...DEFAULT_PRESET_SOCIAL_ORDER },
+  displayText: { ...DEFAULT_PRESET_SOCIAL_DISPLAY_TEXT },
   custom: [],
   resolvedSocialItems: []
 };
@@ -403,6 +420,12 @@ const cloneSocialCustomItems = (items: readonly SiteSocialCustomItem[]): SiteSoc
   items.map((item) => ({ ...item }));
 
 const clonePresetSocialOrder = (value: Readonly<SiteSocialPresetOrder>): SiteSocialPresetOrder => ({
+  ...value
+});
+
+const clonePresetSocialDisplayText = (
+  value: Readonly<SiteSocialPresetDisplayText>
+): SiteSocialPresetDisplayText => ({
   ...value
 });
 
@@ -441,6 +464,7 @@ const DEFAULT_SITE: SiteSettings = {
     x: null,
     email: null,
     presetOrder: clonePresetSocialOrder(DEFAULT_PRESET_SOCIAL_ORDER),
+    displayText: clonePresetSocialDisplayText(DEFAULT_PRESET_SOCIAL_DISPLAY_TEXT),
     custom: [],
     resolvedSocialItems: []
   }
@@ -1024,6 +1048,7 @@ const parseSocialCustomItems = (value: unknown): SiteSocialCustomItem[] | undefi
       label,
       href,
       iconKey: asSocialIconKey(row.iconKey) ?? 'website',
+      displayText: asNullableSingleLineString(row.displayText, ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH) ?? null,
       visible: asBoolean(row.visible) ?? true,
       order: rawOrder !== undefined && isAdminSocialOrderValue(rawOrder) ? rawOrder : index + 1
     });
@@ -1053,7 +1078,7 @@ const parseHomeIntroLinks = (value: unknown): HomeIntroLinkKey[] | undefined => 
 };
 
 const buildResolvedSocialItems = (
-  socialLinks: Pick<SiteSocialLinks, 'github' | 'x' | 'email' | 'presetOrder'>,
+  socialLinks: Pick<SiteSocialLinks, 'github' | 'x' | 'email' | 'presetOrder' | 'displayText'>,
   customItems: readonly SiteSocialCustomItem[]
 ): ResolvedSocialItem[] => {
   const presetItems = PRESET_SOCIAL_ITEMS.flatMap((item, index) => {
@@ -1072,6 +1097,7 @@ const buildResolvedSocialItems = (
         label: item.label,
         href,
         iconKey: item.iconKey,
+        displayText: socialLinks.displayText[item.id],
         kind: 'preset' as const,
         visible: true,
         order: socialLinks.presetOrder[item.id],
@@ -1104,6 +1130,9 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
   const siteAdminOverviewJson = isRecord(siteJson?.adminOverview) ? siteJson.adminOverview : undefined;
   const siteSocialLinksJson = isRecord(siteJson?.socialLinks) ? siteJson.socialLinks : undefined;
   const siteSocialPresetOrderJson = isRecord(siteSocialLinksJson?.presetOrder) ? siteSocialLinksJson.presetOrder : undefined;
+  const siteSocialDisplayTextJson = isRecord(siteSocialLinksJson?.displayText)
+    ? siteSocialLinksJson.displayText
+    : undefined;
   const pageLongformJson = isRecord(pageJson?.longform) ? pageJson.longform : undefined;
   const pageArchiveJson = isRecord(pageJson?.archive) ? pageJson.archive : undefined;
   const pageBitsJson = isRecord(pageJson?.bits) ? pageJson.bits : undefined;
@@ -1180,6 +1209,21 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
     asPresetSocialOrderValue(siteSocialPresetOrderJson?.email),
     LEGACY_SOCIAL_LINKS.presetOrder.email,
     DEFAULT_SITE.socialLinks.presetOrder.email
+  );
+  const socialLinksGithubDisplayText = resolveValue<string | null>(
+    asNullableSingleLineString(siteSocialDisplayTextJson?.github, ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH),
+    undefined,
+    DEFAULT_SITE.socialLinks.displayText.github
+  );
+  const socialLinksXDisplayText = resolveValue<string | null>(
+    asNullableSingleLineString(siteSocialDisplayTextJson?.x, ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH),
+    undefined,
+    DEFAULT_SITE.socialLinks.displayText.x
+  );
+  const socialLinksEmailDisplayText = resolveValue<string | null>(
+    asNullableSingleLineString(siteSocialDisplayTextJson?.email, ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH),
+    undefined,
+    DEFAULT_SITE.socialLinks.displayText.email
   );
   const socialLinksCustom = resolveValue(
     parseSocialCustomItems(siteSocialLinksJson?.custom),
@@ -1383,7 +1427,12 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
       github: socialLinksGithub.value,
       x: socialLinksX.value,
       email: socialLinksEmail.value,
-      presetOrder: presetSocialOrder
+      presetOrder: presetSocialOrder,
+      displayText: {
+        github: socialLinksGithubDisplayText.value,
+        x: socialLinksXDisplayText.value,
+        email: socialLinksEmailDisplayText.value
+      }
     },
     customSocialItems
   );
@@ -1408,6 +1457,11 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
           x: socialLinksX.value,
           email: socialLinksEmail.value,
           presetOrder: clonePresetSocialOrder(presetSocialOrder),
+          displayText: {
+            github: socialLinksGithubDisplayText.value,
+            x: socialLinksXDisplayText.value,
+            email: socialLinksEmailDisplayText.value
+          },
           custom: cloneSocialCustomItems(customSocialItems),
           resolvedSocialItems: cloneResolvedSocialItems(resolvedSocialItems)
         }
@@ -1585,6 +1639,7 @@ const buildEditableThemeSettingsSnapshot = (
         x: resolved.settings.site.socialLinks.x,
         email: resolved.settings.site.socialLinks.email,
         presetOrder: clonePresetSocialOrder(resolved.settings.site.socialLinks.presetOrder),
+        displayText: clonePresetSocialDisplayText(resolved.settings.site.socialLinks.displayText),
         custom: cloneSocialCustomItems(resolved.settings.site.socialLinks.custom)
       }
     },

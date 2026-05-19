@@ -20,12 +20,18 @@
       "x": 3,
       "email": 5
     },
+    "displayText": {
+      "github": "未可WZVico",
+      "x": "未可WZVico",
+      "email": null
+    },
     "custom": [
       {
         "id": "custom-weibo",
         "label": "微博",
         "href": "https://weibo.com/wzvico",
         "iconKey": "weibo",
+        "displayText": "未可WZVico",
         "visible": true,
         "order": 1
       },
@@ -34,6 +40,7 @@
         "label": "Bilibili",
         "href": "https://space.bilibili.com/3706942868425331",
         "iconKey": "bilibili",
+        "displayText": "未可WZVico",
         "visible": true,
         "order": 2
       }

@@ -112,7 +112,7 @@ export const createSocialLinks = ({
 
   const getCustomFieldTarget = (
     index: number,
-    field: 'order' | 'iconKey' | 'id' | 'label' | 'href'
+    field: 'order' | 'iconKey' | 'id' | 'label' | 'href' | 'displayText'
   ) => (): HTMLElement | null => {
     const row = getCustomRows()[index] ?? null;
     return row ? query<HTMLElement>(row, `[data-social-custom-field="${field}"]`) : null;
@@ -442,6 +442,7 @@ export const createSocialLinks = ({
     const idInput = query<HTMLInputElement>(row, '[data-social-custom-field="id"]');
     const labelInput = getCustomRowLabelInput(row);
     const hrefInput = query<HTMLInputElement>(row, '[data-social-custom-field="href"]');
+    const displayTextInput = query<HTMLInputElement>(row, '[data-social-custom-field="displayText"]');
     const iconInput = query<HTMLSelectElement>(row, '[data-social-custom-field="iconKey"]');
     const orderInput = query<HTMLInputElement>(row, '[data-social-custom-field="order"]');
     const visibleInput = query<HTMLInputElement>(row, '[data-social-custom-field="visible"]');
@@ -450,6 +451,7 @@ export const createSocialLinks = ({
       !(idInput instanceof HTMLInputElement) ||
       !(labelInput instanceof HTMLInputElement) ||
       !(hrefInput instanceof HTMLInputElement) ||
+      !(displayTextInput instanceof HTMLInputElement) ||
       !(iconInput instanceof HTMLSelectElement) ||
       !(orderInput instanceof HTMLInputElement) ||
       !(visibleInput instanceof HTMLInputElement)
@@ -467,6 +469,7 @@ export const createSocialLinks = ({
     idInput.value = item?.id ? String(item.id).trim() : '';
     labelInput.value = initialDisplayLabel;
     hrefInput.value = item?.href ? String(item.href).trim() : '';
+    displayTextInput.value = item?.displayText ? String(item.displayText).trim() : '';
     iconInput.value = initialIconKey;
     orderInput.value = String(parseOrder(item?.order, index + 1));
     visibleInput.checked = item?.visible !== false;

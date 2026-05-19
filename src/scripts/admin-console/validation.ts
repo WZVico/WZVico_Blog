@@ -28,6 +28,9 @@ type ValidationContext = {
   inputSiteSocialGithub: HTMLInputElement;
   inputSiteSocialX: HTMLInputElement;
   inputSiteSocialEmail: HTMLInputElement;
+  inputSiteSocialGithubDisplayText: HTMLInputElement;
+  inputSiteSocialXDisplayText: HTMLInputElement;
+  inputSiteSocialEmailDisplayText: HTMLInputElement;
   inputShellBrandTitle: HTMLInputElement;
   inputShellQuote: HTMLTextAreaElement;
   inputHomeIntroLead: HTMLTextAreaElement;
@@ -62,7 +65,7 @@ type ValidationContext = {
   getPresetFieldTarget: (id: SiteSocialPresetId, field: 'order' | 'href') => () => HTMLElement | null;
   getCustomFieldTarget: (
     index: number,
-    field: 'order' | 'iconKey' | 'id' | 'label' | 'href'
+    field: 'order' | 'iconKey' | 'id' | 'label' | 'href' | 'displayText'
   ) => () => HTMLElement | null;
   getCustomVisibilityTarget: (index: number) => () => HTMLElement | null;
   getNavFieldTarget: (
@@ -72,7 +75,7 @@ type ValidationContext = {
   getFirstNavLabelTarget: () => HTMLElement | null;
 };
 
-const CUSTOM_ITEM_PATH_RE = /^site\.socialLinks\.custom\[(\d+)\](?:\.(id|label|href|iconKey|order|visible))?$/;
+const CUSTOM_ITEM_PATH_RE = /^site\.socialLinks\.custom\[(\d+)\](?:\.(id|label|href|displayText|iconKey|order|visible))?$/;
 const NAV_PATH_RE = /^shell\.nav(?:(?:\.([a-z]+))|\[(\d+)\])(?:\.(id|label|ornament|order|visible))?$/;
 const PAGE_TITLE_INPUT_KEYS = ['longform', 'archive', 'bits', 'picks', 'about'] as const;
 
@@ -92,6 +95,9 @@ export const createValidation = ({
   inputSiteSocialGithub,
   inputSiteSocialX,
   inputSiteSocialEmail,
+  inputSiteSocialGithubDisplayText,
+  inputSiteSocialXDisplayText,
+  inputSiteSocialEmailDisplayText,
   inputShellBrandTitle,
   inputShellQuote,
   inputHomeIntroLead,
@@ -191,6 +197,12 @@ export const createValidation = ({
         return () => inputSiteSocialX;
       case 'site.socialLinks.email':
         return () => inputSiteSocialEmail;
+      case 'site.socialLinks.displayText.github':
+        return () => inputSiteSocialGithubDisplayText;
+      case 'site.socialLinks.displayText.x':
+        return () => inputSiteSocialXDisplayText;
+      case 'site.socialLinks.displayText.email':
+        return () => inputSiteSocialEmailDisplayText;
       case 'site.socialLinks.custom':
         return () => socialCustomAddBtn;
       case 'shell.brandTitle':
@@ -253,7 +265,7 @@ export const createValidation = ({
       if (!Number.isInteger(index)) return undefined;
       if (field === 'visible') return getCustomVisibilityTarget(index);
       if (field && field !== 'visible') {
-        return getCustomFieldTarget(index, field as 'id' | 'label' | 'href' | 'iconKey' | 'order');
+        return getCustomFieldTarget(index, field as 'id' | 'label' | 'href' | 'displayText' | 'iconKey' | 'order');
       }
       return getCustomFieldTarget(index, 'id');
     }

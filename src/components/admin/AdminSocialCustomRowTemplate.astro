@@ -1,6 +1,9 @@
 ---
 import type { SiteSocialIconKey } from '../../lib/theme-settings';
-import { ADMIN_SOCIAL_ORDER_MAX } from '../../lib/admin-console/theme-shared';
+import {
+  ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH,
+  ADMIN_SOCIAL_ORDER_MAX
+} from '../../lib/admin-console/theme-shared';
 import BrandIcon from '../BrandIcon.astro';
 import AdminIcon from './AdminIcon.astro';
 
@@ -95,6 +98,20 @@ const { socialIconOptions, customSocialIconOptions, defaultCustomSocialIconKey }
           placeholder="https://example.com"
         />
       </span>
+    </label>
+
+    <label class="admin-field admin-social-field admin-social-field--display">
+      <span class="admin-social-cell-label">详细显示</span>
+      <input
+        class="admin-field__control admin-field__control--soft"
+        data-social-custom-field="displayText"
+        name="site-social-custom-display-text[]"
+        type="text"
+        autocomplete="off"
+        spellcheck="false"
+        maxlength={String(ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH)}
+        placeholder="平台昵称"
+      />
     </label>
 
     <div class="admin-social-field admin-social-field--actions">

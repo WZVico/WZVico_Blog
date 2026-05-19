@@ -51,10 +51,13 @@ export type AdminThemeControls = RequiredElements<{
   inputSiteAdminOverviewHiddenMessage: HTMLInputElement | null;
   inputSiteSocialGithubOrder: HTMLInputElement | null;
   inputSiteSocialGithub: HTMLInputElement | null;
+  inputSiteSocialGithubDisplayText: HTMLInputElement | null;
   inputSiteSocialXOrder: HTMLInputElement | null;
   inputSiteSocialX: HTMLInputElement | null;
+  inputSiteSocialXDisplayText: HTMLInputElement | null;
   inputSiteSocialEmailOrder: HTMLInputElement | null;
   inputSiteSocialEmail: HTMLInputElement | null;
+  inputSiteSocialEmailDisplayText: HTMLInputElement | null;
   inputShellBrandTitle: HTMLInputElement | null;
   inputShellQuote: HTMLTextAreaElement | null;
   inputHomeShowIntroLead: HTMLInputElement | null;
@@ -133,10 +136,13 @@ export const queryAdminThemeControls = (): AdminThemeControls | null => {
     inputSiteAdminOverviewHiddenMessage: byId<HTMLInputElement>('site-admin-overview-hidden-message'),
     inputSiteSocialGithubOrder: byId<HTMLInputElement>('site-social-github-order'),
     inputSiteSocialGithub: byId<HTMLInputElement>('site-social-github'),
+    inputSiteSocialGithubDisplayText: byId<HTMLInputElement>('site-social-github-display-text'),
     inputSiteSocialXOrder: byId<HTMLInputElement>('site-social-x-order'),
     inputSiteSocialX: byId<HTMLInputElement>('site-social-x'),
+    inputSiteSocialXDisplayText: byId<HTMLInputElement>('site-social-x-display-text'),
     inputSiteSocialEmailOrder: byId<HTMLInputElement>('site-social-email-order'),
     inputSiteSocialEmail: byId<HTMLInputElement>('site-social-email'),
+    inputSiteSocialEmailDisplayText: byId<HTMLInputElement>('site-social-email-display-text'),
     inputShellBrandTitle: byId<HTMLInputElement>('shell-brand-title'),
     inputShellQuote: byId<HTMLTextAreaElement>('shell-quote'),
     inputHomeShowIntroLead: byId<HTMLInputElement>('home-show-intro-lead'),

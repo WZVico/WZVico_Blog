@@ -48,7 +48,7 @@ const contactItems: ContactItem[] = [
     key: item.id,
     href: item.href,
     icon: item.iconKey,
-    text: item.id === 'email' ? item.href.replace(/^mailto:/i, '') : formatExternalLabel(item.href)
+    text: item.displayText || (item.id === 'email' ? item.href.replace(/^mailto:/i, '') : formatExternalLabel(item.href))
   }))
 ];
 ---

@@ -11,7 +11,6 @@
   margin-left: 6px;
   margin-right: 0;
   gap: 6px;
-  transform: translateY(2px);
 }
 
 .page-header.page-header--about .icon-link .icon {
@@ -250,7 +249,6 @@
     margin-left: 6px;
     margin-right: 0;
     align-self: flex-end;
-    transform: none;
   }
 
   .site-guide {

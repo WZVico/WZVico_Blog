@@ -84,6 +84,7 @@ export const ADMIN_SOCIAL_PRESET_ORDER_DEFAULT: Record<SiteSocialPresetId, numbe
 };
 export const ADMIN_SOCIAL_ORDER_MIN = 1;
 export const ADMIN_SOCIAL_ORDER_MAX = ADMIN_SOCIAL_PRESET_IDS.length + ADMIN_SOCIAL_CUSTOM_LIMIT;
+export const ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH = 80;
 export const ADMIN_NAV_ORDER_MIN = 1;
 export const ADMIN_NAV_ORDER_MAX = 999;
 
@@ -384,6 +385,7 @@ export const canonicalizeAdminThemeSettings = (
   const bitsPage = isRecord(page.bits) ? page.bits : {};
   const bitsDefaultAuthor = isRecord(bitsPage.defaultAuthor) ? bitsPage.defaultAuthor : {};
   const rawPresetOrder = isRecord(socialLinks.presetOrder) ? socialLinks.presetOrder : {};
+  const rawSocialDisplayText = isRecord(socialLinks.displayText) ? socialLinks.displayText : {};
   const rawUiArticleMeta: LooseRecord = isRecord(ui.articleMeta) ? ui.articleMeta : {};
   const rawUiSidebarActions: LooseRecord = isRecord(ui.sidebarActions) ? ui.sidebarActions : {};
   const rawUiLayout: LooseRecord = isRecord(ui.layout) ? ui.layout : {};
@@ -400,6 +402,7 @@ export const canonicalizeAdminThemeSettings = (
         label: normalizeCustomSocialLabel(record.label, iconKey),
         href: normalizeTrimmed(record.href),
         iconKey,
+        displayText: normalizeOptionalSingleLine(String(record.displayText ?? '')),
         visible: Boolean(record.visible),
         order: parseOrder(record.order as string | number | null | undefined, index + 1),
         __index: index
@@ -483,6 +486,11 @@ export const canonicalizeAdminThemeSettings = (
             rawPresetOrder.email as string | number | null | undefined,
             ADMIN_SOCIAL_PRESET_ORDER_DEFAULT.email
           )
+        },
+        displayText: {
+          github: normalizeOptionalSingleLine(String(rawSocialDisplayText.github ?? '')),
+          x: normalizeOptionalSingleLine(String(rawSocialDisplayText.x ?? '')),
+          email: normalizeOptionalSingleLine(String(rawSocialDisplayText.email ?? ''))
         },
         custom: normalizedCustom
       }
@@ -581,6 +589,9 @@ export const createAdminWritableThemeSettingsGroups = (
       email: settings.site.socialLinks.email,
       presetOrder: {
         ...settings.site.socialLinks.presetOrder
+      },
+      displayText: {
+        ...settings.site.socialLinks.displayText
       },
       custom: cloneCustomItems(settings.site.socialLinks.custom)
     }
@@ -700,6 +711,25 @@ export const validateAdminThemeSettings = (
     pushIssue('site.socialLinks.email', 'Email 必须是合法邮箱地址');
   }
 
+  const presetDisplayText = settings.site.socialLinks?.displayText;
+  ADMIN_SOCIAL_PRESET_IDS.forEach((id) => {
+    const value = presetDisplayText?.[id];
+    if (value == null) return;
+    const rowLabel = id === 'github' ? 'GitHub' : id === 'x' ? 'X / Twitter' : 'Email';
+    if (typeof value !== 'string') {
+      pushIssue(`site.socialLinks.displayText.${id}`, `${rowLabel} 详细显示必须是字符串或留空`);
+      return;
+    }
+    if (value.includes('\n') || value.includes('\r')) {
+      pushIssue(`site.socialLinks.displayText.${id}`, `${rowLabel} 详细显示只允许单行文本`);
+    } else if (value.length > ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH) {
+      pushIssue(
+        `site.socialLinks.displayText.${id}`,
+        `${rowLabel} 详细显示不能超过 ${ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH} 个字符`
+      );
+    }
+  });
+
   const presetOrder = settings.site.socialLinks.presetOrder;
   const customLinks = Array.isArray(settings.site.socialLinks?.custom) ? settings.site.socialLinks.custom : [];
   const socialOrderIssues = getAdminSocialOrderIssues(
@@ -768,6 +798,15 @@ export const validateAdminThemeSettings = (
 
     if (!item.href || !isAdminAllowedHttpsUrl(item.href)) {
       pushIssue(`${basePath}.href`, `自定义链接 #${index + 1} 的链接必须是合法 https:// 地址`);
+    }
+    if (item.displayText != null) {
+      if (typeof item.displayText !== 'string') {
+        pushIssue(`${basePath}.displayText`, `自定义链接 #${index + 1} 的详细显示必须是字符串或留空`);
+      } else if (item.displayText.includes('\n') || item.displayText.includes('\r')) {
+        pushIssue(`${basePath}.displayText`, `自定义链接 #${index + 1} 的详细显示只允许单行文本`);
+      } else if (item.displayText.length > ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH) {
+        pushIssue(`${basePath}.displayText`, `自定义链接 #${index + 1} 的详细显示不能超过 ${ADMIN_SOCIAL_DISPLAY_TEXT_MAX_LENGTH} 个字符`);
+      }
     }
     if (!isAdminSocialIconKey(item.iconKey)) {
       pushIssue(`${basePath}.iconKey`, `自定义链接 #${index + 1} 的图标必须从白名单中选择`);
@@ -1135,27 +1174,69 @@ const fillAdminThemeSettingsSiteCompatibilityDefaults = (
   rawSite: LooseRecord,
   canonicalSite: LooseRecord
 ): LooseRecord => {
-  const canonicalAdminOverview = canonicalSite.adminOverview;
-  if (!isRecord(canonicalAdminOverview)) return rawSite;
+  let nextSite = rawSite;
 
+  const canonicalAdminOverview = canonicalSite.adminOverview;
   const rawAdminOverview = rawSite.adminOverview;
-  if (rawAdminOverview === undefined) {
-    return {
-      ...rawSite,
-      adminOverview: canonicalAdminOverview
+  if (isRecord(canonicalAdminOverview)) {
+    if (rawAdminOverview === undefined) {
+      nextSite = {
+        ...nextSite,
+        adminOverview: canonicalAdminOverview
+      };
+    } else if (isRecord(rawAdminOverview)) {
+      nextSite = {
+        ...nextSite,
+        adminOverview: {
+          publicVisible: canonicalAdminOverview.publicVisible,
+          hiddenMessage: canonicalAdminOverview.hiddenMessage,
+          ...rawAdminOverview
+        }
+      };
+    }
+  }
+
+  const canonicalSocialLinks = canonicalSite.socialLinks;
+  const rawSocialLinks = rawSite.socialLinks;
+  if (isRecord(canonicalSocialLinks) && isRecord(rawSocialLinks)) {
+    const canonicalDisplayText = isRecord(canonicalSocialLinks.displayText)
+      ? canonicalSocialLinks.displayText
+      : undefined;
+    const rawDisplayText = isRecord(rawSocialLinks.displayText) ? rawSocialLinks.displayText : {};
+    const nextSocialLinks: LooseRecord = {
+      ...rawSocialLinks,
+      ...(canonicalDisplayText
+        ? {
+            displayText: {
+              ...canonicalDisplayText,
+              ...rawDisplayText
+            }
+          }
+        : {})
+    };
+
+    const canonicalCustomLinks = Array.isArray(canonicalSocialLinks.custom) ? canonicalSocialLinks.custom : null;
+    if (Array.isArray(rawSocialLinks.custom) && canonicalCustomLinks) {
+      nextSocialLinks.custom = rawSocialLinks.custom.map((item, index) => {
+        if (!isRecord(item)) return item;
+        const canonicalItem = canonicalCustomLinks[index];
+        if (!isRecord(canonicalItem) || Object.prototype.hasOwnProperty.call(item, 'displayText')) {
+          return item;
+        }
+        return {
+          ...item,
+          displayText: canonicalItem.displayText ?? null
+        };
+      });
+    }
+
+    nextSite = {
+      ...nextSite,
+      socialLinks: nextSocialLinks
     };
   }
 
-  if (!isRecord(rawAdminOverview)) return rawSite;
-
-  return {
-    ...rawSite,
-    adminOverview: {
-      publicVisible: canonicalAdminOverview.publicVisible,
-      hiddenMessage: canonicalAdminOverview.hiddenMessage,
-      ...rawAdminOverview
-    }
-  };
+  return nextSite;
 };
 
 const fillAdminThemeSettingsUiCompatibilityDefaults = (

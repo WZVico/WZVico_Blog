@@ -7,6 +7,7 @@
   --admin-social-column-order-width: 44px;
   --admin-social-column-platform-width: 104px;
   --admin-social-column-icon-width: 64px;
+  --admin-social-column-display-width: 136px;
   --admin-social-column-actions-width: 84px;
   --admin-social-row-padding-inline: var(--admin-row-table-padding-inline);
   --admin-social-header-font-size: var(--admin-text-xs);
@@ -69,6 +70,7 @@
     var(--admin-social-column-platform-width)
     var(--admin-social-column-icon-width)
     minmax(0, 1fr)
+    minmax(112px, var(--admin-social-column-display-width))
     var(--admin-social-column-actions-width);
   align-items: center;
 }
@@ -103,6 +105,10 @@
 }
 
 .admin-social-header__actions {
+  grid-column: 6;
+}
+
+.admin-social-header__display {
   grid-column: 5;
 }
 
@@ -142,10 +148,14 @@
 }
 
 .admin-social-field--actions {
-  grid-column: 5;
+  grid-column: 6;
   display: grid;
   gap: 6px;
   justify-items: center;
+}
+
+.admin-social-field--display {
+  grid-column: 5;
 }
 
 .admin-social-link-inline {
@@ -277,6 +287,11 @@
   font-size: var(--admin-social-field-font-size);
 }
 
+.admin-social-field--display .admin-field__control {
+  padding-inline: var(--admin-social-href-padding-inline);
+  font-size: var(--admin-social-field-font-size);
+}
+
 .admin-social-field--icon {
   justify-self: center;
   width: 100%;
@@ -362,6 +377,7 @@
     --admin-social-column-order-width: 40px;
     --admin-social-column-platform-width: 92px;
     --admin-social-column-icon-width: 36px;
+    --admin-social-column-display-width: 124px;
     --admin-social-column-actions-width: 72px;
     --admin-social-row-padding-inline: 10px;
     --admin-social-header-font-size: var(--admin-text-2xs);
@@ -381,6 +397,7 @@
     --admin-social-column-gap: 6px;
     --admin-social-column-platform-width: 84px;
     --admin-social-column-icon-width: 32px;
+    --admin-social-column-display-width: 112px;
     --admin-social-column-actions-width: 68px;
     --admin-social-row-padding-inline: 8px;
     --admin-social-field-font-size: var(--admin-text-2xs);

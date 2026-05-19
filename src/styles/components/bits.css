@@ -41,7 +41,7 @@
   gap: 8px;
   /* border removed */
   padding-bottom: 0;
-  margin: 9px 0 4px;
+  margin: 20px 0 4px;
 }
 
 .bits-controls {
@@ -1096,7 +1096,7 @@
 
   .bits-toolbar {
     align-items: flex-start;
-    margin: 10px 0 4px;
+    margin: 20px 0 4px;
     padding-bottom: 2px;
   }
 
@@ -1262,6 +1262,10 @@
     --bits-mobile-action-w: 68px;
     --bits-mobile-frame: rgba(127, 127, 127, 0.28);
     --bits-mobile-divider: rgba(127, 127, 127, 0.24);
+  }
+
+  .bits-toolbar {
+    margin-top: 10px;
   }
 
   .bits-year-filter {

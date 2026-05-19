@@ -85,6 +85,26 @@ describe('theme-settings revision semantics', () => {
     expect(getThemeSettingsReadDiagnostics(resolved)).toEqual([]);
   });
 
+  it('resolves custom social detail text for about contact links', async () => {
+    const settingsDir = await createTempSettingsFixture();
+    const sitePath = path.join(settingsDir, 'site.json');
+    const siteJson = JSON.parse(await readFile(sitePath, 'utf8')) as Record<string, any>;
+    siteJson.socialLinks.displayText = {
+      github: 'WZVico',
+      x: '@WZVico',
+      email: '写邮件给我'
+    };
+    siteJson.socialLinks.custom[0].displayText = '@wzvico';
+    await writeFile(sitePath, `${JSON.stringify(siteJson, null, 2)}\n`, 'utf8');
+
+    const socialItems = getThemeSettings().settings.site.socialLinks.resolvedSocialItems;
+
+    expect(socialItems.find((item) => item.id === 'github')?.displayText).toBe('WZVico');
+    expect(socialItems.find((item) => item.id === 'x')?.displayText).toBe('@WZVico');
+    expect(socialItems.find((item) => item.id === 'email')?.displayText).toBe('写邮件给我');
+    expect(socialItems.find((item) => item.id === 'custom-weibo')?.displayText).toBe('@wzvico');
+  });
+
   it('locks the console when an existing settings file would be silently repaired', async () => {
     const settingsDir = await createTempSettingsFixture();
     const sitePath = path.join(settingsDir, 'site.json');
