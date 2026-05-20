@@ -3,6 +3,7 @@ import BaseLayout from '../layouts/BaseLayout.astro';
 import TagFilterHeader from './TagFilterHeader.astro';
 import LongformCard from './LongformCard.astro';
 import { createWithBase, getLongformDerivedText, getLongformSlug, type LongformEntry } from '../lib/content';
+import { getLongformArticlePeople } from '../lib/longform-people';
 import { getThemeSettings, getVisibleArticleMetaTags } from '../lib/theme-settings';
 import { joinPageSubtitleText } from '../utils/format';
 
@@ -24,12 +25,11 @@ const {
 
 const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
+const { settings } = getThemeSettings();
 const {
-  settings: {
-    page,
-    ui: { articleMeta }
-  }
-} = getThemeSettings();
+  page,
+  ui: { articleMeta }
+} = settings;
 
 const pageTitleText = page.longform.title || '长文';
 const pageTitleParts = [pageTitleText, currentPage > 1 ? `第 ${currentPage} 页` : null].filter(Boolean);
@@ -76,6 +76,7 @@ const fallbackListId = 'longform-tag-list';
         date={entry.data.date}
         visibleTags={getVisibleArticleMetaTags(entry.data.tags, 'list')}
         articleMetaSettings={articleMeta}
+        articlePeople={getLongformArticlePeople(entry, settings, withBase)}
         badge={entry.data.badge}
       />
     ))}

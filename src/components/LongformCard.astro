@@ -1,6 +1,7 @@
 ---
 import { formatISODateUtc } from '../utils/format';
 import type { ArticleMetaSettings } from '../lib/theme-settings';
+import type { LongformArticlePeople } from '../lib/longform-people';
 
 const {
   href,
@@ -10,6 +11,7 @@ const {
   visibleTags = [],
   badge = '长文',
   slug = '',
+  articlePeople = { authors: [], translator: null },
   articleMetaSettings
 } = Astro.props as {
   href: string;
@@ -19,10 +21,15 @@ const {
   visibleTags?: string[];
   badge?: string;
   slug?: string;
+  articlePeople?: LongformArticlePeople;
   articleMetaSettings: ArticleMetaSettings;
 };
 const displayBadge = badge.trim() ? badge : '长文';
-const shouldShowMetaLine = articleMetaSettings.showDate || (articleMetaSettings.showTags && visibleTags.length > 0);
+const shouldShowPeople = articlePeople.authors.length > 0 || Boolean(articlePeople.translator);
+const shouldShowMetaLine =
+  shouldShowPeople ||
+  articleMetaSettings.showDate ||
+  (articleMetaSettings.showTags && visibleTags.length > 0);
 ---
 
 <a
@@ -40,6 +47,56 @@ const shouldShowMetaLine = articleMetaSettings.showDate || (articleMetaSettings.
   {excerpt ? <p class="list-item__excerpt">{excerpt}</p> : null}
   {shouldShowMetaLine ? (
     <div class="meta-line meta-line--items">
+      {shouldShowPeople ? (
+        <span class="meta-line__item meta-line__item--people longform-card__people">
+          {articlePeople.authors.length ? (
+            <>
+              <span class="article-byline__label">作者</span>
+              <span class="article-author-list">
+                {articlePeople.authors.map((author) => (
+                  <span class="article-author">
+                    {author.showAvatar ? (
+                      <span class="article-author-avatar article-author-avatar--image" aria-hidden="true">
+                        <img
+                          src={author.avatar}
+                          alt=""
+                          width="32"
+                          height="32"
+                          loading="lazy"
+                          decoding="async"
+                          onerror="this.parentElement?.remove();"
+                        />
+                      </span>
+                    ) : null}
+                    <span class="article-byline__name">{author.name}</span>
+                  </span>
+                ))}
+              </span>
+            </>
+          ) : null}
+          {articlePeople.translator ? (
+            <span class="article-translator">
+              <span class="article-byline__label">翻译</span>
+              <span class="article-author">
+                {articlePeople.translator.showAvatar ? (
+                  <span class="article-author-avatar article-author-avatar--image" aria-hidden="true">
+                    <img
+                      src={articlePeople.translator.avatar}
+                      alt=""
+                      width="32"
+                      height="32"
+                      loading="lazy"
+                      decoding="async"
+                      onerror="this.parentElement?.remove();"
+                    />
+                  </span>
+                ) : null}
+                <span class="article-byline__name">{articlePeople.translator.name}</span>
+              </span>
+            </span>
+          ) : null}
+        </span>
+      ) : null}
       {articleMetaSettings.showDate ? (
         <span class="meta-line__item">
           {articleMetaSettings.dateLabel ? `${articleMetaSettings.dateLabel}` : ''}{formatISODateUtc(date)}

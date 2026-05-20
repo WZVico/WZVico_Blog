@@ -5,24 +5,13 @@ import Lightbox from '../components/Lightbox.astro';
 import '../styles/article.css';
 import { getLongformDerivedText, type LongformEntry } from '../lib/content';
 import { getThemeSettings, type ArticleMetaSettings, type SidebarNavId } from '../lib/theme-settings';
+import { getLongformArticlePeople } from '../lib/longform-people';
 import { createWithBase, formatISODateUtc } from '../utils/format';
 import { truncateText } from '../utils/excerpt';
 
 type ArticleNeighborLink = {
   href: string;
   title: string;
-};
-
-type ArticleAuthor = {
-  name?: string | undefined;
-  avatar?: string | undefined;
-  showAvatar?: boolean | undefined;
-};
-
-type ArticlePerson = {
-  name: string;
-  avatar: string;
-  showAvatar: boolean;
 };
 
 const {
@@ -63,39 +52,8 @@ const shouldShowMetaLine = articleMetaSettings.showDate
   || articleMetaSettings.showReadingTime;
 const withBase = createWithBase(import.meta.env.BASE_URL ?? '/');
 const { settings } = getThemeSettings();
-const defaultAuthorName = (settings.page.bits.defaultAuthor.name ?? 'WZVico').trim() || 'WZVico';
-const defaultAuthorAvatar = (settings.page.bits.defaultAuthor.avatar ?? '').trim();
-const normalizeArticlePerson = (author: ArticleAuthor | undefined, useDefaultIdentity: boolean): ArticlePerson => {
-  const name = (author?.name ?? (useDefaultIdentity ? defaultAuthorName : '')).trim();
-  const resolvedName = name || (useDefaultIdentity ? defaultAuthorName : '');
-  const explicitAvatar = author?.avatar?.trim() ?? '';
-  const defaultAvatarForSameName =
-    useDefaultIdentity || resolvedName === defaultAuthorName ? defaultAuthorAvatar : '';
-  const avatarRaw = explicitAvatar || defaultAvatarForSameName;
-  return {
-    name: resolvedName,
-    avatar: avatarRaw ? withBase(avatarRaw) : '',
-    showAvatar: author?.showAvatar !== false && Boolean(avatarRaw)
-  };
-};
-const configuredAuthors = Array.isArray(entry.data.authors) ? entry.data.authors : [];
-const articleAuthors = (
-  configuredAuthors.length > 0
-    ? configuredAuthors.map((author) => normalizeArticlePerson(author, false))
-    : [normalizeArticlePerson(entry.data.author, true)]
-).filter((author) => author.name);
+const { authors: articleAuthors, translator: translatorPerson } = getLongformArticlePeople(entry, settings, withBase);
 const translation = entry.data.translation;
-const translator = translation?.translator?.trim() ?? '';
-const translatorPerson = translator
-  ? normalizeArticlePerson(
-      {
-        name: translator,
-        avatar: translation?.avatar,
-        showAvatar: translation?.showAvatar
-      },
-      false
-    )
-  : null;
 const translationSource = translation?.source?.trim() ?? '';
 const translationSourceUrl = translation?.sourceUrl?.trim() ?? '';
 const translationSourceLabel = translationSource || (translationSourceUrl ? '原文' : '');

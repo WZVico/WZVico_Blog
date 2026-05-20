@@ -8,17 +8,17 @@ import {
   getAdminHomeIntroLinkOption
 } from '../lib/admin-console/theme-shared';
 import { getLongformDerivedText, getLongformSlug, getVisibleLongforms } from '../lib/content';
+import { getLongformArticlePeople } from '../lib/longform-people';
 import { getThemeSettings, getVisibleArticleMetaTags } from '../lib/theme-settings';
 import { createWithBase } from '../utils/format';
 
 const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
+const { settings } = getThemeSettings();
 const {
-  settings: {
-    home: { introLead, introMore, introMoreLinks, showIntroLead, showIntroMore, heroPresetId, heroImageSrc, heroImageAlt },
-    ui: { articleMeta }
-  }
-} = getThemeSettings();
+  home: { introLead, introMore, introMoreLinks, showIntroLead, showIntroMore, heroPresetId, heroImageSrc, heroImageAlt },
+  ui: { articleMeta }
+} = settings;
 const shouldShowHero = heroPresetId !== 'none';
 const shouldShowIntro = showIntroLead || showIntroMore;
 const homeBodyClass = [
@@ -109,6 +109,7 @@ const homeHeadCriticalCss = [
   --border: #e7e5e4;
   --accent: #b91c1c;
   --code-header-bg: #f2f2f0;
+  --code-content-bg: #fcfcfb;
   --panel: var(--code-header-bg);
   --max: 900px;
   --sidebar: 320px;
@@ -126,6 +127,7 @@ const homeHeadCriticalCss = [
   --border: #333333;
   --accent: #f87171;
   --code-header-bg: #2a2a2a;
+  --code-content-bg: #222222;
   --panel: var(--code-header-bg);
 }
 
@@ -395,8 +397,29 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
 
 .list-item__row .badge {
   height: 24px;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
   flex-shrink: 0;
   white-space: nowrap;
+  padding: 0 7px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.6px;
+  color: var(--muted);
+  background: #fafafa;
+  position: relative;
+  top: 1px;
+}
+
+:root[data-theme="dark"] .badge {
+  background: #1f1f1f;
+  border-color: #3f3f3f;
+  color: var(--muted);
 }
 
 .list-item__title {
@@ -438,7 +461,18 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
 }
 
 .meta-line__item--tags {
+  flex: 0 0 auto;
   gap: 0.65em;
+  max-width: 100%;
+  white-space: nowrap;
+}
+
+.meta-line__item--tags .tag {
+  white-space: nowrap;
+}
+
+.meta-line__item--people {
+  gap: 8px;
 }
 
 .meta-line__item + .meta-line__item::before {
@@ -455,6 +489,60 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
 
 .meta-line .tag {
   color: var(--accent);
+}
+
+.article-author-list,
+.article-author,
+.article-translator {
+  display: inline-flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.article-author-list {
+  gap: 8px;
+}
+
+.article-author + .article-author::before,
+.article-translator::before {
+  content: "·";
+  color: var(--faint);
+  margin-right: 2px;
+}
+
+.meta-line__item--people > .article-translator:first-child::before {
+  content: none;
+  margin-right: 0;
+}
+
+.article-author-avatar {
+  width: 24px;
+  height: 24px;
+  flex: 0 0 auto;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: var(--code-content-bg);
+  color: var(--accent);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.article-author-avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.article-byline__label {
+  color: var(--faint);
+}
+
+.article-byline__name {
+  color: var(--text);
 }
 
 @media (min-width: 901px) {
@@ -676,13 +764,15 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
     {latest.map((entry) => {
       const slug = getLongformSlug(entry);
       const href = withBase(`/archive/${slug}/`);
-      const visibleTags = getVisibleArticleMetaTags(entry.data.tags, 'home');
+      const visibleTags = getVisibleArticleMetaTags(entry.data.tags, 'list');
       return (
         <EntryListItem
           href={href}
           title={entry.data.title}
           date={entry.data.date}
           visibleTags={visibleTags}
+          badge={entry.data.badge}
+          articlePeople={getLongformArticlePeople(entry, settings, withBase)}
           articleMetaSettings={articleMeta}
           excerpt={getLongformDerivedText(entry).excerpt}
         />
