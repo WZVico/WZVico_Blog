@@ -50,6 +50,7 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/admin/data/index.html',
     'dist/admin/theme/index.html',
     'dist/api/admin/category/bits',
+    'dist/api/admin/category/materials',
     'dist/api/admin/settings',
     'dist/api/admin/data/settings',
     'dist/api/admin/content/entry',
@@ -297,6 +298,12 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/api/admin/category/bits',
     adminBitsCreateArtifact,
     '/api/admin/category/bits/'
+  );
+  const adminMaterialsCreateArtifact = readText('dist/api/admin/category/materials');
+  assertAdminSettingsStaticShell(
+    'dist/api/admin/category/materials',
+    adminMaterialsCreateArtifact,
+    '/api/admin/category/materials/'
   );
   const adminDataSettingsArtifact = readText('dist/api/admin/data/settings');
   assertAdminSettingsStaticShell('dist/api/admin/data/settings', adminDataSettingsArtifact, '/api/admin/data/settings/');

@@ -140,4 +140,15 @@ const picks = defineCollection({
   })
 });
 
-export const collections = { longform, bits, picks };
+const materials = defineCollection({
+  loader: glob({ pattern: '**/*.md', base: './src/content/materials' }),
+  schema: z.object({
+    title: z.string(),
+    href: z.string(),
+    date: z.coerce.date(),
+    label: z.string().optional(),
+    description: z.string().optional()
+  })
+});
+
+export const collections = { longform, bits, picks, materials };

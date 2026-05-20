@@ -163,7 +163,7 @@ const assertReadonlyAdminChecksShell = (label, response) => {
 };
 
 const assertAdminCategoryShell = (label, response, options = {}) => {
-  const { expectBitsDraft = false, expectNav = false } = options;
+  const { expectBitsDraft = false, expectMaterialsCreate = false, expectNav = false } = options;
   expect(response.status === 200, `${label} returned ${response.status}`);
   expect(
     response.contentType.toLowerCase().includes('text/html'),
@@ -182,6 +182,20 @@ const assertAdminCategoryShell = (label, response, options = {}) => {
     expect(response.body.includes('data-bits-draft-form'), `${label} is missing the inline bits draft form`);
     expect(response.body.includes('data-bits-draft-generate'), `${label} is missing the generate action`);
     expect(!response.body.includes('data-bits-draft-download'), `${label} should not render the old download action`);
+  }
+  if (expectMaterialsCreate) {
+    expect(response.body.includes('data-materials-create-root'), `${label} is missing the materials create root`);
+    expect(
+      response.body.includes('data-materials-create-endpoint="/api/admin/category/materials/"'),
+      `${label} is missing the materials create endpoint`
+    );
+    expect(response.body.includes('data-material-field="title"'), `${label} is missing materials title field`);
+    expect(response.body.includes('data-material-field="href"'), `${label} is missing materials href field`);
+    expect(!response.body.includes('data-material-field="date"'), `${label} should not expose a manual materials date field`);
+    expect(!response.body.includes('data-material-field="group"'), `${label} should not expose a materials group field`);
+    expect(!response.body.includes('data-material-field="slug"'), `${label} should not expose a materials slug field`);
+    expect(!response.body.includes('data-materials-create-add'), `${label} should not expose bulk add rows`);
+    expect(response.body.includes('data-materials-create-submit'), `${label} is missing materials submit action`);
   }
   if (expectNav) {
     assertHasAdminRouteNav(label, response.body);
@@ -209,6 +223,14 @@ const assertAdminBitsCreateStaticResponse = (label, response) => {
     `${label} unexpectedly returned JSON in production preview`
   );
   assertStaticUnsupportedApiShell(label, response.body, '/api/admin/category/bits/');
+};
+
+const assertAdminMaterialsCreateStaticResponse = (label, response) => {
+  expect(
+    !response.contentType.toLowerCase().includes('application/json'),
+    `${label} unexpectedly returned JSON in production preview`
+  );
+  assertStaticUnsupportedApiShell(label, response.body, '/api/admin/category/materials/');
 };
 
 const assertReadonlyAdminImageShell = (label, response) => {
@@ -313,6 +335,7 @@ export const runPreviewAdminBoundaryCheck = async () => {
     const exportResponse = await request(baseUrl, '/api/admin/data/settings/');
     const contentGetResponse = await request(baseUrl, '/api/admin/content/entry/');
     const bitsCreateGetResponse = await request(baseUrl, '/api/admin/category/bits/');
+    const materialsCreateGetResponse = await request(baseUrl, '/api/admin/category/materials/');
     const imageListResponse = await request(baseUrl, '/api/admin/images/list/');
     const imageMetaResponse = await request(baseUrl, '/api/admin/images/meta/');
     const contentPostResponse = await request(baseUrl, '/api/admin/content/entry/', {
@@ -338,6 +361,19 @@ export const runPreviewAdminBoundaryCheck = async () => {
         markdown: '---\ndate: 2026-01-01T00:00:00+08:00\n---\n\npreview boundary'
       })
     });
+    const materialsCreatePostResponse = await request(baseUrl, '/api/admin/category/materials/', {
+      method: 'POST',
+      headers: {
+        'content-type': 'application/json',
+        origin: baseUrl
+      },
+      body: JSON.stringify({
+        item: {
+          title: 'Preview boundary material',
+          href: 'https://example.com/material'
+        }
+      })
+    });
     const postResponse = await request(baseUrl, '/api/admin/settings/', {
       method: 'POST',
       headers: {
@@ -360,10 +396,12 @@ export const runPreviewAdminBoundaryCheck = async () => {
     assertAdminSettingsStaticResponse('GET /api/admin/data/settings/', exportResponse, '/api/admin/data/settings/');
     assertAdminContentStaticResponse('GET /api/admin/content/entry/', contentGetResponse);
     assertAdminBitsCreateStaticResponse('GET /api/admin/category/bits/', bitsCreateGetResponse);
+    assertAdminMaterialsCreateStaticResponse('GET /api/admin/category/materials/', materialsCreateGetResponse);
     assertAdminImageStaticResponse('GET /api/admin/images/list/', imageListResponse, '/api/admin/images/list/');
     assertAdminImageStaticResponse('GET /api/admin/images/meta/', imageMetaResponse, '/api/admin/images/meta/');
     assertAdminContentStaticResponse('POST /api/admin/content/entry/', contentPostResponse);
     assertAdminBitsCreateStaticResponse('POST /api/admin/category/bits/', bitsCreatePostResponse);
+    assertAdminMaterialsCreateStaticResponse('POST /api/admin/category/materials/', materialsCreatePostResponse);
     assertAdminSettingsStaticResponse('POST /api/admin/settings/', postResponse);
     console.log('Preview admin boundary check passed.');
   } finally {
@@ -416,12 +454,17 @@ export const runDevAdminSettingsSmokeCheck = async () => {
     const contentLongformResponse = await request(baseUrl, '/admin/content/longform/');
     const categoryResponse = await request(baseUrl, '/admin/category/');
     const categoryBitsResponse = await request(baseUrl, '/admin/category/?tab=bits');
+    const categoryMaterialsResponse = await request(baseUrl, '/admin/category/?tab=materials');
     const bitsResponse = await request(baseUrl, '/bits/');
     assertAdminContentPlaceholderShell('Dev GET /admin/content/', contentOverviewResponse, { expectNav: true });
     assertAdminContentPlaceholderShell('Dev GET /admin/content/longform/', contentLongformResponse, { expectNav: true });
     assertAdminCategoryShell('Dev GET /admin/category/', categoryResponse, { expectNav: true });
     assertAdminCategoryShell('Dev GET /admin/category/?tab=bits', categoryBitsResponse, {
       expectBitsDraft: true,
+      expectNav: true
+    });
+    assertAdminCategoryShell('Dev GET /admin/category/?tab=materials', categoryMaterialsResponse, {
+      expectMaterialsCreate: true,
       expectNav: true
     });
     assertBitsPageWithoutDraftTools('Dev GET /bits/', bitsResponse);

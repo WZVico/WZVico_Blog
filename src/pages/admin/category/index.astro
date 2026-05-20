@@ -4,6 +4,7 @@ import AdminReadonlyNotice from '../../../components/admin/AdminReadonlyNotice.a
 import AdminShell from '../../../components/admin/AdminShell.astro';
 import BitsDraftDialog from '../../../components/BitsDraftDialog.astro';
 import { getAdminContentOverviewData } from '../../../lib/admin-console/content';
+import { getMaterials } from '../../../lib/materials';
 import { createWithBase } from '../../../utils/format';
 
 type AdminCategoryTabId = 'longform' | 'bits' | 'picks' | 'materials' | 'about';
@@ -51,7 +52,7 @@ const tabs = [
     label: '资料',
     description: '管理资料页分类入口，适合公开展示资料索引、清单或项目材料。',
     publicHref: '/Materials/',
-    sourceLabel: 'src/data/materials.json'
+    sourceLabel: 'src/content/materials'
   },
   {
     id: 'about',
@@ -72,8 +73,14 @@ const selectedTabId: AdminCategoryTabId = isAdminCategoryTabId(selectedTabParam)
 const selectedTab = tabs.find((tab) => tab.id === selectedTabId) ?? tabs[0];
 const contentOverview = isDev ? await getAdminContentOverviewData() : null;
 const contentSummary = contentOverview?.summaries.find((summary) => summary.key === selectedTabId);
+const materialItems = selectedTabId === 'materials' ? await getMaterials() : [];
+const latestMaterialDate = materialItems
+  .map((item) => item.dateValue)
+  .sort((left, right) => right.localeCompare(left))[0] ?? '未设置日期';
 const shouldShowBitsDraftConsole = isDev && selectedTabId === 'bits';
+const shouldShowMaterialsCreateConsole = isDev && selectedTabId === 'materials';
 const bitsDraftCreateEndpoint = withBase('/api/admin/category/bits/');
+const materialsCreateEndpoint = withBase('/api/admin/category/materials/');
 const bitsDraftStylesHref = shouldShowBitsDraftConsole
   ? (await import('../../../styles/components/bits.css?url')).default
   : null;
@@ -88,7 +95,13 @@ const buildCategoryHref = (tabId: AdminCategoryTabId): string =>
     ? withBase('/admin/category/')
     : withBase(`/admin/category/?tab=${tabId}`);
 
-const selectedStats = contentSummary
+const selectedStats = shouldShowMaterialsCreateConsole
+  ? [
+      { label: '当前资料', value: `${materialItems.length} 项` },
+      { label: '最近创建', value: latestMaterialDate },
+      { label: '保存位置', value: selectedTab.sourceLabel }
+    ]
+  : contentSummary
   ? [
       { label: '当前条目', value: `${contentSummary.totalCount} 项` },
       { label: '草稿数量', value: `${contentSummary.draftCount} 项` },
@@ -156,6 +169,54 @@ const selectedStats = contentSummary
                 <BitsDraftDialog inline createEndpoint={bitsDraftCreateEndpoint} />
               ) : null
             }
+
+            {
+              shouldShowMaterialsCreateConsole ? (
+                <section
+                  class="admin-category-materials-create"
+                  aria-labelledby="admin-category-materials-title"
+                  data-materials-create-root
+                  data-materials-create-endpoint={materialsCreateEndpoint}
+                >
+                  <div class="admin-category-materials-create__head">
+                    <div>
+                      <p class="admin-overview-card__eyebrow">Materials</p>
+                      <h3 id="admin-category-materials-title" class="admin-category-materials-create__title">
+                        新增资料
+                      </h3>
+                    </div>
+                  </div>
+
+                  <form class="admin-category-materials-create__form" data-materials-create-form>
+                    <article class="admin-category-materials-create__row">
+                      <label class="admin-category-materials-create__field admin-category-materials-create__field--title">
+                        <span>标题 *</span>
+                        <input class="admin-field__control" data-material-field="title" type="text" autocomplete="off" placeholder="资料标题" />
+                      </label>
+                      <label class="admin-category-materials-create__field admin-category-materials-create__field--href">
+                        <span>链接 *</span>
+                        <input class="admin-field__control" data-material-field="href" type="text" inputmode="url" autocomplete="off" placeholder="example.com/material" />
+                      </label>
+                      <label class="admin-category-materials-create__field admin-category-materials-create__field--label">
+                        <span>类型</span>
+                        <input class="admin-field__control" data-material-field="label" type="text" autocomplete="off" placeholder="视频 / PDF" />
+                      </label>
+                      <label class="admin-category-materials-create__field admin-category-materials-create__field--description">
+                        <span>描述</span>
+                        <textarea class="admin-field__control" data-material-field="description" rows="3" placeholder="前台列表说明"></textarea>
+                      </label>
+                    </article>
+
+                    <div class="admin-category-materials-create__footer">
+                      <div class="admin-category-materials-create__actions">
+                        <button class="admin-btn admin-btn--primary" type="submit" data-materials-create-submit>创建资料</button>
+                      </div>
+                      <p class="admin-category-materials-create__status" data-materials-create-status role="status" aria-live="polite"></p>
+                    </div>
+                  </form>
+                </section>
+              ) : null
+            }
           </section>
         </section>
       ) : (
@@ -172,6 +233,16 @@ const selectedStats = contentSummary
         import { initBitsDraft } from '../../../scripts/bits-draft';
 
         initBitsDraft();
+      </script>
+    ) : null
+  }
+
+  {
+    shouldShowMaterialsCreateConsole ? (
+      <script>
+        import { initMaterialsCreate } from '../../../scripts/materials-create';
+
+        initMaterialsCreate();
       </script>
     ) : null
   }

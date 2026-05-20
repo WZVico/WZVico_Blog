@@ -12,8 +12,9 @@ import { deriveMarkdownText, truncateText } from '../utils/excerpt';
 export { createWithBase } from '../utils/format';
 
 type OrderBy<K extends CollectionKey> = (a: CollectionEntry<K>, b: CollectionEntry<K>) => number;
+type DraftableCollectionKey = 'longform' | 'bits' | 'picks';
 
-export type GetPublishedOptions<K extends CollectionKey> = {
+export type GetPublishedOptions<K extends DraftableCollectionKey> = {
   orderBy?: OrderBy<K>;
   includeDraft?: boolean;
 };
@@ -44,7 +45,7 @@ export const buildPaginatedPaths = (totalPages: number) => {
   }));
 };
 
-export async function getPublished<K extends CollectionKey>(
+export async function getPublished<K extends DraftableCollectionKey>(
   name: K,
   opts: GetPublishedOptions<K> = {}
 ) {
