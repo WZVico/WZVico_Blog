@@ -224,6 +224,47 @@ describe('admin content write api', () => {
     expect(after).not.toBe(before);
   });
 
+  it('writes longform author and translation metadata', async () => {
+    const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
+    const { POST } = await import('../src/pages/api/admin/content/entry');
+
+    const current = await readAdminContentEntryEditorPayload('longform', 'demo');
+    const nextValues = {
+      ...current.values,
+      authorName: 'Alice',
+      authorAvatar: 'author/alice.webp',
+      authorShowAvatar: false,
+      translationTranslator: 'WZVico',
+      translationSource: 'Original Essay',
+      translationSourceUrl: 'https://example.com/original'
+    };
+
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry', {
+        collection: 'longform',
+        entryId: 'demo',
+        revision: current.revision,
+        frontmatter: nextValues
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/entry')
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+    expect(payload.result.changedFields).toEqual(['author', 'translation']);
+
+    const after = await readFile(path.join(tempRoot, 'src', 'content', 'longform', 'demo.md'), 'utf8');
+    expect(after).toContain('author:');
+    expect(after).toContain('name: Alice');
+    expect(after).toContain('avatar: author/alice.webp');
+    expect(after).toContain('showAvatar: false');
+    expect(after).toContain('translation:');
+    expect(after).toContain('translator: WZVico');
+    expect(after).toContain('source: Original Essay');
+    expect(after).toContain('sourceUrl: https://example.com/original');
+  });
+
   it('normalizes legacy longform datetime dates to date plus publishedAt on save', async () => {
     const legacyPath = path.join(tempRoot, 'src', 'content', 'longform', 'legacy-datetime.md');
     await writeFile(

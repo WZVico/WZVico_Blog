@@ -4,13 +4,25 @@ import UiIcon from '../components/UiIcon.astro';
 import Lightbox from '../components/Lightbox.astro';
 import '../styles/article.css';
 import { getLongformDerivedText, type LongformEntry } from '../lib/content';
-import type { ArticleMetaSettings, SidebarNavId } from '../lib/theme-settings';
-import { formatISODateUtc } from '../utils/format';
+import { getThemeSettings, type ArticleMetaSettings, type SidebarNavId } from '../lib/theme-settings';
+import { createWithBase, formatISODateUtc } from '../utils/format';
 import { truncateText } from '../utils/excerpt';
 
 type ArticleNeighborLink = {
   href: string;
   title: string;
+};
+
+type ArticleAuthor = {
+  name?: string | undefined;
+  avatar?: string | undefined;
+  showAvatar?: boolean | undefined;
+};
+
+type ArticlePerson = {
+  name: string;
+  avatar: string;
+  showAvatar: boolean;
 };
 
 const {
@@ -49,6 +61,44 @@ const shouldShowMetaLine = articleMetaSettings.showDate
   || (articleMetaSettings.showTags && visibleTags.length > 0)
   || articleMetaSettings.showWordCount
   || articleMetaSettings.showReadingTime;
+const withBase = createWithBase(import.meta.env.BASE_URL ?? '/');
+const { settings } = getThemeSettings();
+const defaultAuthorName = (settings.page.bits.defaultAuthor.name ?? 'WZVico').trim() || 'WZVico';
+const defaultAuthorAvatar = (settings.page.bits.defaultAuthor.avatar ?? '').trim();
+const normalizeArticlePerson = (author: ArticleAuthor | undefined, useDefaultIdentity: boolean): ArticlePerson => {
+  const name = (author?.name ?? (useDefaultIdentity ? defaultAuthorName : '')).trim();
+  const resolvedName = name || (useDefaultIdentity ? defaultAuthorName : '');
+  const explicitAvatar = author?.avatar?.trim() ?? '';
+  const defaultAvatarForSameName =
+    useDefaultIdentity || resolvedName === defaultAuthorName ? defaultAuthorAvatar : '';
+  const avatarRaw = explicitAvatar || defaultAvatarForSameName;
+  return {
+    name: resolvedName,
+    avatar: avatarRaw ? withBase(avatarRaw) : '',
+    showAvatar: author?.showAvatar !== false && Boolean(avatarRaw)
+  };
+};
+const configuredAuthors = Array.isArray(entry.data.authors) ? entry.data.authors : [];
+const articleAuthors = (
+  configuredAuthors.length > 0
+    ? configuredAuthors.map((author) => normalizeArticlePerson(author, false))
+    : [normalizeArticlePerson(entry.data.author, true)]
+).filter((author) => author.name);
+const translation = entry.data.translation;
+const translator = translation?.translator?.trim() ?? '';
+const translatorPerson = translator
+  ? normalizeArticlePerson(
+      {
+        name: translator,
+        avatar: translation?.avatar,
+        showAvatar: translation?.showAvatar
+      },
+      false
+    )
+  : null;
+const translationSource = translation?.source?.trim() ?? '';
+const translationSourceUrl = translation?.sourceUrl?.trim() ?? '';
+const translationSourceLabel = translationSource || (translationSourceUrl ? '原文' : '');
 
 ---
 
@@ -62,6 +112,9 @@ const shouldShowMetaLine = articleMetaSettings.showDate
 >
   <Fragment slot="head">
     <meta property="article:published_time" content={entry.data.date.toISOString()} />
+    {articleAuthors.map((author) => (
+      <meta property="article:author" content={author.name} />
+    ))}
     {entryTags.map((tag: string) => (
       <meta property="article:tag" content={tag} />
     ))}
@@ -79,6 +132,50 @@ const shouldShowMetaLine = articleMetaSettings.showDate
     >
       <UiIcon name="reader-exit" class="icon" />
     </button>
+    <div class="article-byline">
+      <span class="article-byline__label">作者</span>
+      <span class="article-author-list">
+        {articleAuthors.map((author) => (
+          <span class="article-author">
+            {author.showAvatar ? (
+              <span class="article-author-avatar article-author-avatar--image" aria-hidden="true">
+                <img
+                  src={author.avatar}
+                  alt=""
+                  width="32"
+                  height="32"
+                  loading="lazy"
+                  decoding="async"
+                  onerror="this.parentElement?.remove();"
+                />
+              </span>
+            ) : null}
+            <span class="article-byline__name">{author.name}</span>
+          </span>
+        ))}
+      </span>
+      {translatorPerson ? (
+        <span class="article-translator">
+          <span class="article-byline__label">翻译</span>
+          <span class="article-author">
+            {translatorPerson.showAvatar ? (
+              <span class="article-author-avatar article-author-avatar--image" aria-hidden="true">
+                <img
+                  src={translatorPerson.avatar}
+                  alt=""
+                  width="32"
+                  height="32"
+                  loading="lazy"
+                  decoding="async"
+                  onerror="this.parentElement?.remove();"
+                />
+              </span>
+            ) : null}
+            <span class="article-byline__name">{translatorPerson.name}</span>
+          </span>
+        </span>
+      ) : null}
+    </div>
     {shouldShowMetaLine ? (
       <div class="meta-line meta-line--items">
         {articleMetaSettings.showDate ? (
@@ -103,6 +200,16 @@ const shouldShowMetaLine = articleMetaSettings.showDate
             约 {numberFormatter.format(articleReadingStats.readingMinutes)} 分钟
           </span>
         ) : null}
+      </div>
+    ) : null}
+    {translationSourceLabel ? (
+      <div class="article-source-line">
+        <span>文章来源：</span>
+        {translationSourceUrl ? (
+          <a href={translationSourceUrl} rel="noopener noreferrer" target="_blank">{translationSourceLabel}</a>
+        ) : (
+          <span>{translationSourceLabel}</span>
+        )}
       </div>
     ) : null}
   </div>

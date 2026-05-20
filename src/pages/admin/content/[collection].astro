@@ -462,10 +462,46 @@ const activeFilterCount = pageData
                               <p class="admin-content-editor__error" data-field-error="badge" hidden></p>
                             </label>
 
+                            <label class="admin-field admin-content-editor__field" data-field-path="authorName">
+                              <span class="admin-field__label">author.name</span>
+                              <input class="admin-field__control" id="admin-content-author-name" name="authorName" type="text" value={selectedEntryEditorPayload.values.authorName} />
+                              <p class="admin-content-editor__error" data-field-error="authorName" hidden></p>
+                            </label>
+
+                            <label class="admin-field admin-content-editor__field" data-field-path="authorAvatar">
+                              <span class="admin-field__label">author.avatar</span>
+                              <input class="admin-field__control" id="admin-content-author-avatar" name="authorAvatar" type="text" value={selectedEntryEditorPayload.values.authorAvatar} />
+                              <p class="admin-content-editor__error" data-field-error="authorAvatar" hidden></p>
+                            </label>
+
                             <label class="admin-field admin-content-editor__field admin-field--full" data-field-path="cover">
                               <span class="admin-field__label">cover</span>
                               <input class="admin-field__control" id="admin-content-cover" name="cover" type="text" value={selectedEntryEditorPayload.values.cover} />
                               <p class="admin-content-editor__error" data-field-error="cover" hidden></p>
+                            </label>
+
+                            <label class="admin-field admin-content-editor__field" data-field-path="translationTranslator">
+                              <span class="admin-field__label">translation.translator</span>
+                              <input class="admin-field__control" id="admin-content-translation-translator" name="translationTranslator" type="text" value={selectedEntryEditorPayload.values.translationTranslator} />
+                              <p class="admin-content-editor__error" data-field-error="translationTranslator" hidden></p>
+                            </label>
+
+                            <label class="admin-field admin-content-editor__field" data-field-path="translationSource">
+                              <span class="admin-field__label">translation.source</span>
+                              <input class="admin-field__control" id="admin-content-translation-source" name="translationSource" type="text" value={selectedEntryEditorPayload.values.translationSource} />
+                              <p class="admin-content-editor__error" data-field-error="translationSource" hidden></p>
+                            </label>
+
+                            <label class="admin-field admin-content-editor__field" data-field-path="translationAvatar">
+                              <span class="admin-field__label">translation.avatar</span>
+                              <input class="admin-field__control" id="admin-content-translation-avatar" name="translationAvatar" type="text" value={selectedEntryEditorPayload.values.translationAvatar} />
+                              <p class="admin-content-editor__error" data-field-error="translationAvatar" hidden></p>
+                            </label>
+
+                            <label class="admin-field admin-content-editor__field admin-field--full" data-field-path="translationSourceUrl">
+                              <span class="admin-field__label">translation.sourceUrl</span>
+                              <input class="admin-field__control" id="admin-content-translation-source-url" name="translationSourceUrl" type="url" value={selectedEntryEditorPayload.values.translationSourceUrl} />
+                              <p class="admin-content-editor__error" data-field-error="translationSourceUrl" hidden></p>
                             </label>
 
                             <div class="admin-content-editor__toggles">
@@ -476,6 +512,14 @@ const activeFilterCount = pageData
                               <label class="admin-toggle-row">
                                 <input id="admin-content-archive" name="archive" type="checkbox" checked={selectedEntryEditorPayload.values.archive} />
                                 <span>archive</span>
+                              </label>
+                              <label class="admin-toggle-row">
+                                <input id="admin-content-author-show-avatar" name="authorShowAvatar" type="checkbox" checked={selectedEntryEditorPayload.values.authorShowAvatar} />
+                                <span>显示作者头像</span>
+                              </label>
+                              <label class="admin-toggle-row">
+                                <input id="admin-content-translation-show-avatar" name="translationShowAvatar" type="checkbox" checked={selectedEntryEditorPayload.values.translationShowAvatar} />
+                                <span>显示译者头像</span>
                               </label>
                             </div>
                           </>

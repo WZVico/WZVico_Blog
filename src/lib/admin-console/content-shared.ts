@@ -2,7 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile, readdir } from 'node:fs/promises';
 import path from 'node:path';
-import { normalizeBitsAvatarPath } from '../../utils/format';
+import { normalizeBitsAvatarPath, toSafeHttpUrl } from '../../utils/format';
 import {
   parseLongformDateInput,
   parseLongformPublishedAtInput
@@ -60,6 +60,14 @@ export type AdminLongformEditorValues = {
   slug: string;
   cover: string;
   badge: string;
+  authorName: string;
+  authorAvatar: string;
+  authorShowAvatar: boolean;
+  translationTranslator: string;
+  translationAvatar: string;
+  translationShowAvatar: boolean;
+  translationSource: string;
+  translationSourceUrl: string;
 };
 
 export type AdminBitsEditorValues = {
@@ -132,6 +140,18 @@ type AdminLongformFrontmatter = {
   slug?: string;
   cover?: string;
   badge?: string;
+  author?: {
+    name?: string;
+    avatar?: string;
+    showAvatar?: boolean;
+  };
+  translation?: {
+    translator?: string;
+    avatar?: string;
+    showAvatar?: boolean;
+    source?: string;
+    sourceUrl?: string;
+  };
 };
 
 type AdminBitsImage = {
@@ -287,7 +307,15 @@ const parseAdminLongformEditorInput = (
     archive: getRequiredBooleanField(input, 'archive', issues),
     slug: getRequiredStringField(input, 'slug', issues),
     cover: getRequiredStringField(input, 'cover', issues),
-    badge: getRequiredStringField(input, 'badge', issues)
+    badge: getRequiredStringField(input, 'badge', issues),
+    authorName: getRequiredStringField(input, 'authorName', issues),
+    authorAvatar: getRequiredStringField(input, 'authorAvatar', issues),
+    authorShowAvatar: typeof input.authorShowAvatar === 'boolean' ? input.authorShowAvatar : true,
+    translationTranslator: getRequiredStringField(input, 'translationTranslator', issues),
+    translationAvatar: getRequiredStringField(input, 'translationAvatar', issues),
+    translationShowAvatar: typeof input.translationShowAvatar === 'boolean' ? input.translationShowAvatar : true,
+    translationSource: getRequiredStringField(input, 'translationSource', issues),
+    translationSourceUrl: getRequiredStringField(input, 'translationSourceUrl', issues)
   };
 
   return issues.length > 0 ? { issues } : { values, issues };
@@ -454,6 +482,8 @@ const loadAdminContentSourceState = async (
 
 const toLongformEditorValues = (state: AdminContentSourceState): AdminLongformEditorValues => {
   const frontmatter = state.rawFrontmatter;
+  const author = isRecord(frontmatter.author) ? frontmatter.author : null;
+  const translation = isRecord(frontmatter.translation) ? frontmatter.translation : null;
   const rawDate = getDateString(frontmatter, 'date', '');
   const rawPublishedAt = normalizeOptionalText(frontmatter.publishedAt);
   const dateResult = parseLongformDateInput(rawDate);
@@ -468,7 +498,15 @@ const toLongformEditorValues = (state: AdminContentSourceState): AdminLongformEd
     archive: frontmatter.archive !== false,
     slug: normalizeOptionalText(frontmatter.slug),
     cover: normalizeOptionalText(frontmatter.cover),
-    badge: normalizeOptionalText(frontmatter.badge)
+    badge: normalizeOptionalText(frontmatter.badge),
+    authorName: normalizeOptionalText(author?.name),
+    authorAvatar: normalizeOptionalText(author?.avatar),
+    authorShowAvatar: author?.showAvatar !== false,
+    translationTranslator: normalizeOptionalText(translation?.translator),
+    translationAvatar: normalizeOptionalText(translation?.avatar),
+    translationShowAvatar: translation?.showAvatar !== false,
+    translationSource: normalizeOptionalText(translation?.source),
+    translationSourceUrl: normalizeOptionalText(translation?.sourceUrl)
   };
 };
 
@@ -576,6 +614,40 @@ const buildLongformFrontmatterFromValues = (
   const slug = values.slug.trim();
   const date = dateResult.dateText;
   const publishedAtText = hasExplicitPublishedAt ? explicitPublishedAt : dateResult.publishedAtText;
+  const authorName = values.authorName.trim();
+  const authorAvatarRaw = values.authorAvatar.trim();
+  const authorAvatar = authorAvatarRaw ? normalizeBitsAvatarPath(authorAvatarRaw) : '';
+  if (authorAvatarRaw && authorAvatar === undefined) {
+    issues.push(
+      createIssue(
+        'authorAvatar',
+        'author.avatar 只允许相对图片路径（例如 author/avatar.webp），不要带 public/、不要以 / 开头，也不要使用 URL、..、?、#'
+      )
+    );
+  }
+
+  const translationTranslator = values.translationTranslator.trim();
+  const translationAvatarRaw = values.translationAvatar.trim();
+  const translationAvatar = translationAvatarRaw ? normalizeBitsAvatarPath(translationAvatarRaw) : '';
+  if (translationAvatarRaw && translationAvatar === undefined) {
+    issues.push(
+      createIssue(
+        'translationAvatar',
+        'translation.avatar 只允许相对图片路径（例如 author/avatar.webp），不要带 public/、不要以 / 开头，也不要使用 URL、..、?、#'
+      )
+    );
+  }
+
+  const translationSource = values.translationSource.trim();
+  const translationSourceUrlRaw = values.translationSourceUrl.trim();
+  const translationSourceUrl = translationSourceUrlRaw ? toSafeHttpUrl(translationSourceUrlRaw) : '';
+  if (translationSourceUrlRaw && !translationSourceUrl) {
+    issues.push(createIssue('translationSourceUrl', 'translation.sourceUrl 必须是合法的 http(s) URL'));
+  }
+
+  if (issues.length > 0) {
+    return { issues };
+  }
 
   return {
     issues,
@@ -589,7 +661,27 @@ const buildLongformFrontmatterFromValues = (
       archive: values.archive !== false,
       ...(slug ? { slug } : {}),
       ...(values.cover.trim() ? { cover: values.cover.trim() } : {}),
-      ...(values.badge.trim() ? { badge: values.badge.trim() } : {})
+      ...(values.badge.trim() ? { badge: values.badge.trim() } : {}),
+      ...((authorName || authorAvatar || values.authorShowAvatar === false)
+        ? {
+            author: {
+              ...(authorName ? { name: authorName } : {}),
+              ...(authorAvatar ? { avatar: authorAvatar } : {}),
+              ...(values.authorShowAvatar === false ? { showAvatar: false } : {})
+            }
+          }
+        : {}),
+      ...((translationTranslator || translationAvatar || values.translationShowAvatar === false || translationSource || translationSourceUrl)
+        ? {
+            translation: {
+              ...(translationTranslator ? { translator: translationTranslator } : {}),
+              ...(translationAvatar ? { avatar: translationAvatar } : {}),
+              ...(values.translationShowAvatar === false ? { showAvatar: false } : {}),
+              ...(translationSource ? { source: translationSource } : {}),
+              ...(translationSourceUrl ? { sourceUrl: translationSourceUrl } : {})
+            }
+          }
+        : {})
     }
   };
 };
@@ -768,7 +860,9 @@ const buildLongformWritePlan = async (
     { field: 'archive', path: ['archive'], currentValue: current.archive, nextValue: next.frontmatter.archive },
     { field: 'slug', path: ['slug'], currentValue: current.slug, nextValue: next.frontmatter.slug },
     { field: 'cover', path: ['cover'], currentValue: current.cover, nextValue: next.frontmatter.cover },
-    { field: 'badge', path: ['badge'], currentValue: current.badge, nextValue: next.frontmatter.badge }
+    { field: 'badge', path: ['badge'], currentValue: current.badge, nextValue: next.frontmatter.badge },
+    { field: 'author', path: ['author'], currentValue: current.author, nextValue: next.frontmatter.author },
+    { field: 'translation', path: ['translation'], currentValue: current.translation, nextValue: next.frontmatter.translation }
   ];
 
   const changedFields: string[] = [];

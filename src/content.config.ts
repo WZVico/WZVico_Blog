@@ -22,10 +22,51 @@ const longformBaseFields = {
   slug: slugRule.optional()
 };
 
+const bitsImage = z.object({
+  src: z.string(),
+  width: z.number().int().positive().optional(),
+  height: z.number().int().positive().optional(),
+  alt: z.string().optional()
+});
+
+const bitsAuthorAvatar = z
+  .string()
+  .superRefine((value, ctx) => {
+    const normalized = normalizeBitsAvatarPath(value);
+    if (normalized === undefined) {
+      ctx.addIssue({
+        code: 'custom',
+        message: 'author.avatar 只允许相对图片路径（例如 author/avatar.webp），不要带 public/、不要以 / 开头，也不要使用 URL、..、?、#'
+      });
+      return;
+    }
+  })
+  .transform((value) => normalizeBitsAvatarPath(value) ?? value);
+
+const contentAuthorBase = z.object({
+  name: z.string().optional(),
+  avatar: bitsAuthorAvatar.optional()
+});
+
+const longformAuthor = contentAuthorBase.extend({
+  showAvatar: z.boolean().optional()
+});
+
+const longformTranslation = z.object({
+  translator: z.string().optional(),
+  avatar: bitsAuthorAvatar.optional(),
+  showAvatar: z.boolean().optional(),
+  source: z.string().optional(),
+  sourceUrl: z.url().optional()
+});
+
 const longformShape = {
   ...longformBaseFields,
   cover: z.string().optional(),
-  badge: z.string().optional()
+  badge: z.string().optional(),
+  author: longformAuthor.optional(),
+  authors: z.array(longformAuthor).optional(),
+  translation: longformTranslation.optional()
 };
 
 const longformSchema = z.object(longformShape).transform((data, ctx) => {
@@ -66,32 +107,6 @@ const longformSchema = z.object(longformShape).transform((data, ctx) => {
   };
 });
 
-const bitsImage = z.object({
-  src: z.string(),
-  width: z.number().int().positive().optional(),
-  height: z.number().int().positive().optional(),
-  alt: z.string().optional()
-});
-
-const bitsAuthorAvatar = z
-  .string()
-  .superRefine((value, ctx) => {
-    const normalized = normalizeBitsAvatarPath(value);
-    if (normalized === undefined) {
-      ctx.addIssue({
-        code: 'custom',
-        message: 'author.avatar 只允许相对图片路径（例如 author/avatar.webp），不要带 public/、不要以 / 开头，也不要使用 URL、..、?、#'
-      });
-      return;
-    }
-  })
-  .transform((value) => normalizeBitsAvatarPath(value) ?? value);
-
-const bitsAuthor = z.object({
-  name: z.string().optional(),
-  avatar: bitsAuthorAvatar.optional()
-});
-
 const longform = defineCollection({
   loader: glob({ pattern: '**/*.md', base: './src/content/longform' }),
   schema: longformSchema
@@ -110,7 +125,7 @@ const bits = defineCollection({
 
     // Optional media for card display.
     images: z.array(bitsImage).optional(),
-    author: bitsAuthor.optional()
+    author: contentAuthorBase.optional()
   })
 });
 

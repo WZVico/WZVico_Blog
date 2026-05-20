@@ -276,7 +276,15 @@ if (!adminContentRoot) {
             archive: formData.get('archive') !== null,
             slug: getText('slug'),
             cover: getText('cover'),
-            badge: getText('badge')
+            badge: getText('badge'),
+            authorName: getText('authorName'),
+            authorAvatar: getText('authorAvatar'),
+            authorShowAvatar: formData.get('authorShowAvatar') !== null,
+            translationTranslator: getText('translationTranslator'),
+            translationAvatar: getText('translationAvatar'),
+            translationShowAvatar: formData.get('translationShowAvatar') !== null,
+            translationSource: getText('translationSource'),
+            translationSourceUrl: getText('translationSourceUrl')
           };
         }
 

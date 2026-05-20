@@ -505,7 +505,7 @@ const DEFAULT_PAGE: PageSettings = {
     title: LEGACY_BITS_TITLE,
     subtitle: LEGACY_BITS_SUBTITLE,
     defaultAuthor: {
-      name: 'Whono',
+      name: 'WZVico',
       avatar: 'author/avatar.webp'
     }
   },

@@ -233,6 +233,14 @@ const createLongformIndexItem = (entry: LongformEntry): AdminContentIndexItem =>
   const relativePath = buildRelativePath('longform', entry.id);
   const publicHref = entry.data.draft === true ? null : `/archive/${slug}/`;
   const excerpt = derivedText.excerpt || null;
+  const authorItems = entry.data.authors?.length ? entry.data.authors : (entry.data.author ? [entry.data.author] : []);
+  const authorName = authorItems.map((author) => normalizeOptionalText(author.name)).filter(Boolean).join(', ');
+  const authorAvatar = authorItems.map((author) => normalizeOptionalText(author.avatar)).filter(Boolean).join(', ');
+  const translation = entry.data.translation;
+  const translationTranslator = normalizeOptionalText(translation?.translator);
+  const translationAvatar = normalizeOptionalText(translation?.avatar);
+  const translationSource = normalizeOptionalText(translation?.source);
+  const translationSourceUrl = normalizeOptionalText(translation?.sourceUrl);
 
   return {
     collection: 'longform',
@@ -259,7 +267,13 @@ const createLongformIndexItem = (entry: LongformEntry): AdminContentIndexItem =>
       buildEntryField('archive', String(entry.data.archive !== false)),
       buildEntryField('slug', slug),
       buildEntryField('cover', entry.data.cover),
-      buildEntryField('badge', entry.data.badge)
+      buildEntryField('badge', entry.data.badge),
+      buildEntryField('author.name', authorName, MISSING_VALUE),
+      buildEntryField('author.avatar', authorAvatar, MISSING_VALUE),
+      buildEntryField('translation.translator', translationTranslator, MISSING_VALUE),
+      buildEntryField('translation.avatar', translationAvatar, MISSING_VALUE),
+      buildEntryField('translation.source', translationSource, MISSING_VALUE),
+      buildEntryField('translation.sourceUrl', translationSourceUrl, MISSING_VALUE)
     ],
     searchHaystack: buildSearchHaystack([
       title,
@@ -267,6 +281,12 @@ const createLongformIndexItem = (entry: LongformEntry): AdminContentIndexItem =>
       slug,
       entry.data.description,
       entry.data.tags,
+      authorName,
+      authorAvatar,
+      translationTranslator,
+      translationAvatar,
+      translationSource,
+      translationSourceUrl,
       derivedText.text
     ])
   };
