@@ -344,6 +344,7 @@
 
 .list-item__title-link {
   color: inherit;
+  border-bottom: 1px solid transparent;
   text-decoration: none;
 }
 
@@ -421,6 +422,17 @@
   grid-row: 1;
 }
 
+.archive-title a {
+  color: inherit;
+}
+
+.archive-title a:hover,
+.archive-title a:focus-visible {
+  color: var(--accent);
+  border-bottom-color: currentColor;
+  outline: none;
+}
+
 .materials-description,
 .materials-empty {
   margin: 6px 0 0;
@@ -457,6 +469,7 @@
 .archive-author a,
 .article-byline__name--link {
   color: inherit;
+  border-bottom: 1px solid transparent;
   text-decoration: none;
 }
 

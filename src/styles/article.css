@@ -16,11 +16,14 @@
 
 .article-source-line a {
   color: inherit;
-  border-bottom: 1px dashed currentColor;
+  border-bottom: 1px solid transparent;
 }
 
-.article-source-line a:hover {
-  border-bottom-style: solid;
+.article-source-line a:hover,
+.article-source-line a:focus-visible {
+  color: var(--accent);
+  border-bottom-color: currentColor;
+  outline: none;
 }
 
 .article-header .meta-line__item--tags {

@@ -373,7 +373,14 @@
   color: var(--muted);
   font-size: 13px;
   white-space: nowrap;
-  border-bottom: none;
+  border-bottom: 1px solid transparent;
+}
+
+.picks-toc .toc-items a:hover,
+.picks-toc .toc-items a:focus-visible {
+  color: var(--accent);
+  border-bottom-color: currentColor;
+  outline: none;
 }
 
 .toc-num {
