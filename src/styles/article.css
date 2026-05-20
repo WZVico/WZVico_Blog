@@ -93,3 +93,12 @@
 .article-source-line a:hover {
   border-bottom-style: solid;
 }
+
+.article-header .meta-line__item--tags {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.article-header .meta-line__item--tags .tag {
+  white-space: nowrap;
+}

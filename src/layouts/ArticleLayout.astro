@@ -183,13 +183,6 @@ const translationSourceLabel = translationSource || (translationSourceUrl ? '原
             {articleMetaSettings.dateLabel ? `${articleMetaSettings.dateLabel}` : ''}{formatISODateUtc(entry.data.date)}
           </span>
         ) : null}
-        {articleMetaSettings.showTags && visibleTags.length ? (
-          <span class="meta-line__item meta-line__item--tags">
-            {visibleTags.map((tag) => (
-              <span class="tag">#{tag}</span>
-            ))}
-          </span>
-        ) : null}
         {articleMetaSettings.showWordCount ? (
           <span class="meta-line__item meta-line__item--desktop-meta">
             共 {numberFormatter.format(articleReadingStats.wordCount)} 字
@@ -198,6 +191,13 @@ const translationSourceLabel = translationSource || (translationSourceUrl ? '原
         {articleMetaSettings.showReadingTime ? (
           <span class="meta-line__item meta-line__item--desktop-meta">
             约 {numberFormatter.format(articleReadingStats.readingMinutes)} 分钟
+          </span>
+        ) : null}
+        {articleMetaSettings.showTags && visibleTags.length ? (
+          <span class="meta-line__item meta-line__item--tags">
+            {visibleTags.map((tag) => (
+              <span class="tag">#{tag}</span>
+            ))}
           </span>
         ) : null}
       </div>
