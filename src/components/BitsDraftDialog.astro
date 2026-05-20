@@ -3,11 +3,18 @@ import UiIcon from './UiIcon.astro';
 import { getThemeSettings } from '../lib/theme-settings';
 
 const { settings } = getThemeSettings();
+const { createEndpoint = '', inline = false } = Astro.props as {
+  createEndpoint?: string;
+  inline?: boolean;
+};
+const RootTag = inline ? 'section' : 'dialog';
 ---
-<dialog
-  class="bits-draft-dialog"
+<RootTag
+  class:list={['bits-draft-dialog', inline && 'bits-draft-dialog--inline']}
   id="bits-draft-dialog"
   aria-labelledby="bits-draft-title"
+  data-bits-draft-inline={inline ? 'true' : undefined}
+  data-bits-draft-create-endpoint={createEndpoint || undefined}
   data-default-author-name={settings.page.bits.defaultAuthor.name ?? ''}
   data-default-author-avatar={settings.page.bits.defaultAuthor.avatar ?? ''}
 >
@@ -19,7 +26,7 @@ const { settings } = getThemeSettings();
         </span>
         碎碎念
       </h2>
-      <button class="bits-draft-close" type="button" data-bits-draft-close aria-label="关闭">×</button>
+      {!inline ? <button class="bits-draft-close" type="button" data-bits-draft-close aria-label="关闭">×</button> : null}
     </div>
 
     <div class="bits-draft-field">
@@ -245,9 +252,8 @@ const { settings } = getThemeSettings();
         <span class="bits-draft-check-help">草稿:线上/预览默认不显示</span>
       </div>
       <div class="bits-draft-actions">
-        <button class="bits-draft-primary" type="button" data-bits-draft-generate>生成并复制</button>
-        <button class="bits-draft-secondary" type="button" data-bits-draft-download>下载 .md</button>
+        <button class="bits-draft-primary" type="button" data-bits-draft-generate>生成</button>
       </div>
     </div>
   </form>
-</dialog>
+</RootTag>

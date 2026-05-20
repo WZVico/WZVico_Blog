@@ -1,0 +1,178 @@
+---
+import AdminLayout from '../../../components/admin/AdminLayout.astro';
+import AdminReadonlyNotice from '../../../components/admin/AdminReadonlyNotice.astro';
+import AdminShell from '../../../components/admin/AdminShell.astro';
+import BitsDraftDialog from '../../../components/BitsDraftDialog.astro';
+import { getAdminContentOverviewData } from '../../../lib/admin-console/content';
+import { createWithBase } from '../../../utils/format';
+
+type AdminCategoryTabId = 'longform' | 'bits' | 'picks' | 'materials' | 'about';
+
+type AdminCategoryTab = {
+  id: AdminCategoryTabId;
+  label: string;
+  description: string;
+  publicHref: string;
+  sourceLabel: string;
+};
+
+const isDev = import.meta.env.DEV;
+const base = import.meta.env.BASE_URL ?? '/';
+const withBase = createWithBase(base);
+const [{ default: adminShellStylesHref }, { default: adminCategoryStylesHref }] = await Promise.all([
+  import('../../../styles/components/admin-shell.css?url'),
+  import('../../../styles/components/admin-category.css?url')
+]);
+
+const tabs = [
+  {
+    id: 'longform',
+    label: '长文',
+    description: '管理文章型内容分类，适合沉淀完整主题、教程、译文或长篇记录。',
+    publicHref: '/longform/',
+    sourceLabel: 'src/content/longform'
+  },
+  {
+    id: 'bits',
+    label: '絮语',
+    description: '管理短记录与轻量更新分类，适合快速想法、片段笔记与日常状态。',
+    publicHref: '/bits/',
+    sourceLabel: 'src/content/bits'
+  },
+  {
+    id: 'picks',
+    label: '拾选',
+    description: '管理精选内容分类，适合链接、摘录、推荐与阶段性收藏。',
+    publicHref: '/picks/',
+    sourceLabel: 'src/content/picks'
+  },
+  {
+    id: 'materials',
+    label: '资料',
+    description: '管理资料页分类入口，适合公开展示资料索引、清单或项目材料。',
+    publicHref: '/Materials/',
+    sourceLabel: 'src/data/materials.json'
+  },
+  {
+    id: 'about',
+    label: '关于',
+    description: '管理关于页分类入口，适合维护个人介绍、站点说明与联系信息。',
+    publicHref: '/about/',
+    sourceLabel: 'src/pages/about'
+  }
+] as const satisfies readonly AdminCategoryTab[];
+
+const isAdminCategoryTabId = (value: string): value is AdminCategoryTabId =>
+  tabs.some((tab) => tab.id === value);
+
+const selectedTabParam = Astro.url.searchParams.get('tab')?.trim() ?? '';
+const selectedTabId: AdminCategoryTabId = isAdminCategoryTabId(selectedTabParam)
+  ? selectedTabParam
+  : 'longform';
+const selectedTab = tabs.find((tab) => tab.id === selectedTabId) ?? tabs[0];
+const contentOverview = isDev ? await getAdminContentOverviewData() : null;
+const contentSummary = contentOverview?.summaries.find((summary) => summary.key === selectedTabId);
+const shouldShowBitsDraftConsole = isDev && selectedTabId === 'bits';
+const bitsDraftCreateEndpoint = withBase('/api/admin/category/bits/');
+const bitsDraftStylesHref = shouldShowBitsDraftConsole
+  ? (await import('../../../styles/components/bits.css?url')).default
+  : null;
+const adminStylesHref = [
+  adminShellStylesHref,
+  adminCategoryStylesHref,
+  bitsDraftStylesHref
+].filter((href): href is string => typeof href === 'string' && href.length > 0);
+
+const buildCategoryHref = (tabId: AdminCategoryTabId): string =>
+  tabId === 'longform'
+    ? withBase('/admin/category/')
+    : withBase(`/admin/category/?tab=${tabId}`);
+
+const selectedStats = contentSummary
+  ? [
+      { label: '当前条目', value: `${contentSummary.totalCount} 项` },
+      { label: '草稿数量', value: `${contentSummary.draftCount} 项` },
+      { label: '最近更新', value: contentSummary.latestDateLabel }
+    ]
+  : [
+      { label: '公开入口', value: selectedTab.publicHref },
+      { label: '维护来源', value: selectedTab.sourceLabel },
+      { label: '状态', value: isDev ? '分类入口已建立' : '只读预览' }
+    ];
+---
+
+<AdminLayout title="Category Console" stylesHref={adminStylesHref}>
+  <AdminShell
+    currentRoute="category"
+    title="Category Console"
+    subtitle="分类管理"
+    showNav={isDev}
+  >
+    {
+      isDev ? (
+        <section class="admin-category-console" aria-labelledby="admin-category-title">
+          <nav class="admin-category-tabs" aria-label="分类页面切换">
+            {
+              tabs.map((tab) => {
+                const isActive = tab.id === selectedTabId;
+                return (
+                  <a
+                    class:list={['admin-category-tab', isActive && 'is-active']}
+                    href={buildCategoryHref(tab.id)}
+                    aria-current={isActive ? 'page' : undefined}
+                  >
+                    {tab.label}
+                  </a>
+                );
+              })
+            }
+          </nav>
+
+          <section class="admin-category-panel" aria-labelledby="admin-category-title">
+            <div class="admin-category-panel__head">
+              <p class="admin-overview-card__eyebrow">Category</p>
+              <h2 id="admin-category-title" class="admin-category-panel__title">{selectedTab.label}</h2>
+              <p class="admin-category-panel__body">{selectedTab.description}</p>
+            </div>
+
+            <div class="admin-category-panel__grid" aria-label={`${selectedTab.label} 分类信息`}>
+              {
+                selectedStats.map((item) => (
+                  <article class="admin-category-panel__card">
+                    <p class="admin-category-panel__card-label">{item.label}</p>
+                    <p class="admin-category-panel__card-value">{item.value}</p>
+                  </article>
+                ))
+              }
+            </div>
+
+            <div class="admin-overview-card__actions">
+              <a class="admin-btn admin-btn--secondary" href={withBase(selectedTab.publicHref)}>查看公开页</a>
+              <a class="admin-btn admin-btn--ghost" href={withBase('/admin/content/')}>打开 Content Console</a>
+            </div>
+
+            {
+              shouldShowBitsDraftConsole ? (
+                <BitsDraftDialog inline createEndpoint={bitsDraftCreateEndpoint} />
+              ) : null
+            }
+          </section>
+        </section>
+      ) : (
+        <AdminReadonlyNotice>
+          若需管理分类，请在本地运行 <code translate="no">npm run dev</code> 后进入 Category Console。
+        </AdminReadonlyNotice>
+      )
+    }
+  </AdminShell>
+
+  {
+    shouldShowBitsDraftConsole ? (
+      <script>
+        import { initBitsDraft } from '../../../scripts/bits-draft';
+
+        initBitsDraft();
+      </script>
+    ) : null
+  }
+</AdminLayout>

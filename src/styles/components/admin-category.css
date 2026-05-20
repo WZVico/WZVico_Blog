@@ -1,0 +1,126 @@
+.admin-category-console {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-category-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 8px;
+  border: 1px solid var(--admin-panel-border);
+  border-radius: var(--admin-panel-radius);
+  background: var(--admin-surface);
+}
+
+.admin-category-tab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  color: var(--muted);
+  font-size: var(--admin-text-sm);
+  line-height: 1.2;
+  text-decoration: none;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.admin-category-tab:hover {
+  border-color: var(--admin-control-border);
+  background: var(--admin-control-bg-hover);
+  color: var(--text);
+  text-decoration: none;
+}
+
+.admin-category-tab:focus-visible {
+  outline: none;
+  border-color: var(--admin-focus-border);
+  box-shadow: var(--admin-focus-shadow);
+}
+
+.admin-category-tab.is-active {
+  border-color: var(--admin-control-border-hover);
+  background: var(--admin-surface-muted);
+  color: var(--text);
+}
+
+.admin-category-panel {
+  display: grid;
+  gap: 16px;
+}
+
+.admin-category-panel__head {
+  display: grid;
+  gap: 6px;
+}
+
+.admin-category-panel__title {
+  margin: 0;
+  font-size: 22px;
+  line-height: 1.3;
+}
+
+.admin-category-panel__body {
+  max-width: 72ch;
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--admin-text-base);
+  line-height: 1.7;
+}
+
+.admin-category-panel__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-category-panel__card {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+  padding: 14px;
+  border: 1px solid var(--admin-panel-border);
+  border-radius: var(--admin-panel-radius);
+  background: var(--admin-panel-bg);
+}
+
+.admin-category-panel__card-label,
+.admin-category-panel__card-value {
+  margin: 0;
+}
+
+.admin-category-panel__card-label {
+  color: var(--faint);
+  font-size: var(--admin-text-xs);
+}
+
+.admin-category-panel__card-value {
+  color: var(--text);
+  font-size: var(--admin-text-sm);
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 720px) {
+  .admin-category-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .admin-category-tab {
+    flex: 0 0 auto;
+  }
+
+  .admin-category-panel__grid {
+    grid-template-columns: 1fr;
+  }
+
+}

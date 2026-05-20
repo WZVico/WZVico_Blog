@@ -39,6 +39,7 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/index.html',
     'dist/about/index.html',
     'dist/admin/index.html',
+    'dist/admin/category/index.html',
     'dist/admin/content/index.html',
     'dist/admin/content/longform/index.html',
     'dist/admin/content/bits/index.html',
@@ -48,6 +49,7 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/bits/index.html',
     'dist/admin/data/index.html',
     'dist/admin/theme/index.html',
+    'dist/api/admin/category/bits',
     'dist/api/admin/settings',
     'dist/api/admin/data/settings',
     'dist/api/admin/content/entry',
@@ -71,6 +73,7 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'Sitemap is missing the expected /about/ location'
   );
   expect(!sitemapXml.includes('/admin/'), 'Admin route leaked into sitemap');
+  expect(!sitemapXml.includes('/admin/category/'), 'Admin category route leaked into sitemap');
   expect(!sitemapXml.includes('/admin/theme/'), 'Admin theme route leaked into sitemap');
   expect(!sitemapXml.includes('/admin/content/'), 'Admin content route leaked into sitemap');
   expect(!sitemapXml.includes('/admin/images/'), 'Admin images route leaked into sitemap');
@@ -101,6 +104,7 @@ export const runProductionArtifactCheck = async (options = {}) => {
   expect(!/--admin-status-/.test(aboutHtml), 'Public about page still contains admin CSS tokens');
 
   const adminHtml = readText('dist/admin/index.html');
+  const adminCategoryHtml = readText('dist/admin/category/index.html');
   const adminContentHtml = readText('dist/admin/content/index.html');
   const adminContentLongformHtml = readText('dist/admin/content/longform/index.html');
   const adminContentBitsHtml = readText('dist/admin/content/bits/index.html');
@@ -110,6 +114,7 @@ export const runProductionArtifactCheck = async (options = {}) => {
   const adminThemeHtml = readText('dist/admin/theme/index.html');
   const adminDataHtml = readText('dist/admin/data/index.html');
   const readonlyAdminHtmlChecks = [
+    ['dist/admin/category/index.html', adminCategoryHtml, 'Category Console'],
     ['dist/admin/content/index.html', adminContentHtml, 'Content Console'],
     ['dist/admin/content/longform/index.html', adminContentLongformHtml, 'Content Console'],
     ['dist/admin/content/bits/index.html', adminContentBitsHtml, 'Content Console'],
@@ -141,6 +146,10 @@ export const runProductionArtifactCheck = async (options = {}) => {
   expect(
     !/<script type="module" src="\/_astro\/[^"]+"><\/script>/.test(adminHtml),
     'dist/admin/index.html still links an external _astro module script'
+  );
+  expect(
+    !existsSync('dist/bits/draft-dialog/index.html'),
+    'Bits draft dialog route should no longer be generated under /bits/'
   );
 
   for (const [filePath, html, heading] of readonlyAdminHtmlChecks) {
@@ -283,6 +292,12 @@ export const runProductionArtifactCheck = async (options = {}) => {
 
   const adminSettingsArtifact = readText('dist/api/admin/settings');
   assertAdminSettingsStaticShell('dist/api/admin/settings', adminSettingsArtifact);
+  const adminBitsCreateArtifact = readText('dist/api/admin/category/bits');
+  assertAdminSettingsStaticShell(
+    'dist/api/admin/category/bits',
+    adminBitsCreateArtifact,
+    '/api/admin/category/bits/'
+  );
   const adminDataSettingsArtifact = readText('dist/api/admin/data/settings');
   assertAdminSettingsStaticShell('dist/api/admin/data/settings', adminDataSettingsArtifact, '/api/admin/data/settings/');
   const adminContentEntryArtifact = readText('dist/api/admin/content/entry');

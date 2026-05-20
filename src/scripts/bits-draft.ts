@@ -16,12 +16,14 @@ export type BitsDraftOpenOptions = {
 };
 
 export type BitsDraftController = {
-  dialog: HTMLDialogElement;
+  dialog: BitsDraftRoot;
   open: (options?: BitsDraftOpenOptions) => void;
   close: () => void;
 };
 
 let cachedController: BitsDraftController | null = null;
+
+type BitsDraftRoot = HTMLElement & Partial<Pick<HTMLDialogElement, 'close' | 'open' | 'showModal'>>;
 
 const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
@@ -42,13 +44,6 @@ const formatDateLocal = () => {
   const datePart = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
   const timePart = `${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`;
   return `${datePart}T${timePart}${sign}${tzHours}:${tzRemainder}`;
-};
-
-const formatFileStamp = () => {
-  const now = new Date();
-  const datePart = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
-  const timePart = `${pad2(now.getHours())}${pad2(now.getMinutes())}`;
-  return `${datePart}-${timePart}`;
 };
 
 const splitTags = (value: string) =>
@@ -114,17 +109,18 @@ const resolveAuthorAvatarPreviewSrc = (value: string) => {
 };
 
 export const initBitsDraft = (): BitsDraftController | null => {
-  const dialog = document.getElementById('bits-draft-dialog') as HTMLDialogElement | null;
+  const dialog = document.getElementById('bits-draft-dialog') as BitsDraftRoot | null;
   if (!dialog) return null;
   if (cachedController?.dialog === dialog) return cachedController;
+  const isInline = dialog.dataset.bitsDraftInline === 'true';
 
   const defaultAuthorName = (dialog.dataset.defaultAuthorName ?? '').trim();
   const defaultAuthorAvatar = (dialog.dataset.defaultAuthorAvatar ?? '').trim();
+  const createEndpoint = (dialog.dataset.bitsDraftCreateEndpoint ?? '').trim();
 
   const form = query<HTMLFormElement>(dialog, '[data-bits-draft-form]');
   const closeBtns = queryAll<HTMLElement>(dialog, '[data-bits-draft-close]');
   const generateBtn = query<HTMLButtonElement>(dialog, '[data-bits-draft-generate]');
-  const downloadBtn = query<HTMLButtonElement>(dialog, '[data-bits-draft-download]');
   const statusEl = query<HTMLElement>(dialog, '[data-bits-draft-status]');
   const manualOpenBtn = query<HTMLButtonElement>(dialog, '[data-bits-manual-open]');
   const manualBox = query<HTMLElement>(dialog, '[data-bits-manual]');
@@ -599,6 +595,42 @@ export const initBitsDraft = (): BitsDraftController | null => {
     }
   };
 
+  const createBitsDraftFile = async (markdown: string): Promise<{ relativePath: string }> => {
+    if (!createEndpoint) {
+      throw new Error('bits draft create endpoint missing');
+    }
+
+    const response = await fetch(createEndpoint, {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json'
+      },
+      body: JSON.stringify({ markdown })
+    });
+    const result = await response.json().catch(() => null) as {
+      ok?: boolean;
+      errors?: unknown;
+      result?: {
+        relativePath?: unknown;
+      };
+    } | null;
+
+    if (!response.ok || !result?.ok) {
+      const errors = Array.isArray(result?.errors)
+        ? result.errors.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+        : [];
+      throw new Error(errors[0] ?? '创建絮语文件失败');
+    }
+
+    const relativePath = result.result?.relativePath;
+    if (typeof relativePath !== 'string' || !relativePath.trim()) {
+      throw new Error('创建成功，但接口未返回文件路径');
+    }
+
+    return { relativePath };
+  };
+
   const collectImages = (): ImageDraft[] | null => {
     const images: ImageDraft[] = [];
     for (const row of getImageRows()) {
@@ -701,10 +733,7 @@ export const initBitsDraft = (): BitsDraftController | null => {
     });
   };
 
-  const openDialog = (options: BitsDraftOpenOptions = {}) => {
-    lastOpenTrigger =
-      options.opener ?? (document.activeElement instanceof HTMLElement ? document.activeElement : lastOpenTrigger);
-    if (dialog.open) return;
+  const syncDraftState = () => {
     clearStatus();
     hideManualCopy();
     updateManualLink();
@@ -713,7 +742,16 @@ export const initBitsDraft = (): BitsDraftController | null => {
     setAuthorPlaceholders();
     updateIdentityPill();
     syncIdentityToggleState();
-    if (typeof dialog.showModal === 'function') {
+  };
+
+  const openDialog = (options: BitsDraftOpenOptions = {}) => {
+    lastOpenTrigger =
+      options.opener ?? (document.activeElement instanceof HTMLElement ? document.activeElement : lastOpenTrigger);
+    if (!isInline && dialog.open) return;
+    syncDraftState();
+    if (isInline) {
+      dialog.setAttribute('open', '');
+    } else if (typeof dialog.showModal === 'function') {
       dialog.showModal();
     } else {
       dialog.setAttribute('open', '');
@@ -733,7 +771,9 @@ export const initBitsDraft = (): BitsDraftController | null => {
     if (identityPanel) identityPanel.hidden = true;
     updateIdentityPill();
     syncIdentityToggleState();
-    if (dialog.open) {
+    if (isInline) {
+      dialog.setAttribute('open', '');
+    } else if (dialog.open) {
       if (typeof dialog.close === 'function') {
         dialog.close();
       } else {
@@ -744,6 +784,10 @@ export const initBitsDraft = (): BitsDraftController | null => {
   };
 
   initImageRows();
+  if (isInline) {
+    dialog.setAttribute('open', '');
+    syncDraftState();
+  }
 
   closeBtns.forEach((button) => {
     button.addEventListener('click', () => {
@@ -932,6 +976,23 @@ export const initBitsDraft = (): BitsDraftController | null => {
     const markdown = buildMarkdown();
     if (!markdown) return;
     rememberMarkdown(markdown);
+    if (createEndpoint) {
+      generateBtn.disabled = true;
+      generateBtn.setAttribute('aria-busy', 'true');
+      setStatus('正在创建絮语文件...');
+      try {
+        const result = await createBitsDraftFile(markdown);
+        setStatus(`已创建：${result.relativePath}`, 'success');
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '创建絮语文件失败';
+        setStatus(message, 'error');
+        showManualCopy(markdown, '文件创建失败，已保留草稿内容。');
+      } finally {
+        generateBtn.disabled = false;
+        generateBtn.setAttribute('aria-busy', 'false');
+      }
+      return;
+    }
     if (!window.isSecureContext || !navigator.clipboard?.writeText) {
       showManualCopy(markdown, '已生成草稿。');
       return;
@@ -939,23 +1000,6 @@ export const initBitsDraft = (): BitsDraftController | null => {
     const copied = await tryClipboardCopy(markdown);
     if (copied) setStatus('已复制草稿。', 'success');
     else showManualCopy(markdown, '已生成草稿。');
-  });
-
-  downloadBtn?.addEventListener('click', () => {
-    clearStatus();
-    hideManualCopy();
-    const markdown = buildMarkdown();
-    if (!markdown) return;
-    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `bits-${formatFileStamp()}.md`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    setStatus('已下载草稿。', 'success');
   });
 
   cachedController = {

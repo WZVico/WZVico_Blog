@@ -513,21 +513,6 @@
   color: #f0f0f0;
 }
 
-.bits-controls__actions > button.new {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  border: 1px solid #111;
-  background: #111;
-  color: #fff;
-}
-
-:root[data-theme="dark"] .bits-controls__actions > button.new {
-  color: var(--text);
-  border-color: var(--border);
-  background: var(--panel);
-}
-
 .bits-status {
   min-height: 4px;
   font-size: 12px;
@@ -536,16 +521,6 @@
 
 .bits-status:empty {
   min-height: 0;
-}
-
-.bits-draft-load-status {
-  min-height: 16px;
-  font-size: 12px;
-  color: var(--muted);
-}
-
-.bits-draft-load-status[data-tone="error"] {
-  color: var(--accent);
 }
 
 .bits-noscript-note {
@@ -608,26 +583,6 @@
 
 #bits-list > .bit-card:first-child {
   margin-top: 0;
-}
-
-.bits-controls__actions > button.new[data-loading="true"] {
-  opacity: 0.92;
-  cursor: progress;
-}
-
-.bits-controls__actions > button.new[data-loading="true"] .new-icon {
-  animation: bits-new-pulse 1s ease-in-out infinite;
-}
-
-@keyframes bits-new-pulse {
-  0%,
-  100% {
-    opacity: 1;
-  }
-
-  50% {
-    opacity: 0.55;
-  }
 }
 
 .bit-card {
@@ -1404,10 +1359,6 @@
     box-shadow: none;
   }
 
-  .bits-controls__actions > button.new {
-    display: none;
-  }
-
   .bit-media {
     max-width: 100%;
   }
@@ -1441,6 +1392,15 @@
   font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
   --bits-focus: var(--muted);
   padding: 0;
+}
+
+.bits-draft-dialog--inline {
+  display: block;
+  width: 100%;
+  margin: 0;
+  border-radius: var(--admin-panel-radius, 8px);
+  background: var(--admin-panel-bg, var(--bg));
+  font-family: var(--admin-font-ui, "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif);
 }
 
 .bits-draft-dialog::backdrop {
