@@ -428,6 +428,18 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
   font-weight: 600;
 }
 
+.list-item__title-link {
+  color: inherit;
+  text-decoration: none;
+}
+
+.list-item__title-link:hover,
+.list-item__title-link:focus-visible {
+  color: var(--accent);
+  border-bottom-color: currentColor;
+  outline: none;
+}
+
 /* Keep above-the-fold EntryListItem copy stable until the deferred global stylesheet arrives. */
 .list-item__excerpt {
   margin: 10px 0 0;
@@ -543,6 +555,17 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
 
 .article-byline__name {
   color: var(--text);
+}
+
+.article-byline__name--link {
+  text-decoration: none;
+}
+
+.article-byline__name--link:hover,
+.article-byline__name--link:focus-visible {
+  color: var(--accent);
+  border-bottom-color: currentColor;
+  outline: none;
 }
 
 @media (min-width: 901px) {

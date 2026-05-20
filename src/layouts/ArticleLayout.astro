@@ -3,6 +3,7 @@ import BaseLayout from './BaseLayout.astro';
 import UiIcon from '../components/UiIcon.astro';
 import Lightbox from '../components/Lightbox.astro';
 import '../styles/article.css';
+import { getArchiveAuthorHref } from '../lib/archive-links';
 import { getLongformDerivedText, type LongformEntry } from '../lib/content';
 import { getThemeSettings, type ArticleMetaSettings, type SidebarNavId } from '../lib/theme-settings';
 import { getLongformArticlePeople } from '../lib/longform-people';
@@ -108,7 +109,13 @@ const translationSourceLabel = translationSource || (translationSourceUrl ? '原
                 />
               </span>
             ) : null}
-            <span class="article-byline__name">{author.name}</span>
+            <a
+              class="article-byline__name article-byline__name--link"
+              href={getArchiveAuthorHref(author.name, withBase)}
+              aria-label={`查看 ${author.name} 的所有文章`}
+            >
+              {author.name}
+            </a>
           </span>
         ))}
       </span>

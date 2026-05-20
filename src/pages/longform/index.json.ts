@@ -12,6 +12,7 @@ export const GET: APIRoute = async () => {
     const { text } = getLongformDerivedText(entry);
     return {
       slug: getLongformSlug(entry),
+      href: `/archive/${getLongformSlug(entry)}/`,
       title: entry.data.title ?? '',
       description: entry.data.description ?? '',
       tags: entry.data.tags ?? [],

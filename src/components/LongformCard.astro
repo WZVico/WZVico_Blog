@@ -1,5 +1,7 @@
 ---
 import { formatISODateUtc } from '../utils/format';
+import { getArchiveAuthorHref } from '../lib/archive-links';
+import { createWithBase } from '../lib/content';
 import type { ArticleMetaSettings } from '../lib/theme-settings';
 import type { LongformArticlePeople } from '../lib/longform-people';
 
@@ -25,6 +27,7 @@ const {
   articleMetaSettings: ArticleMetaSettings;
 };
 const displayBadge = badge.trim() ? badge : '长文';
+const withBase = createWithBase(import.meta.env.BASE_URL ?? '/');
 const shouldShowPeople = articlePeople.authors.length > 0 || Boolean(articlePeople.translator);
 const shouldShowMetaLine =
   shouldShowPeople ||
@@ -32,16 +35,17 @@ const shouldShowMetaLine =
   (articleMetaSettings.showTags && visibleTags.length > 0);
 ---
 
-<a
+<article
   class="list-item list-item--link"
-  href={href}
   data-entry-item
   data-slug={slug || undefined}
 >
   <div class="list-item__row">
     <div style="display:flex; align-items:center; gap:10px; min-width:0;">
       <span class="badge">{displayBadge}</span>
-      <h2 class="list-item__title" style="margin:0; min-width:0;">{title}</h2>
+      <h2 class="list-item__title" style="margin:0; min-width:0;">
+        <a class="list-item__title-link" href={href}>{title}</a>
+      </h2>
     </div>
   </div>
   {excerpt ? <p class="list-item__excerpt">{excerpt}</p> : null}
@@ -68,7 +72,13 @@ const shouldShowMetaLine =
                         />
                       </span>
                     ) : null}
-                    <span class="article-byline__name">{author.name}</span>
+                    <a
+                      class="article-byline__name article-byline__name--link"
+                      href={getArchiveAuthorHref(author.name, withBase)}
+                      aria-label={`查看 ${author.name} 的所有文章`}
+                    >
+                      {author.name}
+                    </a>
                   </span>
                 ))}
               </span>
@@ -109,4 +119,4 @@ const shouldShowMetaLine =
       ) : null}
     </div>
   ) : null}
-</a>
+</article>

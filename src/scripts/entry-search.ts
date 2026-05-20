@@ -9,6 +9,7 @@ import {
 
 type IndexItem = {
   slug: string;
+  href?: string;
   title: string;
   description: string;
   tags: string[];
@@ -26,6 +27,7 @@ const root = document.querySelector<HTMLElement>('[data-entry-filters]');
 const FILTER_DEBOUNCE_MS = 120;
 const HOVER_PREVIEW_CLOSE_DELAY_MS = 48;
 const HOVER_PREVIEW_MEDIA_QUERY = '(hover: hover) and (pointer: fine)';
+const QUERY_PARAM_QUERY = 'q';
 
 if (!root) {
   // Current page does not use entry search / tags.
@@ -184,6 +186,93 @@ if (!root) {
   const isSearchOpen = () => searchRoot?.classList.contains('is-open') ?? false;
   const supportsHoverPreview = () => hoverPreviewMedia.matches;
 
+  const escapeHtml = (value: string): string =>
+    value.replace(/[&<>"']/g, (char) => {
+      switch (char) {
+        case '&':
+          return '&amp;';
+        case '<':
+          return '&lt;';
+        case '>':
+          return '&gt;';
+        case '"':
+          return '&quot;';
+        default:
+          return '&#39;';
+      }
+    });
+
+  const getItemHref = (item: IndexItem): string => {
+    if (item.href) return withBase(item.href);
+    return withBase(`/archive/${item.slug}/`);
+  };
+
+  const formatDateLabel = (date: string | null): string => {
+    if (!date) return '';
+    return date.slice(0, 10);
+  };
+
+  const renderSearchResults = (query: string, matches: IndexItem[]) => {
+    if (!resultsRoot || !resultsListEl) return;
+    const normalizedQuery = query.trim();
+
+    if (matches.length === 0) {
+      showEmptyResults();
+      return;
+    }
+
+    if (resultsSummaryEl) {
+      resultsSummaryEl.textContent = normalizedQuery
+        ? `搜索“${normalizedQuery}”共命中 ${matches.length} 条`
+        : `共命中 ${matches.length} 条`;
+    }
+
+    resultsListEl.innerHTML = matches
+      .map((item) => {
+        const description = item.description.trim();
+        const authors = (item.authors ?? []).map((author) => author.trim()).filter(Boolean);
+        const tags = item.tags.map((tag) => tag.trim()).filter(Boolean);
+        const dateLabel = formatDateLabel(item.date);
+        const meta = [
+          dateLabel ? `<span class="entry-search-result__date">${escapeHtml(dateLabel)}</span>` : '',
+          authors.length
+            ? `<span class="entry-search-result__authors">作者：${authors.map(escapeHtml).join('、')}</span>`
+            : '',
+          tags.length
+            ? `<span class="entry-search-result__tags">${tags.map((tag) => `#${escapeHtml(tag)}`).join(' ')}</span>`
+            : ''
+        ]
+          .filter(Boolean)
+          .join('<span class="entry-search-result__sep" aria-hidden="true">·</span>');
+
+        return `
+          <article class="entry-search-result">
+            <a class="entry-search-result__link" href="${escapeHtml(getItemHref(item))}">
+              <h3 class="entry-search-result__title">${escapeHtml(item.title)}</h3>
+              ${description ? `<p class="entry-search-result__excerpt">${escapeHtml(description)}</p>` : ''}
+              ${meta ? `<div class="entry-search-result__meta">${meta}</div>` : ''}
+            </a>
+          </article>
+        `;
+      })
+      .join('');
+    resultsRoot.removeAttribute('hidden');
+  };
+
+  const syncQueryParam = (query: string) => {
+    const url = new URL(window.location.href);
+    const normalizedQuery = query.trim();
+    if (normalizedQuery) {
+      url.searchParams.set(QUERY_PARAM_QUERY, normalizedQuery);
+    } else {
+      url.searchParams.delete(QUERY_PARAM_QUERY);
+    }
+    const next = `${url.pathname}${url.search}${url.hash}`;
+    if (`${window.location.pathname}${window.location.search}${window.location.hash}` !== next) {
+      window.history.replaceState({}, '', next);
+    }
+  };
+
   const setSearchOpen = (open: boolean) => {
     if (!searchRoot) return;
     searchRoot.classList.toggle('is-open', open);
@@ -263,7 +352,6 @@ if (!root) {
       setStatus('无匹配结果', { visible: false });
       return;
     }
-    hideEmptyResults();
     if (visibleMatches === totalMatches) {
       setStatus(query && !activeTagKey ? `命中 ${totalMatches} 条` : prefix);
       return;
@@ -325,6 +413,7 @@ if (!root) {
     const runId = ++filterRunId;
     const rawQuery = (input?.value || '').trim();
     const queryTerms = tokenizeSearchQuery(rawQuery);
+    syncQueryParam(rawQuery);
 
     if (queryTerms.length === 0) {
       showAllItems();
@@ -337,6 +426,7 @@ if (!root) {
     if (runId !== filterRunId) return;
     if (!index || !indexHay || !indexTagKeys) return;
 
+    const matchedItems: IndexItem[] = [];
     const matchedSlugs = new Set<string>();
     for (const item of index) {
       const hay = indexHay.get(item.slug) || '';
@@ -348,17 +438,16 @@ if (!root) {
       }
 
       matchedSlugs.add(item.slug);
+      matchedItems.push(item);
     }
 
-    let visibleMatches = 0;
     for (const item of items) {
-      const matched = item.slug ? matchedSlugs.has(item.slug) : false;
-      setItemVisible(item, matched);
-      if (matched) visibleMatches += 1;
+      setItemVisible(item, false);
     }
 
+    renderSearchResults(rawQuery, matchedItems);
     syncSections(true);
-    updateStatusForMatches(rawQuery, matchedSlugs.size, visibleMatches);
+    updateStatusForMatches(rawQuery, matchedSlugs.size, matchedItems.length);
   };
 
   const removePickerParam = () => {
@@ -413,6 +502,7 @@ if (!root) {
 
   const resetSearch = () => {
     if (input) input.value = '';
+    syncQueryParam('');
     showAllItems();
     syncSections(false);
     setStatus('');
@@ -421,6 +511,13 @@ if (!root) {
   syncLegacyTagParam();
   setSearchOpen(false);
   setTagDialogExpanded(false);
+
+  const initialQuery = (new URL(window.location.href).searchParams.get(QUERY_PARAM_QUERY) ?? '').trim();
+  if (initialQuery && input) {
+    input.value = initialQuery;
+    openSearchInteractive({ preloadIndex: true });
+    void applyFilter();
+  }
 
   toggleBtn?.addEventListener('click', () => {
     if (hoverPreviewActive) {

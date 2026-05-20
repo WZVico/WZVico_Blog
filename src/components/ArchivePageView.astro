@@ -1,6 +1,7 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
 import TagFilterHeader from './TagFilterHeader.astro';
+import { getArchiveAuthorHref } from '../lib/archive-links';
 import { createWithBase, getLongformSlug, type LongformEntry } from '../lib/content';
 import { getLongformArticlePeople } from '../lib/longform-people';
 import { getTagPath, type TagSummary } from '../lib/tags';
@@ -96,10 +97,7 @@ const currentTagState = currentTag
         {group.list.map((entry) => {
           const slug = getLongformSlug(entry);
           const href = withBase(`/archive/${slug}/`);
-          const authorNames = getLongformArticlePeople(entry, settings, withBase)
-            .authors
-            .map((author) => author.name)
-            .join('、');
+          const authors = getLongformArticlePeople(entry, settings, withBase).authors;
           return (
             <div class="archive-row" data-entry-item data-slug={slug}>
               <div class="archive-title">
@@ -110,7 +108,16 @@ const currentTagState = currentTag
                   <span class="archive-date-md">{formatMonthDayUtc(entry.data.date)}</span>
                   <span class="archive-date-full">{formatISODateUtc(entry.data.date)}</span>
                 </div>
-                {authorNames ? <div class="archive-author">{authorNames}</div> : null}
+                {authors.length ? (
+                  <div class="archive-author">
+                    {authors.map((author, index) => (
+                      <>
+                        {index > 0 ? '、' : null}
+                        <a href={getArchiveAuthorHref(author.name, withBase)}>{author.name}</a>
+                      </>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             </div>
           );
