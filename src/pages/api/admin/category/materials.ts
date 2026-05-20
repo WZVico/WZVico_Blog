@@ -27,7 +27,6 @@ const METHOD_NOT_ALLOWED_RESPONSE = new Response('Method Not Allowed', {
   }
 });
 
-const MATERIALS_CONTENT_DIR = join(process.cwd(), 'src', 'content', 'materials');
 const MAX_TEXT_LENGTH = 600;
 const MAX_DESCRIPTION_LENGTH = 2000;
 
@@ -50,20 +49,28 @@ const normalizeMaterialHref = (value: string): string | null => {
 
 const pad2 = (value: number): string => String(value).padStart(2, '0');
 
-const createLocalTimestamp = (): { date: string; fileStamp: string } => {
+const getProjectRoot = (): string =>
+  process.env.ASTRO_WHONO_INTERNAL_TEST_PROJECT_ROOT?.trim() || process.cwd();
+
+const getMaterialsContentDir = (): string =>
+  join(getProjectRoot(), 'src', 'content', 'materials');
+
+const createLocalTimestamp = (): { date: string; fileStamp: string; year: number } => {
   const now = new Date();
   const tzMinutes = -now.getTimezoneOffset();
   const sign = tzMinutes >= 0 ? '+' : '-';
   const abs = Math.abs(tzMinutes);
   const tzHours = pad2(Math.floor(abs / 60));
   const tzRemainder = pad2(abs % 60);
-  const datePart = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+  const year = now.getFullYear();
+  const datePart = `${year}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
   const timePart = `${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`;
   const fileStamp = `${datePart}-${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
 
   return {
     date: `${datePart}T${timePart}${sign}${tzHours}:${tzRemainder}`,
-    fileStamp
+    fileStamp,
+    year
   };
 };
 
@@ -84,15 +91,19 @@ const fileExists = async (filePath: string): Promise<boolean> => {
   }
 };
 
-const getAvailableMaterialPath = async (title: string): Promise<{ filePath: string; relativePath: string }> => {
-  const { fileStamp } = createLocalTimestamp();
+const getAvailableMaterialPath = async (
+  title: string,
+  timestamp: ReturnType<typeof createLocalTimestamp>
+): Promise<{ filePath: string; relativePath: string }> => {
+  const { fileStamp, year } = timestamp;
   const filenameBase = `${normalizeFilenamePart(title)}-${fileStamp}`;
+  const yearDir = String(year);
 
   for (let index = 0; index < 1000; index += 1) {
     const suffix = index === 0 ? '' : `-${index + 1}`;
     const filename = `${filenameBase}${suffix}.md`;
-    const relativePath = `src/content/materials/${filename}`;
-    const filePath = join(MATERIALS_CONTENT_DIR, filename);
+    const relativePath = `src/content/materials/${yearDir}/${filename}`;
+    const filePath = join(getMaterialsContentDir(), yearDir, filename);
     if (!(await fileExists(filePath))) {
       return { filePath, relativePath };
     }
@@ -122,8 +133,11 @@ const escapeYamlDoubleQuoted = (value: string): string =>
 const quoteYaml = (value: string): string =>
   /[:#\n\r\t\\]|^\s|\s$|^-/.test(value) ? `"${escapeYamlDoubleQuoted(value)}"` : value;
 
-const buildMaterialMarkdown = (item: MaterialCreateItem): string => {
-  const { date } = createLocalTimestamp();
+const buildMaterialMarkdown = (
+  item: MaterialCreateItem,
+  timestamp: ReturnType<typeof createLocalTimestamp>
+): string => {
+  const { date } = timestamp;
   const lines = [
     '---',
     `title: ${quoteYaml(item.title)}`,
@@ -220,8 +234,9 @@ export const POST: APIRoute = async ({ request, url }) => {
 
   return withAdminMaterialsCreateLock(async () => {
     try {
-      const { filePath, relativePath } = await getAvailableMaterialPath(item.title);
-      const markdown = buildMaterialMarkdown(item);
+      const timestamp = createLocalTimestamp();
+      const { filePath, relativePath } = await getAvailableMaterialPath(item.title, timestamp);
+      const markdown = buildMaterialMarkdown(item, timestamp);
 
       if (isAdminDryRunRequest(url)) {
         return new Response(
@@ -249,7 +264,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
       ], {
         beforeWrite: async () => {
-          await mkdir(MATERIALS_CONTENT_DIR, { recursive: true });
+          await mkdir(join(getMaterialsContentDir(), String(timestamp.year)), { recursive: true });
         }
       });
 

@@ -4,6 +4,7 @@ import AdminReadonlyNotice from '../../../components/admin/AdminReadonlyNotice.a
 import AdminShell from '../../../components/admin/AdminShell.astro';
 import BitsDraftDialog from '../../../components/BitsDraftDialog.astro';
 import { getAdminContentOverviewData } from '../../../lib/admin-console/content';
+import { readAdminPicksIntro, readAdminPicksStats } from '../../../lib/admin-console/picks';
 import { getMaterials } from '../../../lib/materials';
 import { createWithBase } from '../../../utils/format';
 
@@ -73,13 +74,17 @@ const selectedTabId: AdminCategoryTabId = isAdminCategoryTabId(selectedTabParam)
 const selectedTab = tabs.find((tab) => tab.id === selectedTabId) ?? tabs[0];
 const contentOverview = isDev ? await getAdminContentOverviewData() : null;
 const contentSummary = contentOverview?.summaries.find((summary) => summary.key === selectedTabId);
+const picksStats = selectedTabId === 'picks' ? await readAdminPicksStats() : null;
+const picksIntro = selectedTabId === 'picks' ? await readAdminPicksIntro() : [];
 const materialItems = selectedTabId === 'materials' ? await getMaterials() : [];
 const latestMaterialDate = materialItems
   .map((item) => item.dateValue)
   .sort((left, right) => right.localeCompare(left))[0] ?? '未设置日期';
 const shouldShowBitsDraftConsole = isDev && selectedTabId === 'bits';
+const shouldShowPicksCreateConsole = isDev && selectedTabId === 'picks';
 const shouldShowMaterialsCreateConsole = isDev && selectedTabId === 'materials';
 const bitsDraftCreateEndpoint = withBase('/api/admin/category/bits/');
+const picksCreateEndpoint = withBase('/api/admin/category/picks/');
 const materialsCreateEndpoint = withBase('/api/admin/category/materials/');
 const bitsDraftStylesHref = shouldShowBitsDraftConsole
   ? (await import('../../../styles/components/bits.css?url')).default
@@ -100,6 +105,12 @@ const selectedStats = shouldShowMaterialsCreateConsole
       { label: '当前资料', value: `${materialItems.length} 项` },
       { label: '最近创建', value: latestMaterialDate },
       { label: '保存位置', value: selectedTab.sourceLabel }
+    ]
+  : shouldShowPicksCreateConsole && picksStats
+  ? [
+      { label: '当前拾选', value: `${picksStats.itemCount} 条` },
+      { label: '最新拾选', value: picksStats.latestPickDateLabel },
+      { label: '保存位置', value: picksStats.storagePathLabel }
     ]
   : contentSummary
   ? [
@@ -167,6 +178,91 @@ const selectedStats = shouldShowMaterialsCreateConsole
             {
               shouldShowBitsDraftConsole ? (
                 <BitsDraftDialog inline createEndpoint={bitsDraftCreateEndpoint} />
+              ) : null
+            }
+
+            {
+              shouldShowPicksCreateConsole ? (
+                <>
+                  <section
+                    class="admin-category-picks-create"
+                    aria-labelledby="admin-category-picks-intro-title"
+                    data-picks-intro-root
+                    data-picks-intro-endpoint={picksCreateEndpoint}
+                  >
+                    <div class="admin-category-picks-create__head">
+                      <div>
+                        <p class="admin-overview-card__eyebrow">Picks Intro</p>
+                        <h3 id="admin-category-picks-intro-title" class="admin-category-picks-create__title">
+                          页面介绍
+                        </h3>
+                      </div>
+                    </div>
+
+                    <form class="admin-category-picks-create__form" data-picks-intro-form>
+                      <article class="admin-category-picks-create__row">
+                        <label class="admin-category-picks-create__field admin-category-picks-create__field--full">
+                          <span>/picks/ 下方介绍</span>
+                          <textarea class="admin-field__control" data-picks-intro-field rows="4" placeholder="每行显示为一段介绍">{picksIntro.join('\n')}</textarea>
+                          <small class="admin-category-picks-create__help">每一行会在 /picks/ 页面介绍区显示为一行。</small>
+                        </label>
+                      </article>
+
+                      <div class="admin-category-picks-create__footer">
+                        <div class="admin-category-picks-create__actions">
+                          <button class="admin-btn admin-btn--primary" type="submit" data-picks-intro-submit>保存介绍</button>
+                        </div>
+                        <p class="admin-category-picks-create__status" data-picks-intro-status role="status" aria-live="polite"></p>
+                      </div>
+                    </form>
+                  </section>
+
+                  <section
+                    class="admin-category-picks-create"
+                    aria-labelledby="admin-category-picks-title"
+                    data-picks-create-root
+                    data-picks-create-endpoint={picksCreateEndpoint}
+                  >
+                    <div class="admin-category-picks-create__head">
+                      <div>
+                        <p class="admin-overview-card__eyebrow">Picks</p>
+                        <h3 id="admin-category-picks-title" class="admin-category-picks-create__title">
+                          新增拾选
+                        </h3>
+                      </div>
+                    </div>
+
+                    <form class="admin-category-picks-create__form" data-picks-create-form>
+                      <article class="admin-category-picks-create__row">
+                        <label class="admin-category-picks-create__field admin-category-picks-create__field--title">
+                          <span>作品名 *</span>
+                          <input class="admin-field__control" data-pick-field="title" type="text" autocomplete="off" placeholder="《置身事内》" />
+                        </label>
+                        <label class="admin-category-picks-create__field admin-category-picks-create__field--creator">
+                          <span>作者 / 创作者</span>
+                          <input class="admin-field__control" data-pick-field="authors" type="text" autocomplete="off" placeholder="兰小欢、合作者" />
+                          <small class="admin-category-picks-create__help">多作者用顿号、逗号或分号分隔。</small>
+                        </label>
+                        <label class="admin-category-picks-create__field admin-category-picks-create__field--reason">
+                          <span>推荐理由 *</span>
+                          <textarea class="admin-field__control" data-pick-field="reason" rows="4" placeholder="它解决了什么问题，带来什么视角，适合谁在什么时候翻开。"></textarea>
+                        </label>
+                        <label class="admin-category-picks-create__field admin-category-picks-create__field--tags">
+                          <span>标签</span>
+                          <input class="admin-field__control" data-pick-field="tags" type="text" autocomplete="off" placeholder="经济 财政 中国" />
+                          <small class="admin-category-picks-create__help">多标签用空格、逗号、顿号分隔；可以不写 #，系统会自动处理。</small>
+                        </label>
+                      </article>
+
+                      <div class="admin-category-picks-create__footer">
+                        <div class="admin-category-picks-create__actions">
+                          <button class="admin-btn admin-btn--primary" type="submit" data-picks-create-submit>写入拾选</button>
+                        </div>
+                        <p class="admin-category-picks-create__status" data-picks-create-status role="status" aria-live="polite"></p>
+                      </div>
+                    </form>
+                  </section>
+                </>
               ) : null
             }
 
@@ -243,6 +339,16 @@ const selectedStats = shouldShowMaterialsCreateConsole
         import { initMaterialsCreate } from '../../../scripts/materials-create';
 
         initMaterialsCreate();
+      </script>
+    ) : null
+  }
+
+  {
+    shouldShowPicksCreateConsole ? (
+      <script>
+        import { initPicksCreate } from '../../../scripts/picks-create';
+
+        initPicksCreate();
       </script>
     ) : null
   }

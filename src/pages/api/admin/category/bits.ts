@@ -1,5 +1,5 @@
 import { access, mkdir } from 'node:fs/promises';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import type { APIRoute } from 'astro';
 import {
   ADMIN_JSON_HEADERS,
@@ -24,22 +24,30 @@ const METHOD_NOT_ALLOWED_RESPONSE = new Response('Method Not Allowed', {
   }
 });
 
-const BITS_CONTENT_DIR = join(process.cwd(), 'src', 'content', 'bits');
 const MAX_MARKDOWN_LENGTH = 200_000;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
+const getProjectRoot = (): string =>
+  process.env.ASTRO_WHONO_INTERNAL_TEST_PROJECT_ROOT?.trim() || process.cwd();
+
+const getBitsContentDir = (): string =>
+  join(getProjectRoot(), 'src', 'content', 'bits');
+
 const pad2 = (value: number): string => String(value).padStart(2, '0');
 
-const createFileStamp = (): string => {
+const createFileStamp = (): { stamp: string; year: number } => {
   const now = new Date();
-  return [
+  const year = now.getFullYear();
+  const stamp = [
     now.getFullYear(),
     pad2(now.getMonth() + 1),
     pad2(now.getDate())
   ].join('-')
     + `-${pad2(now.getHours())}${pad2(now.getMinutes())}`;
+
+  return { stamp, year };
 };
 
 const fileExists = async (filePath: string): Promise<boolean> => {
@@ -91,13 +99,13 @@ const createJsonErrorResponse = (status: number, errors: readonly string[]): Res
   });
 
 const getAvailableBitsDraftPath = async (): Promise<{ filePath: string; relativePath: string }> => {
-  const stamp = createFileStamp();
+  const { stamp, year } = createFileStamp();
 
   for (let index = 0; index < 1000; index += 1) {
     const suffix = index === 0 ? '' : `-${index + 1}`;
     const filename = `bits-${stamp}${suffix}.md`;
-    const relativePath = `src/content/bits/${filename}`;
-    const filePath = join(BITS_CONTENT_DIR, filename);
+    const relativePath = `src/content/bits/${year}/${filename}`;
+    const filePath = join(getBitsContentDir(), String(year), filename);
     if (!(await fileExists(filePath))) {
       return { filePath, relativePath };
     }
@@ -149,7 +157,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
       ], {
         beforeWrite: async () => {
-          await mkdir(BITS_CONTENT_DIR, { recursive: true });
+          await mkdir(dirname(filePath), { recursive: true });
         }
       });
 

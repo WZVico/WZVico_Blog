@@ -210,7 +210,7 @@ const RootTag = inline ? 'section' : 'dialog';
             aria-controls="bits-identity-panel"
             aria-expanded="false"
           >
-            自定义作者
+            添加作者
           </button>
         </div>
       </div>
@@ -227,6 +227,7 @@ const RootTag = inline ? 'section' : 'dialog';
           <label class="bits-identity-label">
             <span class="bits-identity-label-title">作者名</span>
             <input type="text" name="authorName" inputmode="text" data-author-name />
+            <span class="bits-identity-label-hint">多作者用顿号、逗号或分号分隔</span>
           </label>
           <label class="bits-identity-label">
             <span class="bits-identity-label-row">
@@ -238,7 +239,7 @@ const RootTag = inline ? 'section' : 'dialog';
         </div>
         <div class="bits-identity-meta">
           <p class="bits-identity-note">
-            留空即用当前作者，本条不会写入 author
+            留空即用当前作者；多作者会写入 authors
           </p>
           <button type="button" class="bits-identity-reset" data-author-reset>恢复默认</button>
         </div>

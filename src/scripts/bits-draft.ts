@@ -102,6 +102,15 @@ const resolvePreviewSrc = (value: string) => {
 };
 
 const normalizeAuthorName = (value: string) => value.trim();
+const splitAuthorNames = (value: string) =>
+  Array.from(
+    new Set(
+      value
+        .split(/[,\n，、；;]+/)
+        .map((part) => normalizeAuthorName(part))
+        .filter(Boolean)
+    )
+  );
 const normalizeAuthorAvatar = (value: string) => normalizeBitsAvatarPath(value) ?? '';
 const resolveAuthorAvatarPreviewSrc = (value: string) => {
   const normalized = normalizeAuthorAvatar(value);
@@ -371,7 +380,7 @@ export const initBitsDraft = (): BitsDraftController | null => {
   };
 
   const setAuthorPlaceholders = () => {
-    if (authorNameEl) authorNameEl.placeholder = defaultAuthorName ? `默认：${defaultAuthorName}` : '默认：匿名';
+    if (authorNameEl) authorNameEl.placeholder = defaultAuthorName ? `默认：${defaultAuthorName}；多作者用顿号或逗号分隔` : '默认：匿名；多作者用顿号或逗号分隔';
     if (authorAvatarEl) {
       authorAvatarEl.placeholder = defaultAuthorAvatar
         ? `默认：${defaultAuthorAvatar}`
@@ -407,10 +416,10 @@ export const initBitsDraft = (): BitsDraftController | null => {
   };
 
   const updateIdentityPill = () => {
-    const authorName = normalizeAuthorName(authorNameEl?.value ?? '');
+    const authorNames = splitAuthorNames(authorNameEl?.value ?? '');
     const authorAvatar = normalizeAuthorAvatar(authorAvatarEl?.value ?? '');
-    const displayName = authorName || defaultAuthorName || '匿名';
-    const label = !authorName && !authorAvatar ? `${displayName}（当前）` : displayName;
+    const displayName = authorNames.length ? authorNames.join('、') : defaultAuthorName || '匿名';
+    const label = !authorNames.length && !authorAvatar ? `${displayName}（当前）` : displayName;
     if (identityNameEl) identityNameEl.textContent = label;
     const avatarSrc = authorAvatar || defaultAuthorAvatar;
     const fallback = Array.from(displayName)[0] ?? '匿';
@@ -681,16 +690,16 @@ export const initBitsDraft = (): BitsDraftController | null => {
       tags.unshift(`loc:${place}`);
     }
 
-    const authorName = normalizeAuthorName(authorNameEl?.value ?? '');
+    const authorNames = splitAuthorNames(authorNameEl?.value ?? '');
     const authorAvatar = normalizeBitsAvatarPath(authorAvatarEl?.value ?? '');
     if (authorAvatar === undefined) {
       setStatus('作者头像只允许相对图片路径（例如 author/avatar.webp），不要带 public/、不要以 / 开头，也不要使用 URL、..、?、#。', 'error');
       authorAvatarEl?.focus();
       return null;
     }
-    const customAuthorName = authorName && authorName !== defaultAuthorName ? authorName : '';
+    const customAuthorNames = authorNames.filter((name) => name !== defaultAuthorName);
     const customAuthorAvatar = authorAvatar && authorAvatar !== defaultAuthorAvatar ? authorAvatar : '';
-    const hasCustomAuthor = !!customAuthorName || !!customAuthorAvatar;
+    const hasCustomAuthor = customAuthorNames.length > 0 || !!customAuthorAvatar;
 
     const lines = ['---', `date: ${formatDateLocal()}`];
 
@@ -702,9 +711,16 @@ export const initBitsDraft = (): BitsDraftController | null => {
     }
 
     if (hasCustomAuthor) {
-      lines.push('author:');
-      if (customAuthorName) lines.push(`  name: ${quoteYaml(customAuthorName)}`);
-      if (customAuthorAvatar) lines.push(`  avatar: ${quoteYaml(customAuthorAvatar)}`);
+      if (customAuthorNames.length > 0) {
+        lines.push('authors:');
+        customAuthorNames.forEach((name, index) => {
+          lines.push(`  - name: ${quoteYaml(name)}`);
+          if (index === 0 && customAuthorAvatar) lines.push(`    avatar: ${quoteYaml(customAuthorAvatar)}`);
+        });
+      } else {
+        lines.push('author:');
+        lines.push(`  avatar: ${quoteYaml(customAuthorAvatar)}`);
+      }
     }
 
     if (draftEl?.checked) {

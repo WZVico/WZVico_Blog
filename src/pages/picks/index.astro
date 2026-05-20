@@ -4,12 +4,18 @@ import UiIcon from '../../components/UiIcon.astro';
 import Lightbox from '../../components/Lightbox.astro';
 import '../../styles/article.css';
 import '../../styles/picks.css';
-import { getEntry, render } from 'astro:content';
+import { getCollection, getEntry, render } from 'astro:content';
+import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
 import { getThemeSettings } from '../../lib/theme-settings';
 
 const prod = import.meta.env.PROD;
 const DEFAULT_READS_TITLE = '拾选';
 const DEFAULT_READS_SUBTITLE = '书单与简短理由。';
+const DEFAULT_READS_INTRO = [
+  '这里按年份收集我想留下、回看或推荐的书。',
+  '每一本只留下最直接的理由：它解决了什么问题，带来什么视角，适合谁在什么时候翻开。',
+  '书单会慢慢更新，不追求完整，只保留真正想分享的部分。'
+];
 
 const entry = await getEntry('picks', 'index');
 if (!entry) {
@@ -27,10 +33,34 @@ const {
 const { Content, headings } = await render(entry);
 const readsTitle = page.picks.title ?? entry.data.title ?? DEFAULT_READS_TITLE;
 const readsSubtitle = page.picks.subtitle ?? entry.data.subtitle ?? DEFAULT_READS_SUBTITLE;
+const readsIntro = entry.data.intro?.length ? entry.data.intro : DEFAULT_READS_INTRO;
 
 // Build a grouped TOC: H2 as section titles, H3 as items.
 type TocItem = { text: string; slug: string };
 type TocGroup = { title: string; items: TocItem[] };
+type PickFileItem = {
+  id: string;
+  title: string;
+  tocText: string;
+  authors: string[];
+  tags: string[];
+  year: number;
+  dateValue: number;
+  Content: AstroComponentFactory;
+};
+
+const getPickTocText = (text: string) => text.replace(/^(《[^》]+》)\s*-\s*.+$/, '$1');
+const isPicksIndexEntry = (id: string) => id === 'index' || id === 'index.md';
+const getPickFileTitle = (item: Pick<{ title: string; authors: string[] }, 'title' | 'authors'>) =>
+  item.authors.length > 0 ? `${item.title}- ${item.authors.join('、')}` : item.title;
+const getPickFileAnchorId = (id: string) =>
+  `pick-${id.replace(/\.md$/i, '').replace(/[^a-zA-Z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-+|-+$/g, '')}`;
+const getPickFileYear = (id: string, year: number | undefined, date: Date | undefined) => {
+  if (year) return year;
+  if (date) return date.getFullYear();
+  const pathYear = Number(id.match(/\b(20\d{2}|19\d{2})\b/)?.[1]);
+  return Number.isFinite(pathYear) ? pathYear : 0;
+};
 
 const groups: TocGroup[] = [];
 let current: TocGroup | null = null;
@@ -43,9 +73,73 @@ for (const h of headings) {
       current = { title: '目录', items: [] };
       groups.push(current);
     }
-    current.items.push({ text: h.text, slug: h.slug });
+    current.items.push({ text: getPickTocText(h.text), slug: h.slug });
   }
 }
+
+const pickEntries = await getCollection('picks', ({ id, data }) =>
+  !isPicksIndexEntry(id) && (!prod || data.draft !== true)
+);
+const pickFileItems = await Promise.all(
+  pickEntries.map(async (pickEntry) => {
+    const rendered = await render(pickEntry);
+    const year = getPickFileYear(pickEntry.id, pickEntry.data.year, pickEntry.data.date);
+    const authors = pickEntry.data.authors ?? [];
+    const title = getPickFileTitle({
+      title: pickEntry.data.title,
+      authors
+    });
+
+    return {
+      id: getPickFileAnchorId(pickEntry.id),
+      title,
+      tocText: getPickTocText(title),
+      authors,
+      tags: pickEntry.data.tags ?? [],
+      year,
+      dateValue: pickEntry.data.date?.valueOf() ?? 0,
+      Content: rendered.Content
+    } satisfies PickFileItem;
+  })
+);
+const pickFileGroups = Array.from(
+  pickFileItems
+    .sort((left, right) => right.dateValue - left.dateValue || left.title.localeCompare(right.title))
+    .reduce((map, item) => {
+      const key = item.year || new Date(item.dateValue).getFullYear();
+      const list = map.get(key) ?? [];
+      list.push(item);
+      map.set(key, list);
+      return map;
+    }, new Map<number, PickFileItem[]>())
+    .entries()
+)
+  .sort(([left], [right]) => right - left)
+  .map(([year, items]) => ({
+    year,
+    items
+  }));
+
+pickFileGroups.forEach((group) => {
+  const existing = groups.find((item) => item.title === String(group.year));
+  const tocItems = group.items.map((item) => ({
+    text: item.tocText,
+    slug: item.id
+  }));
+  if (existing) {
+    existing.items.unshift(...tocItems);
+    return;
+  }
+  groups.push({ title: String(group.year), items: tocItems });
+});
+groups.sort((left, right) => {
+  const leftYear = Number(left.title);
+  const rightYear = Number(right.title);
+  if (Number.isFinite(leftYear) && Number.isFinite(rightYear)) {
+    return rightYear - leftYear;
+  }
+  return 0;
+});
 ---
 
 <BaseLayout
@@ -111,9 +205,12 @@ for (const h of headings) {
 
   <div data-picks-browse>
     <div class="intro">
-      这里按年份收集我想留下、回看或推荐的书。
-      <br />每一本只留下最直接的理由：它解决了什么问题，带来什么视角，适合谁在什么时候翻开。
-      <br />书单会慢慢更新，不追求完整，只保留真正想分享的部分。
+      {readsIntro.map((line, index) => (
+        <>
+          {index > 0 ? <br /> : null}
+          {line}
+        </>
+      ))}
     </div>
 
     <nav class="picks-toc" aria-label="目录">
@@ -135,6 +232,24 @@ for (const h of headings) {
     </nav>
 
     <div class="picks-content prose heti" id="picks-content">
+      {pickFileGroups.map((group) => (
+        <>
+          <h2>{group.year}</h2>
+          {group.items.map((item) => (
+            <>
+              <h3 id={item.id}>{item.title}</h3>
+              <item.Content />
+              {item.tags.length ? (
+                <p class="pick-tags" aria-label="标签">
+                  {item.tags.map((tag) => (
+                    <span class="pick-tag">#{tag.replace(/^#+/, '')}</span>
+                  ))}
+                </p>
+              ) : null}
+            </>
+          ))}
+        </>
+      ))}
       <Content />
     </div>
   </div>

@@ -23,6 +23,7 @@ describe('admin content write api', () => {
     await mkdir(path.join(tempRoot, 'src', 'content', 'longform'), { recursive: true });
     await mkdir(path.join(tempRoot, 'src', 'content', 'bits'), { recursive: true });
     await mkdir(path.join(tempRoot, 'src', 'content', 'picks'), { recursive: true });
+    await mkdir(path.join(tempRoot, 'src', 'content', 'materials'), { recursive: true });
     await mkdir(path.join(tempRoot, 'public', 'author'), { recursive: true });
 
     await writeFile(path.join(tempRoot, 'public', 'author', 'alice.webp'), 'avatar');
@@ -556,6 +557,139 @@ describe('admin content write api', () => {
         })
       ])
     );
+  });
+
+  it('creates picks entries as yearly single-entry markdown files', async () => {
+    const picksPath = path.join(tempRoot, 'src', 'content', 'picks', 'index.md');
+    await writeFile(
+      picksPath,
+      [
+        '---',
+        'title: picks',
+        'date: 2026-01-10',
+        '---',
+        '',
+        '## 2025',
+        '',
+        '### 《旧书》 - 作者',
+        '',
+        '旧推荐。',
+        '',
+        '<p class="pick-tags" aria-label="标签"><span class="pick-tag">#旧</span></p>',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+
+    const { POST } = await import('../src/pages/api/admin/category/picks');
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/picks', {
+        item: {
+          year: '2026',
+          title: '新书',
+          authors: '新作者',
+          reason: '新的推荐理由。',
+          tags: '经济 阅读'
+        }
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/category/picks')
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+    expect(payload.result.relativePath).toMatch(/^src\/content\/picks\/\d{4}\/新书-\d{4}-\d{2}-\d{2}-\d{6}\.md$/);
+
+    const createdPath = path.join(tempRoot, payload.result.relativePath);
+    const after = await readFile(createdPath, 'utf8');
+    expect(after).toContain('title: 《新书》');
+    expect(after).toContain('authors:\n  - 新作者');
+    expect(after).toContain('新的推荐理由。');
+    expect(after).toContain('tags:\n  - 经济\n  - 阅读');
+  });
+
+  it('rejects duplicate picks entries in the same year', async () => {
+    const picksPath = path.join(tempRoot, 'src', 'content', 'picks', 'index.md');
+    await writeFile(
+      picksPath,
+      [
+        '---',
+        'title: picks',
+        'date: 2026-01-10',
+        '---',
+        '',
+        '## 2026',
+        '',
+        '### 《新书》- 新作者',
+        '',
+        '已有推荐。',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+
+    const { POST } = await import('../src/pages/api/admin/category/picks');
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/picks', {
+        item: {
+          year: '2026',
+          title: '《新书》',
+          authors: '新作者',
+          reason: '重复推荐。',
+          tags: '阅读'
+        }
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/category/picks')
+    } as never);
+
+    expect(response.status).toBe(409);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(false);
+    expect(payload.errors[0]).toContain('已存在');
+  });
+
+  it('creates materials entries inside the current year folder', async () => {
+    const { POST } = await import('../src/pages/api/admin/category/materials');
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/materials', {
+        item: {
+          title: '年度资料',
+          href: 'example.com/material',
+          label: 'PDF',
+          description: '资料描述'
+        }
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/category/materials')
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+    expect(payload.result.relativePath).toMatch(/^src\/content\/materials\/\d{4}\/年度资料-\d{4}-\d{2}-\d{2}-\d{6}\.md$/);
+
+    const after = await readFile(path.join(tempRoot, payload.result.relativePath), 'utf8');
+    expect(after).toContain('title: 年度资料');
+    expect(after).toContain('href: "https://example.com/material"');
+    expect(after).toContain('label: PDF');
+  });
+
+  it('creates bits entries inside the current year folder', async () => {
+    const markdown = ['---', 'date: 2026-05-20T12:00:00+08:00', '---', '', '新的絮语', ''].join('\n');
+    const { POST } = await import('../src/pages/api/admin/category/bits');
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/bits', {
+        markdown
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/category/bits')
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+    expect(payload.result.relativePath).toMatch(/^src\/content\/bits\/\d{4}\/bits-\d{4}-\d{2}-\d{2}-\d{4}\.md$/);
+
+    const after = await readFile(path.join(tempRoot, payload.result.relativePath), 'utf8');
+    expect(after).toBe(markdown);
   });
 
   it('rejects stale revisions after the source file changes externally', async () => {

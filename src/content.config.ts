@@ -125,7 +125,8 @@ const bits = defineCollection({
 
     // Optional media for card display.
     images: z.array(bitsImage).optional(),
-    author: contentAuthorBase.optional()
+    author: contentAuthorBase.optional(),
+    authors: z.array(contentAuthorBase).optional()
   })
 });
 
@@ -134,7 +135,11 @@ const picks = defineCollection({
   schema: z.object({
     title: z.string(),
     subtitle: z.string().optional(),
+    intro: z.array(z.string()).optional(),
     date: z.coerce.date().optional(),
+    year: z.number().int().optional(),
+    authors: z.array(z.string()).default([]),
+    tags: z.array(z.string()).default([]),
     draft: z.boolean().default(false),
     slug: z.string().optional()
   })
