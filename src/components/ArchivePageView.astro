@@ -2,6 +2,7 @@
 import BaseLayout from '../layouts/BaseLayout.astro';
 import TagFilterHeader from './TagFilterHeader.astro';
 import { createWithBase, getLongformSlug, type LongformEntry } from '../lib/content';
+import { getLongformArticlePeople } from '../lib/longform-people';
 import { getTagPath, type TagSummary } from '../lib/tags';
 import { getThemeSettings } from '../lib/theme-settings';
 import { formatISODateUtc, formatMonthDayUtc, groupByUtcYear, joinPageSubtitleText } from '../utils/format';
@@ -30,11 +31,8 @@ const {
 
 const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
-const {
-  settings: {
-    page
-  }
-} = getThemeSettings();
+const { settings } = getThemeSettings();
+const { page } = settings;
 
 const pageTitleText = page.archive.title || '归档';
 const pageTitleParts = [pageTitleText, currentTag ? `#${currentTag.label}` : null, currentPage > 1 ? `第 ${currentPage} 页` : null]
@@ -87,6 +85,7 @@ const currentTagState = currentTag
       currentTag={currentTagState}
       tagOptions={tagOptions}
       searchAriaLabel={`搜索${pageTitleText}`}
+      searchPlaceholder="搜索：标题/作者/摘要/标签"
     />
   </div>
 
@@ -97,7 +96,10 @@ const currentTagState = currentTag
         {group.list.map((entry) => {
           const slug = getLongformSlug(entry);
           const href = withBase(`/archive/${slug}/`);
-          const tag = currentTag?.label ?? entry.data.tags?.[0];
+          const authorNames = getLongformArticlePeople(entry, settings, withBase)
+            .authors
+            .map((author) => author.name)
+            .join('、');
           return (
             <div class="archive-row" data-entry-item data-slug={slug}>
               <div class="archive-title">
@@ -108,7 +110,7 @@ const currentTagState = currentTag
                   <span class="archive-date-md">{formatMonthDayUtc(entry.data.date)}</span>
                   <span class="archive-date-full">{formatISODateUtc(entry.data.date)}</span>
                 </div>
-                {tag ? <div class="archive-tag">#{tag}</div> : null}
+                {authorNames ? <div class="archive-author">{authorNames}</div> : null}
               </div>
             </div>
           );

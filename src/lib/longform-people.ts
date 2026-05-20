@@ -99,3 +99,12 @@ export const getLongformArticlePeople = (
     translator
   };
 };
+
+export const getLongformArticleAuthorNames = (
+  entry: LongformEntry,
+  settings: ThemeSettings
+): string[] =>
+  getLongformArticlePeople(entry, settings, (path) => path)
+    .authors
+    .map((author) => author.name)
+    .filter(Boolean);

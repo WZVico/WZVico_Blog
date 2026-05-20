@@ -1,10 +1,13 @@
 import type { APIRoute } from 'astro';
 import { getArchiveLongforms, getLongformDerivedText, getLongformSlug } from '../../lib/content';
+import { getLongformArticleAuthorNames } from '../../lib/longform-people';
+import { getThemeSettings } from '../../lib/theme-settings';
 
 export const prerender = true;
 
 export const GET: APIRoute = async () => {
   const archiveItems = await getArchiveLongforms();
+  const { settings } = getThemeSettings();
   const index = archiveItems.map((entry) => {
     const { text } = getLongformDerivedText(entry);
     return {
@@ -12,6 +15,7 @@ export const GET: APIRoute = async () => {
       title: entry.data.title ?? '',
       description: entry.data.description ?? '',
       tags: entry.data.tags ?? [],
+      authors: getLongformArticleAuthorNames(entry, settings),
       text,
       date: entry.data.date ? entry.data.date.toISOString() : null
     };

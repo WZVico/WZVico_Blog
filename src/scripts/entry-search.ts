@@ -12,6 +12,7 @@ type IndexItem = {
   title: string;
   description: string;
   tags: string[];
+  authors?: string[];
   text: string;
   date: string | null;
 };
@@ -305,7 +306,7 @@ if (!root) {
       indexHay = new Map(
         data.map((item) => [
           item.slug,
-          buildSearchHaystack([item.title, item.description, item.tags, item.text])
+          buildSearchHaystack([item.title, item.description, item.tags, item.authors ?? [], item.text])
         ])
       );
       indexTagKeys = new Map(data.map((item) => [item.slug, getTagKeys(item.tags)]));
