@@ -760,6 +760,253 @@
   color: var(--admin-status-danger-text);
 }
 
+.admin-category-about {
+  display: grid;
+  gap: 14px;
+  padding-top: 2px;
+}
+
+.admin-category-about__head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 10px 18px;
+}
+
+.admin-category-about__title,
+.admin-category-about__hint,
+.admin-category-about__block-title,
+.admin-category-about__status {
+  margin: 0;
+}
+
+.admin-category-about__title {
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.admin-category-about__hint,
+.admin-category-about__help,
+.admin-category-about__status {
+  color: var(--muted);
+  font-size: var(--admin-text-sm);
+  line-height: 1.65;
+}
+
+.admin-category-about__hint {
+  max-width: 50ch;
+  text-align: right;
+}
+
+.admin-category-about__hint code {
+  color: var(--text);
+  font-size: 0.95em;
+}
+
+.admin-category-about__form,
+.admin-category-about__block,
+.admin-category-about__rows {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-category-about__block {
+  padding: 12px;
+  border: 1px solid var(--admin-panel-border);
+  border-radius: var(--admin-panel-radius);
+  background: var(--admin-panel-bg);
+}
+
+.admin-category-about__block:hover {
+  background: var(--admin-row-hover-bg);
+}
+
+.admin-category-about__block-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 12px;
+}
+
+.admin-category-about__block-title {
+  color: var(--text);
+  font-size: var(--admin-text-sm);
+  line-height: 1.5;
+}
+
+.admin-category-about__group,
+.admin-category-about__row {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  align-items: stretch;
+  gap: 10px 12px;
+}
+
+.admin-category-about__group {
+  padding-top: 10px;
+  border-top: 1px solid var(--admin-panel-border);
+}
+
+.admin-category-about__group > .admin-category-about__row {
+  grid-column: 1 / -1;
+}
+
+.admin-category-about__group:first-child {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.admin-category-about__field {
+  display: grid;
+  grid-template-rows: auto minmax(44px, 1fr);
+  gap: 6px;
+  min-width: 0;
+  grid-column: span 4;
+}
+
+.admin-category-about__field > span {
+  color: var(--faint);
+  font-size: var(--admin-text-2xs);
+  font-weight: 600;
+  letter-spacing: var(--admin-tracking-wide);
+  text-transform: uppercase;
+}
+
+.admin-category-about__field .admin-field__control {
+  height: 100%;
+  min-height: 44px;
+  min-width: 0;
+  width: 100%;
+}
+
+.admin-category-about__field textarea.admin-field__control {
+  overflow: hidden;
+  resize: vertical;
+}
+
+.admin-category-about__field--full textarea.admin-field__control,
+.admin-category-about__field--description textarea.admin-field__control {
+  min-height: 72px;
+}
+
+.admin-category-about__field--full,
+.admin-category-about__field--section-title {
+  grid-column: 1 / -1;
+}
+
+.admin-category-about__field--section-title {
+  max-width: 460px;
+}
+
+.admin-category-about__field--title {
+  grid-column: span 4;
+}
+
+.admin-category-about__field--path {
+  grid-column: span 3;
+}
+
+.admin-category-about__field--description {
+  grid-column: span 5;
+}
+
+.admin-category-about__row[data-about-guide-index] .admin-category-about__field--title,
+.admin-category-about__row[data-about-guide-index] .admin-category-about__field--path {
+  grid-column: span 2;
+}
+
+.admin-category-about__row[data-about-guide-index] .admin-category-about__field--description {
+  grid-column: span 8;
+}
+
+.admin-category-about__row[data-about-guide-index] .admin-field__control,
+.admin-category-about__row[data-about-tech-item-index] .admin-field__control {
+  min-height: 34px;
+}
+
+.admin-category-about__row[data-about-guide-index] textarea.admin-field__control,
+.admin-category-about__row[data-about-tech-item-index] textarea.admin-field__control {
+  height: 34px;
+  min-height: 34px;
+}
+
+.admin-category-about__row[data-about-guide-index] .admin-category-about__field,
+.admin-category-about__row[data-about-tech-item-index] .admin-category-about__field {
+  gap: 4px;
+  grid-template-rows: auto minmax(34px, 1fr);
+}
+
+.admin-category-about__row[data-about-tech-item-index] .admin-category-about__field--title {
+  grid-column: span 3;
+}
+
+.admin-category-about__row[data-about-tech-item-index] .admin-category-about__field--description {
+  grid-column: span 9;
+}
+
+.admin-category-about__row--faq {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.admin-category-about__row--faq .admin-category-about__field--full {
+  grid-column: 1 / -1;
+}
+
+.admin-category-about__row--faq .admin-category-about__field--title {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.admin-category-about__row--faq .admin-category-about__field--full {
+  grid-row: 2;
+}
+
+.admin-category-about__row--faq .admin-category-about__field--full textarea.admin-field__control {
+  min-height: 104px;
+}
+
+.admin-category-about__remove {
+  align-self: start;
+  grid-column: 2;
+  grid-row: 1;
+  justify-self: end;
+}
+
+.admin-category-about__row:not(.admin-category-about__row--faq)
+  .admin-category-about__field--title
+  + .admin-category-about__field--description {
+  grid-column: span 8;
+}
+
+.admin-category-about__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 16px;
+}
+
+.admin-category-about__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.admin-category-about__status {
+  min-height: 22px;
+  text-align: right;
+}
+
+.admin-category-about__status[data-tone='success'] {
+  color: var(--admin-status-success-text);
+}
+
+.admin-category-about__status[data-tone='error'] {
+  color: var(--admin-status-danger-text);
+}
+
 .admin-category-author-manager {
   display: grid;
   gap: 14px;
@@ -923,6 +1170,8 @@
 
   .admin-category-materials-create__head,
   .admin-category-materials-create__footer,
+  .admin-category-about__head,
+  .admin-category-about__footer,
   .admin-category-author-manager__head,
   .admin-category-author-manager__footer,
   .admin-category-longform-create__head,
@@ -935,6 +1184,8 @@
 
   .admin-category-materials-create__hint,
   .admin-category-materials-create__status,
+  .admin-category-about__hint,
+  .admin-category-about__status,
   .admin-category-author-manager__hint,
   .admin-category-author-manager__status,
   .admin-category-longform-create__status,
@@ -946,6 +1197,8 @@
   .admin-category-longform-create__grid,
   .admin-category-author-manager__add,
   .admin-category-author-manager__row,
+  .admin-category-about__group,
+  .admin-category-about__row,
   .admin-category-materials-create__row,
   .admin-category-picks-create__row {
     grid-template-columns: 1fr;
@@ -965,6 +1218,12 @@
   .admin-category-materials-create__field--href,
   .admin-category-materials-create__field--label,
   .admin-category-materials-create__field--description,
+  .admin-category-about__field,
+  .admin-category-about__field--full,
+  .admin-category-about__field--section-title,
+  .admin-category-about__field--title,
+  .admin-category-about__field--path,
+  .admin-category-about__field--description,
   .admin-category-picks-create__field,
   .admin-category-picks-create__field--full,
   .admin-category-picks-create__field--title,
@@ -972,6 +1231,13 @@
   .admin-category-picks-create__field--reason,
   .admin-category-picks-create__field--tags {
     grid-column: auto;
+  }
+
+  .admin-category-about__remove,
+  .admin-category-about__row--faq .admin-category-about__field--title,
+  .admin-category-about__row--faq .admin-category-about__field--full {
+    grid-column: auto;
+    grid-row: auto;
   }
 
   .admin-category-longform-create__split,

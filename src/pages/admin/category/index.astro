@@ -10,6 +10,7 @@ import {
   readAdminAuthorProfiles
 } from '../../../lib/admin-console/authors';
 import { getAdminContentOverviewData } from '../../../lib/admin-console/content';
+import { getAboutContent } from '../../../lib/about-content';
 import { readAdminPicksIntro, readAdminPicksStats } from '../../../lib/admin-console/picks';
 import { getMaterials } from '../../../lib/materials';
 import { createWithBase } from '../../../utils/format';
@@ -90,6 +91,7 @@ const contentSummary = contentOverview?.summaries.find((summary) => summary.key 
 const picksStats = selectedTabId === 'picks' ? await readAdminPicksStats() : null;
 const picksIntro = selectedTabId === 'picks' ? await readAdminPicksIntro() : [];
 const materialItems = selectedTabId === 'materials' ? await getMaterials() : [];
+const aboutContent = selectedTabId === 'about' ? getAboutContent() : null;
 const authorProfiles = selectedTabId === 'author' ? await readAdminAuthorProfiles() : [];
 const latestMaterialDate = materialItems
   .map((item) => item.dateValue)
@@ -98,11 +100,13 @@ const shouldShowLongformCreateConsole = isDev && selectedTabId === 'longform';
 const shouldShowBitsDraftConsole = isDev && selectedTabId === 'bits';
 const shouldShowPicksCreateConsole = isDev && selectedTabId === 'picks';
 const shouldShowMaterialsCreateConsole = isDev && selectedTabId === 'materials';
+const shouldShowAboutContentConsole = isDev && selectedTabId === 'about' && aboutContent !== null;
 const shouldShowAuthorConsole = isDev && selectedTabId === 'author';
 const longformCreateEndpoint = withBase('/api/admin/category/longform/');
 const bitsDraftCreateEndpoint = withBase('/api/admin/category/bits/');
 const picksCreateEndpoint = withBase('/api/admin/category/picks/');
 const materialsCreateEndpoint = withBase('/api/admin/category/materials/');
+const aboutContentEndpoint = withBase('/api/admin/category/about/');
 const authorLibraryEndpoint = withBase('/api/admin/category/authors/');
 const bitsDraftStylesHref = shouldShowBitsDraftConsole
   ? (await import('../../../styles/components/bits.css?url')).default
@@ -123,6 +127,12 @@ const selectedStats = shouldShowAuthorConsole
       { label: '当前作者', value: `${authorProfiles.length} 位` },
       { label: '已有头像', value: `${authorProfiles.filter((author) => author.avatar.trim()).length} 位` },
       { label: '保存位置', value: ADMIN_AUTHOR_LIBRARY_RELATIVE_PATH }
+    ]
+  : shouldShowAboutContentConsole && aboutContent
+  ? [
+      { label: '栏目指引', value: `${aboutContent.guide.items.length} 项` },
+      { label: '常见问题', value: `${aboutContent.faq.items.length} 条` },
+      { label: '保存位置', value: 'src/data/about.json' }
     ]
   : shouldShowMaterialsCreateConsole
   ? [
@@ -354,6 +364,161 @@ const selectedStats = shouldShowAuthorConsole
             }
 
             {
+              shouldShowAboutContentConsole && aboutContent ? (
+                <section
+                  class="admin-category-about"
+                  aria-labelledby="admin-category-about-title"
+                  data-about-content-root
+                  data-about-content-endpoint={aboutContentEndpoint}
+                >
+                  <div class="admin-category-about__head">
+                    <div>
+                      <p class="admin-overview-card__eyebrow">About Copy</p>
+                      <h3 id="admin-category-about-title" class="admin-category-about__title">
+                        页面文案
+                      </h3>
+                    </div>
+                    <p class="admin-category-about__hint">
+                      页头标题、副标题和社交链接仍在 <code>/admin/theme/</code> 设置。
+                    </p>
+                  </div>
+
+                  <form class="admin-category-about__form" data-about-content-form>
+                    <article class="admin-category-about__block">
+                      <div class="admin-category-about__block-head">
+                        <h4 class="admin-category-about__block-title">开头介绍</h4>
+                      </div>
+                      <label class="admin-category-about__field admin-category-about__field--full">
+                        <span>介绍文字</span>
+                        <textarea class="admin-field__control" data-about-field="introLines" data-about-required rows="3">{aboutContent.introLines.join('\n')}</textarea>
+                        <small class="admin-category-about__help">每一行会在 About 页面显示为一行。</small>
+                      </label>
+                    </article>
+
+                    <article class="admin-category-about__block">
+                      <div class="admin-category-about__block-head">
+                        <label class="admin-category-about__field admin-category-about__field--section-title">
+                          <span>栏目指引大标题</span>
+                          <input class="admin-field__control" data-about-field="guide.title" data-about-required type="text" value={aboutContent.guide.title} />
+                        </label>
+                      </div>
+                      <div class="admin-category-about__rows">
+                        {aboutContent.guide.items.map((item, index) => (
+                          <article class="admin-category-about__row" data-about-guide-index={String(index)}>
+                            <label class="admin-category-about__field admin-category-about__field--title">
+                              <span>栏目名</span>
+                              <input class="admin-field__control" data-about-guide-field="title" data-about-required type="text" value={item.title} />
+                            </label>
+                            <label class="admin-category-about__field admin-category-about__field--path">
+                              <span>路径文字</span>
+                              <input class="admin-field__control" data-about-guide-field="href" data-about-required type="text" value={item.href} />
+                            </label>
+                            <label class="admin-category-about__field admin-category-about__field--description">
+                              <span>说明</span>
+                              <textarea class="admin-field__control" data-about-guide-field="description" data-about-required rows="1">{item.description}</textarea>
+                            </label>
+                          </article>
+                        ))}
+                      </div>
+                    </article>
+
+                    <article class="admin-category-about__block">
+                      <div class="admin-category-about__block-head">
+                        <label class="admin-category-about__field admin-category-about__field--section-title">
+                          <span>项目大标题</span>
+                          <input class="admin-field__control" data-about-field="tech.title" data-about-required type="text" value={aboutContent.tech.title} />
+                        </label>
+                      </div>
+                      <div class="admin-category-about__rows">
+                        {aboutContent.tech.groups.map((group, groupIndex) => (
+                          <article class="admin-category-about__group" data-about-tech-group-index={String(groupIndex)}>
+                            <label class="admin-category-about__field admin-category-about__field--full">
+                              <span>分组标题</span>
+                              <input class="admin-field__control" data-about-tech-group-field="title" data-about-required type="text" value={group.title} />
+                            </label>
+                            {group.items.map((item, itemIndex) => (
+                              <article class="admin-category-about__row" data-about-tech-item-index={String(itemIndex)}>
+                                <label class="admin-category-about__field admin-category-about__field--title">
+                                  <span>项目名</span>
+                                  <input class="admin-field__control" data-about-tech-field="title" data-about-required type="text" value={item.title} />
+                                </label>
+                                <label class="admin-category-about__field admin-category-about__field--description">
+                                  <span>说明</span>
+                                  <textarea class="admin-field__control" data-about-tech-field="description" data-about-required rows="1">{item.description}</textarea>
+                                </label>
+                              </article>
+                            ))}
+                          </article>
+                        ))}
+                      </div>
+                    </article>
+
+                    <article class="admin-category-about__block">
+                      <div class="admin-category-about__block-head">
+                        <label class="admin-category-about__field admin-category-about__field--section-title">
+                          <span>常见问题大标题</span>
+                          <input class="admin-field__control" data-about-field="faq.title" data-about-required type="text" value={aboutContent.faq.title} />
+                        </label>
+                        <button class="admin-btn admin-btn--secondary" type="button" data-about-faq-add>添加问答</button>
+                      </div>
+                      <div class="admin-category-about__rows" data-about-faq-list>
+                        {aboutContent.faq.items.map((item, index) => (
+                          <article class="admin-category-about__row admin-category-about__row--faq" data-about-faq-index={String(index)}>
+                            <label class="admin-category-about__field admin-category-about__field--title">
+                              <span>问题</span>
+                              <input class="admin-field__control" data-about-faq-field="question" data-about-required type="text" value={item.question} />
+                            </label>
+                            <label class="admin-category-about__field admin-category-about__field--full">
+                              <span>回答</span>
+                              <textarea class="admin-field__control" data-about-faq-field="answer" data-about-required rows="3">{item.answer}</textarea>
+                            </label>
+                            <button class="admin-btn admin-btn--ghost admin-category-about__remove" type="button" data-about-faq-remove>删除</button>
+                          </article>
+                        ))}
+                      </div>
+                      <template data-about-faq-template>
+                        <article class="admin-category-about__row admin-category-about__row--faq" data-about-faq-index="">
+                          <label class="admin-category-about__field admin-category-about__field--title">
+                            <span>问题</span>
+                            <input class="admin-field__control" data-about-faq-field="question" data-about-required type="text" value="" />
+                          </label>
+                          <label class="admin-category-about__field admin-category-about__field--full">
+                            <span>回答</span>
+                            <textarea class="admin-field__control" data-about-faq-field="answer" data-about-required rows="3"></textarea>
+                          </label>
+                          <button class="admin-btn admin-btn--ghost admin-category-about__remove" type="button" data-about-faq-remove>删除</button>
+                        </article>
+                      </template>
+                    </article>
+
+                    <article class="admin-category-about__block">
+                      <div class="admin-category-about__block-head">
+                        <h4 class="admin-category-about__block-title">联系与订阅</h4>
+                      </div>
+                      <div class="admin-category-about__row">
+                        <label class="admin-category-about__field admin-category-about__field--title">
+                          <span>联系区大标题</span>
+                          <input class="admin-field__control" data-about-field="contact.title" data-about-required type="text" value={aboutContent.contact.title} />
+                        </label>
+                        <label class="admin-category-about__field admin-category-about__field--description">
+                          <span>联系区说明</span>
+                          <textarea class="admin-field__control" data-about-field="contact.note" data-about-required rows="3">{aboutContent.contact.note}</textarea>
+                        </label>
+                      </div>
+                    </article>
+
+                    <div class="admin-category-about__footer">
+                      <div class="admin-category-about__actions">
+                        <button class="admin-btn admin-btn--primary" type="submit" data-about-content-submit>保存 About 文案</button>
+                      </div>
+                      <p class="admin-category-about__status" data-about-content-status role="status" aria-live="polite"></p>
+                    </div>
+                  </form>
+                </section>
+              ) : null
+            }
+
+            {
               shouldShowAuthorConsole ? (
                 <AuthorLibraryManager
                   authors={authorProfiles}
@@ -408,6 +573,16 @@ const selectedStats = shouldShowAuthorConsole
         import { initPicksCreate } from '../../../scripts/picks-create';
 
         initPicksCreate();
+      </script>
+    ) : null
+  }
+
+  {
+    shouldShowAboutContentConsole ? (
+      <script>
+        import { initAboutContent } from '../../../scripts/about-content';
+
+        initAboutContent();
       </script>
     ) : null
   }
