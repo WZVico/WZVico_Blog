@@ -6,7 +6,10 @@ import type {
   SiteSocialPresetId,
   ThemeSettingsEditablePayload
 } from '@/lib/theme-settings';
-import { normalizeHeroImageSrc as normalizeHeroImageSrcValue } from '@/utils/format';
+import {
+  normalizeHeroImageSrc as normalizeHeroImageSrcValue,
+  normalizeSiteFaviconSrc as normalizeSiteFaviconSrcValue
+} from '@/utils/format';
 import {
   ADMIN_ARTICLE_META_DATE_LABEL_DEFAULT,
   ADMIN_HERO_IMAGE_ALT_DEFAULT,
@@ -49,6 +52,7 @@ type FormCodecContext = {
   inputSiteTitle: HTMLInputElement;
   inputSiteDescription: HTMLTextAreaElement;
   inputSiteDefaultLocale: HTMLInputElement;
+  inputSiteFavicon: HTMLInputElement;
   inputSiteFooterStartYear: HTMLInputElement;
   inputSiteFooterShowCurrentYear: HTMLInputElement;
   inputSiteFooterCopyright: HTMLInputElement;
@@ -142,6 +146,12 @@ const normalizeHeroImageInput = (value: unknown): string | null => {
   return normalizeHeroImageSrcValue(rawValue) ?? rawValue;
 };
 
+const normalizeSiteFaviconInput = (value: unknown): string | null => {
+  const rawValue = normalizeTrimmed(value);
+  if (!rawValue) return null;
+  return normalizeSiteFaviconSrcValue(rawValue) ?? rawValue;
+};
+
 const normalizeHeroImageAlt = (value: unknown): string => {
   const rawValue = normalizeTrimmed(value);
   return rawValue || ADMIN_HERO_IMAGE_ALT_DEFAULT;
@@ -165,6 +175,7 @@ export const createFormCodec = ({
   inputSiteTitle,
   inputSiteDescription,
   inputSiteDefaultLocale,
+  inputSiteFavicon,
   inputSiteFooterStartYear,
   inputSiteFooterShowCurrentYear,
   inputSiteFooterCopyright,
@@ -506,6 +517,7 @@ export const createFormCodec = ({
         title: inputSiteTitle.value.trim(),
         description: normalizeMultiline(inputSiteDescription.value).trim(),
         defaultLocale: inputSiteDefaultLocale.value.trim(),
+        favicon: normalizeSiteFaviconInput(inputSiteFavicon.value),
         footer: {
           startYear: parseInteger(inputSiteFooterStartYear.value) ?? footerStartYearMax,
           showCurrentYear: Boolean(inputSiteFooterShowCurrentYear.checked),
@@ -606,6 +618,7 @@ export const createFormCodec = ({
     inputSiteTitle.value = settings.site.title || '';
     inputSiteDescription.value = settings.site.description || '';
     inputSiteDefaultLocale.value = settings.site.defaultLocale || '';
+    inputSiteFavicon.value = settings.site.favicon || '';
     inputSiteFooterStartYear.value = String(settings.site.footer?.startYear ?? '');
     inputSiteFooterShowCurrentYear.checked = Boolean(settings.site.footer?.showCurrentYear);
     inputSiteFooterCopyright.value = settings.site.footer?.copyright || '';

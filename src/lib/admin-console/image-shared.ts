@@ -33,8 +33,10 @@ import {
 import {
   getBitsAvatarLocalFilePath,
   getHeroImageLocalFilePath,
+  getSiteFaviconLocalFilePath,
   normalizeBitsAvatarPath,
   normalizeHeroImageSrc,
+  normalizeSiteFaviconSrc,
   toSafeHttpUrl
 } from '../../utils/format';
 
@@ -180,7 +182,7 @@ type AdminImageShortCacheEntry<T> = {
 export const ADMIN_IMAGE_LIST_API_PATH = '/api/admin/images/list/' as const;
 export const ADMIN_IMAGE_META_API_PATH = '/api/admin/images/meta/' as const;
 
-const IMAGE_LOCAL_EXT_RE = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i;
+const IMAGE_LOCAL_EXT_RE = /\.(?:avif|gif|ico|jpe?g|png|svg|webp)$/i;
 const MARKDOWN_EXT_RE = /\.(?:md|mdx)$/i;
 const RELATIVE_CONTENT_ASSET_RE = /!\[[^\]]*]\(([^)]+)\)|<img[^>]+src=["']([^"']+)["']/g;
 const ADMIN_IMAGE_SHORT_CACHE_TTL_MS = 3_000;
@@ -216,6 +218,7 @@ const ADMIN_IMAGE_SCAN_ROOTS = [
 const MIME_BY_EXT: Record<string, string> = {
   '.avif': 'image/avif',
   '.gif': 'image/gif',
+  '.ico': 'image/x-icon',
   '.jpeg': 'image/jpeg',
   '.jpg': 'image/jpeg',
   '.png': 'image/png',
@@ -234,8 +237,8 @@ const ADMIN_IMAGE_ASSET_SUBGROUP_LABELS = {
 } as const;
 
 const SYSTEM_ASSET_FILE_PATTERNS = [
-  /^favicon(?:[-\w]*)?\.(?:avif|gif|jpe?g|png|svg|webp)$/i,
-  /^apple-touch-icon(?:[-\w]*)?\.(?:avif|gif|jpe?g|png|svg|webp)$/i,
+  /^favicon(?:[-\w]*)?\.(?:avif|gif|ico|jpe?g|png|svg|webp)$/i,
+  /^apple-touch-icon(?:[-\w]*)?\.(?:avif|gif|ico|jpe?g|png|svg|webp)$/i,
   /^preview-[^/]+\.(?:avif|gif|jpe?g|png|svg|webp)$/i
 ] as const;
 const adminImageOwnerOptionsCache = new Map<string, AdminImageShortCacheEntry<AdminImageContentOwner[]>>();
@@ -999,6 +1002,30 @@ const resolveFieldImageTarget = (field: AdminImageFieldContext, rawValue: string
         value: normalized,
         origin: 'public',
         previewSrc: `/${normalized}`
+      }
+    };
+  }
+
+  if (field === 'site.favicon') {
+    const normalized = normalizeSiteFaviconSrc(value);
+    if (!normalized) {
+      throw new AdminImageError('浏览器标签页 Logo 只允许 public/** 下的图片或 https:// 远程 URL');
+    }
+
+    if (normalized.startsWith('https://')) return { kind: 'remote', url: normalized };
+
+    const localPath = getSiteFaviconLocalFilePath(normalized);
+    if (!localPath) {
+      throw new AdminImageError('浏览器标签页 Logo 地址不支持当前本地路径格式');
+    }
+
+    return {
+      kind: 'local',
+      target: {
+        path: localPath,
+        value: normalized,
+        origin: 'public',
+        previewSrc: getPreviewSrcFromPath(localPath)
       }
     };
   }

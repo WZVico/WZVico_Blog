@@ -39,6 +39,17 @@ type ThemeImagePreviewState =
 
 const FIELD_CONFIGS: readonly ThemeImageFieldConfig[] = [
   {
+    field: 'site.favicon',
+    inputId: 'site-favicon',
+    buttonSelector: '[data-admin-images-open="site.favicon"]',
+    pickerTitle: '更换浏览器标签页 Logo',
+    pickerDescription: '仅列出可直接写入 site.favicon 的 public/** 图片资源。',
+    pickerResetLabel: '使用默认图标',
+    pickerResetStatus: '已恢复默认浏览器标签页 Logo',
+    pickerFallbackCurrentValue: '/favicon.svg',
+    pickerFallbackCurrentLabel: '默认 favicon'
+  },
+  {
     field: 'home.heroImageSrc',
     inputId: 'home-hero-image-src',
     buttonSelector: '[data-admin-images-open="home.heroImageSrc"]',

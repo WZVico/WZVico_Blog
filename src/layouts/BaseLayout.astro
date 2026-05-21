@@ -26,6 +26,7 @@ const {
 
 const { settings } = getThemeSettings();
 const siteTitle = settings.site.title;
+const siteFavicon = settings.site.favicon;
 const brandTitle = settings.shell.brandTitle ?? siteTitle;
 const metaDescription = description ?? settings.site.description;
 const fullTitle = title ? `${title} | ${siteTitle}` : siteTitle;
@@ -47,6 +48,18 @@ const yearRange = footerShowCurrentYear && currentYear > footerStartYear
   : `${footerStartYear}`;
 const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
+const getFaviconType = (src: string): string | null => {
+  const pathname = src.split(/[?#]/, 1)[0]?.toLowerCase() ?? '';
+  if (pathname.endsWith('.svg')) return 'image/svg+xml';
+  if (pathname.endsWith('.png')) return 'image/png';
+  if (pathname.endsWith('.ico')) return 'image/x-icon';
+  if (pathname.endsWith('.webp')) return 'image/webp';
+  if (pathname.endsWith('.avif')) return 'image/avif';
+  if (pathname.endsWith('.gif')) return 'image/gif';
+  if (pathname.endsWith('.jpg') || pathname.endsWith('.jpeg')) return 'image/jpeg';
+  return null;
+};
+const siteFaviconType = siteFavicon ? getFaviconType(siteFavicon) : null;
 ---
 
 <!doctype html>
@@ -64,9 +77,17 @@ const withBase = createWithBase(base);
     </script>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <link rel="icon" type="image/svg+xml" sizes="any" href={withBase('favicon.svg')} />
-    <link rel="icon" type="image/png" sizes="32x32" href={withBase('favicon-32x32.png')} />
-    <link rel="apple-touch-icon" sizes="180x180" href={withBase('apple-touch-icon.png')} />
+    {
+      siteFavicon ? (
+        <link rel="icon" type={siteFaviconType ?? undefined} href={withBase(siteFavicon)} />
+      ) : (
+        <>
+          <link rel="icon" type="image/svg+xml" sizes="any" href={withBase('favicon.svg')} />
+          <link rel="icon" type="image/png" sizes="32x32" href={withBase('favicon-32x32.png')} />
+          <link rel="apple-touch-icon" sizes="180x180" href={withBase('apple-touch-icon.png')} />
+        </>
+      )
+    }
     <title>{fullTitle}</title>
     {metaDescription && <meta name="description" content={metaDescription} />}
     {canonical && <link rel="canonical" href={canonical} />}

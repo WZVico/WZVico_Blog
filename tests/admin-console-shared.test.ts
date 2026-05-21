@@ -16,8 +16,10 @@ import {
   buildSearchHaystack,
   getBitsAvatarLocalFilePath,
   getHeroImageLocalFilePath,
+  getSiteFaviconLocalFilePath,
   normalizeBitsAvatarPath,
   normalizeHeroImageSrc,
+  normalizeSiteFaviconSrc,
   tokenizeSearchQuery
 } from '../src/utils/format';
 
@@ -61,6 +63,17 @@ describe('admin-console/shared', () => {
     expect(getHeroImageLocalFilePath('/images/hero.png')).toBe('public/images/hero.png');
   });
 
+  it('normalizes browser tab logo sources and rejects non-public local paths', () => {
+    expect(normalizeSiteFaviconSrc('public/favicon.svg')).toBe('/favicon.svg');
+    expect(normalizeSiteFaviconSrc('favicon.ico')).toBe('/favicon.ico');
+    expect(normalizeSiteFaviconSrc('/images/logo.png')).toBe('/images/logo.png');
+    expect(normalizeSiteFaviconSrc('https://example.com/favicon.svg')).toBe('https://example.com/favicon.svg');
+    expect(normalizeSiteFaviconSrc('src/assets/logo.png')).toBeUndefined();
+    expect(normalizeSiteFaviconSrc('/images/logo.png?v=2')).toBeUndefined();
+    expect(normalizeSiteFaviconSrc('../favicon.svg')).toBeUndefined();
+    expect(getSiteFaviconLocalFilePath('/favicon.svg')).toBe('public/favicon.svg');
+  });
+
   it('normalizes bits avatar paths and rejects invalid values', () => {
     expect(normalizeBitsAvatarPath(' author/avatar.webp ')).toBe('author/avatar.webp');
     expect(normalizeBitsAvatarPath('')).toBe('');
@@ -91,6 +104,9 @@ describe('admin-console/shared', () => {
     expect(getAdminImageFieldPreviewSrc('page.bits.defaultAuthor.avatar', 'author/avatar.svg', '/blog/')).toBe(
       '/blog/author/avatar.svg'
     );
+    expect(getAdminImageFieldPreviewSrc('site.favicon', '/favicon.svg', '/blog/')).toBe('/blog/favicon.svg');
+    expect(getAdminImageFieldPreviewSrc('site.favicon', 'public/favicon.ico', '/blog/')).toBe('/blog/favicon.ico');
+    expect(getAdminImageFieldPreviewSrc('site.favicon', 'src/assets/favicon.png', '/blog/')).toBeNull();
   });
 
   it('normalizes rendered admin image preview sources before assigning img src', () => {
@@ -143,6 +159,7 @@ describe('admin-console/shared', () => {
     });
 
     expect(canonical.site.title).toBe(getEditableThemeSettingsPayload().settings.site.title);
+    expect(canonical.site.favicon).toBe(getEditableThemeSettingsPayload().settings.site.favicon);
     expect(canonical.site.footer.startYear).toBe(getEditableThemeSettingsPayload().settings.site.footer.startYear);
     expect(canonical.site.socialLinks.email).toBe(getEditableThemeSettingsPayload().settings.site.socialLinks.email);
     expect(canonical.site.socialLinks.custom[0]).toMatchObject({
@@ -172,6 +189,7 @@ describe('admin-console/shared', () => {
     const canonical = getEditableThemeSettingsPayload().settings;
     const legacySnapshot = structuredClone(canonical) as Record<string, any>;
     delete legacySnapshot.site.adminOverview;
+    delete legacySnapshot.site.favicon;
     legacySnapshot.ui.sidebarActions = {
       showThemeToggle: canonical.ui.sidebarActions.showThemeToggle
     };
@@ -183,6 +201,7 @@ describe('admin-console/shared', () => {
 
     const mismatchPaths = createAdminThemeSettingsCanonicalMismatchIssues(compatible, canonical).map((issue) => issue.path);
     expect(mismatchPaths).not.toContain('site.adminOverview');
+    expect(mismatchPaths).not.toContain('site.favicon');
     expect(mismatchPaths).not.toContain('ui.sidebarActions');
     expect(mismatchPaths).not.toContain('ui.sidebarActions.showRssLink');
     expect(mismatchPaths).not.toContain('ui.sidebarActions.showAdminEntry');

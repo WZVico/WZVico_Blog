@@ -44,6 +44,7 @@ export type AdminThemeControls = RequiredElements<{
   inputSiteTitle: HTMLInputElement | null;
   inputSiteDescription: HTMLTextAreaElement | null;
   inputSiteDefaultLocale: HTMLInputElement | null;
+  inputSiteFavicon: HTMLInputElement | null;
   inputSiteFooterStartYear: HTMLInputElement | null;
   inputSiteFooterShowCurrentYear: HTMLInputElement | null;
   inputSiteFooterCopyright: HTMLInputElement | null;
@@ -131,6 +132,7 @@ export const queryAdminThemeControls = (): AdminThemeControls | null => {
     inputSiteTitle: byId<HTMLInputElement>('site-title'),
     inputSiteDescription: byId<HTMLTextAreaElement>('site-description'),
     inputSiteDefaultLocale: byId<HTMLInputElement>('site-default-locale'),
+    inputSiteFavicon: byId<HTMLInputElement>('site-favicon'),
     inputSiteFooterStartYear: byId<HTMLInputElement>('site-footer-start-year'),
     inputSiteFooterShowCurrentYear: byId<HTMLInputElement>('site-footer-show-current-year'),
     inputSiteFooterCopyright: byId<HTMLInputElement>('site-footer-copyright'),

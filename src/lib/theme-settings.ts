@@ -4,8 +4,10 @@ import { join } from 'node:path';
 import { site as legacySite } from '../../site.config.mjs';
 import {
   getHeroImageLocalFilePath,
+  getSiteFaviconLocalFilePath,
   normalizeBitsAvatarPath,
-  normalizeHeroImageSrc
+  normalizeHeroImageSrc,
+  normalizeSiteFaviconSrc
 } from '../utils/format';
 import {
   ADMIN_ARTICLE_META_DATE_LABEL_DEFAULT,
@@ -132,6 +134,7 @@ export interface SiteSettings {
   title: string;
   description: string;
   defaultLocale: string;
+  favicon: string | null;
   footer: SiteFooterSettings;
   adminOverview: SiteAdminOverviewSettings;
   socialLinks: SiteSocialLinks;
@@ -222,6 +225,7 @@ export interface ThemeSettingsSources {
     title: SettingSource;
     description: SettingSource;
     defaultLocale: SettingSource;
+    favicon: SettingSource;
     footerStartYear: SettingSource;
     footerShowCurrentYear: SettingSource;
     footerCopyright: SettingSource;
@@ -455,6 +459,7 @@ const DEFAULT_SITE: SiteSettings = {
   title: 'Whono',
   description: '一个 Astro 主题的展示站：轻量、可维护、可复用。',
   defaultLocale: 'zh-CN',
+  favicon: null,
   footer: {
     startYear: LEGACY_FOOTER_START_YEAR,
     showCurrentYear: LEGACY_FOOTER_SHOW_CURRENT_YEAR,
@@ -699,6 +704,16 @@ const asHeroImageSrc = (value: unknown): string | null | undefined => {
   if (normalized === undefined || normalized === null) return normalized;
 
   const localFilePath = getHeroImageLocalFilePath(normalized);
+  if (!localFilePath) return normalized;
+
+  return existsSync(join(process.cwd(), ...localFilePath.split('/'))) ? normalized : undefined;
+};
+
+const asSiteFaviconSrc = (value: unknown): string | null | undefined => {
+  const normalized = normalizeSiteFaviconSrc(value);
+  if (normalized === undefined || normalized === null) return normalized;
+
+  const localFilePath = getSiteFaviconLocalFilePath(normalized);
   if (!localFilePath) return normalized;
 
   return existsSync(join(process.cwd(), ...localFilePath.split('/'))) ? normalized : undefined;
@@ -1166,6 +1181,11 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
     undefined,
     DEFAULT_SITE.defaultLocale
   );
+  const favicon = resolveValue<string | null>(
+    asSiteFaviconSrc(siteJson?.favicon),
+    undefined,
+    DEFAULT_SITE.favicon
+  );
   const footerCopyright = resolveValue(
     asNonEmptyString(siteFooterJson?.copyright),
     LEGACY_FOOTER_COPYRIGHT,
@@ -1464,6 +1484,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         title: title.value,
         description: description.value,
         defaultLocale: defaultLocale.value,
+        favicon: favicon.value,
         footer: {
           startYear: footerStartYear.value,
           showCurrentYear: footerShowCurrentYear.value,
@@ -1561,6 +1582,7 @@ export const getThemeSettings = (): ThemeSettingsResolved => {
         title: title.source,
         description: description.source,
         defaultLocale: defaultLocale.source,
+        favicon: favicon.source,
         footerStartYear: footerStartYear.source,
         footerShowCurrentYear: footerShowCurrentYear.source,
         footerCopyright: footerCopyright.source,
@@ -1655,6 +1677,7 @@ const buildEditableThemeSettingsSnapshot = (
       title: resolved.settings.site.title,
       description: resolved.settings.site.description,
       defaultLocale: resolved.settings.site.defaultLocale,
+      favicon: resolved.settings.site.favicon,
       footer: {
         ...resolved.settings.site.footer
       },

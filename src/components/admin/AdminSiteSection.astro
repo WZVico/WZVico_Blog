@@ -35,6 +35,41 @@ const { footerStartYearMin, footerStartYearMax, socialCustomLimit } = Astro.prop
       </span>
       <input class="admin-field__control" id="site-default-locale" type="text" autocomplete="off" />
     </label>
+    <div class="admin-field admin-field--full">
+      <span class="admin-label">
+        <label class="admin-label__main" for="site-favicon">浏览器标签页 Logo</label>
+        <span class="admin-label__hint">（留空使用 public/favicon.* 默认图标）</span>
+      </span>
+      <div class="admin-images-field-input">
+        <input
+          class="admin-field__control"
+          id="site-favicon"
+          type="text"
+          inputmode="url"
+          spellcheck="false"
+          placeholder="/favicon.svg"
+          aria-label="浏览器标签页 Logo"
+        />
+        <button
+          class="admin-btn admin-btn--ghost"
+          type="button"
+          data-admin-images-open="site.favicon"
+          aria-label="选择浏览器标签页 Logo"
+        >
+          选择
+        </button>
+      </div>
+      <p class="admin-help">支持 public/** 或 https:// 图片地址，推荐 SVG、PNG 或 ICO。</p>
+      <p class="admin-help admin-help--inline" data-admin-images-meta="site.favicon" hidden></p>
+      <div
+        class="admin-images-field-preview admin-images-field-preview--favicon"
+        data-admin-images-preview="site.favicon"
+        data-admin-images-default-preview-src="/favicon.svg"
+        hidden
+      >
+        <img alt="" loading="lazy" decoding="async" data-admin-images-preview-img="site.favicon" />
+      </div>
+    </div>
     <label class="admin-field admin-field--full">
       <span class="admin-label">
         <span class="admin-label__main">默认 SEO 描述</span>

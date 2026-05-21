@@ -13,15 +13,19 @@ import type {
 import {
   getBitsAvatarLocalFilePath as getAdminBitsAvatarLocalFilePath,
   getHeroImageLocalFilePath as getAdminHeroImageLocalFilePath,
+  getSiteFaviconLocalFilePath as getAdminSiteFaviconLocalFilePath,
   normalizeBitsAvatarPath as normalizeAdminBitsAvatarPath,
-  normalizeHeroImageSrc as normalizeAdminHeroImageSrc
+  normalizeHeroImageSrc as normalizeAdminHeroImageSrc,
+  normalizeSiteFaviconSrc as normalizeAdminSiteFaviconSrc
 } from '../../utils/format';
 
 export {
   getAdminBitsAvatarLocalFilePath,
   getAdminHeroImageLocalFilePath,
+  getAdminSiteFaviconLocalFilePath,
   normalizeAdminBitsAvatarPath,
-  normalizeAdminHeroImageSrc
+  normalizeAdminHeroImageSrc,
+  normalizeAdminSiteFaviconSrc
 };
 
 export const ADMIN_NAV_IDS = ['longform', 'bits', 'picks', 'archive', 'materials', 'about'] as const satisfies readonly SidebarNavId[];
@@ -462,6 +466,14 @@ export const canonicalizeAdminThemeSettings = (
       title: normalizeTrimmed(site.title),
       description: normalizeMultiline(String(site.description ?? '')).trim(),
       defaultLocale: normalizeTrimmed(site.defaultLocale),
+      favicon: (() => {
+        const normalized = normalizeAdminSiteFaviconSrc(site.favicon);
+        if (normalized === undefined) {
+          const rawValue = normalizeTrimmed(site.favicon);
+          return rawValue ? rawValue : null;
+        }
+        return normalized;
+      })(),
       footer: {
         startYear: parseInteger(siteFooter.startYear as string | number | null | undefined) ?? footerStartYearMax,
         showCurrentYear: Boolean(siteFooter.showCurrentYear),
@@ -583,6 +595,7 @@ export const createAdminWritableThemeSettingsGroups = (
     title: settings.site.title,
     description: settings.site.description,
     defaultLocale: settings.site.defaultLocale,
+    favicon: settings.site.favicon,
     footer: {
       ...settings.site.footer
     },
@@ -655,6 +668,21 @@ export const validateAdminThemeSettings = (
     pushIssue('site.defaultLocale', '默认语言不能为空');
   } else if (!ADMIN_LOCALE_RE.test(settings.site.defaultLocale)) {
     pushIssue('site.defaultLocale', '默认语言格式无效（示例：zh-CN）');
+  }
+
+  if (
+    settings.site.favicon !== null &&
+    normalizeAdminSiteFaviconSrc(settings.site.favicon) === undefined
+  ) {
+    pushIssue(
+      'site.favicon',
+      '浏览器标签页 Logo 只允许 public/**（或 / 开头路径）以及 https:// 图片地址'
+    );
+  } else if (settings.site.favicon) {
+    const localFilePath = getAdminSiteFaviconLocalFilePath(settings.site.favicon);
+    if (localFilePath && options.localFileExists && !options.localFileExists(localFilePath)) {
+      pushIssue('site.favicon', `浏览器标签页 Logo 指向的本地文件不存在：${localFilePath}`);
+    }
   }
 
   if (!Number.isInteger(settings.site.footer?.startYear)) {
@@ -1203,6 +1231,13 @@ const fillAdminThemeSettingsSiteCompatibilityDefaults = (
         }
       };
     }
+  }
+
+  if (!Object.prototype.hasOwnProperty.call(rawSite, 'favicon')) {
+    nextSite = {
+      ...nextSite,
+      favicon: canonicalSite.favicon ?? null
+    };
   }
 
   const canonicalSocialLinks = canonicalSite.socialLinks;

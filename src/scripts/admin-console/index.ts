@@ -67,6 +67,7 @@ if (!root) {
       inputSiteTitle: controls.inputSiteTitle,
       inputSiteDescription: controls.inputSiteDescription,
       inputSiteDefaultLocale: controls.inputSiteDefaultLocale,
+      inputSiteFavicon: controls.inputSiteFavicon,
       inputSiteFooterStartYear: controls.inputSiteFooterStartYear,
       inputSiteFooterShowCurrentYear: controls.inputSiteFooterShowCurrentYear,
       inputSiteFooterCopyright: controls.inputSiteFooterCopyright,
@@ -147,6 +148,7 @@ if (!root) {
       inputSiteTitle: controls.inputSiteTitle,
       inputSiteDescription: controls.inputSiteDescription,
       inputSiteDefaultLocale: controls.inputSiteDefaultLocale,
+      inputSiteFavicon: controls.inputSiteFavicon,
       inputSiteFooterStartYear: controls.inputSiteFooterStartYear,
       inputSiteFooterShowCurrentYear: controls.inputSiteFooterShowCurrentYear,
       inputSiteFooterCopyright: controls.inputSiteFooterCopyright,
@@ -246,6 +248,7 @@ if (!root) {
       formCodec.syncHomeIntroLinkControls();
       formCodec.syncHeroControls();
       formCodec.syncFooterYearControls();
+      themeImageFields?.refresh('site.favicon');
       themeImageFields?.refresh('home.heroImageSrc');
     };
 

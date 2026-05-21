@@ -20,6 +20,7 @@ type ValidationContext = {
   inputSiteTitle: HTMLInputElement;
   inputSiteDescription: HTMLTextAreaElement;
   inputSiteDefaultLocale: HTMLInputElement;
+  inputSiteFavicon: HTMLInputElement;
   inputSiteFooterStartYear: HTMLInputElement;
   inputSiteFooterShowCurrentYear: HTMLInputElement;
   inputSiteFooterCopyright: HTMLInputElement;
@@ -89,6 +90,7 @@ export const createValidation = ({
   inputSiteTitle,
   inputSiteDescription,
   inputSiteDefaultLocale,
+  inputSiteFavicon,
   inputSiteFooterStartYear,
   inputSiteFooterShowCurrentYear,
   inputSiteFooterCopyright,
@@ -187,6 +189,8 @@ export const createValidation = ({
         return () => inputSiteDescription;
       case 'site.defaultLocale':
         return () => inputSiteDefaultLocale;
+      case 'site.favicon':
+        return () => inputSiteFavicon;
       case 'site.footer.startYear':
         return () => inputSiteFooterStartYear;
       case 'site.footer.showCurrentYear':

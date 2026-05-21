@@ -20,6 +20,7 @@ import {
 
 export type AdminImagePickerField =
   | 'bits.images'
+  | 'site.favicon'
   | 'home.heroImageSrc'
   | 'page.bits.defaultAuthor.avatar';
 

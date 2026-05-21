@@ -12,11 +12,13 @@ import {
 import {
   normalizeBitsAvatarPath,
   normalizeHeroImageSrc,
+  normalizeSiteFaviconSrc,
   toSafeHttpUrl
 } from '../../utils/format';
 
 export type AdminImageFieldContext =
   | 'bits.images'
+  | 'site.favicon'
   | 'home.heroImageSrc'
   | 'page.bits.defaultAuthor.avatar';
 
@@ -66,7 +68,7 @@ type AdminImageFieldConfig = {
   toValue: (assetPath: string, origin: AdminImageOrigin) => string | null;
 };
 
-const IMAGE_LOCAL_EXT_RE = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i;
+const IMAGE_LOCAL_EXT_RE = /\.(?:avif|gif|ico|jpe?g|png|svg|webp)$/i;
 const DATA_URL_RE = /^data:/i;
 
 const FIELD_CONFIG: Record<AdminImageFieldContext, AdminImageFieldConfig> = {
@@ -74,6 +76,11 @@ const FIELD_CONFIG: Record<AdminImageFieldContext, AdminImageFieldConfig> = {
     allowedOrigins: ['public'],
     preferredPrefixes: ['public/bits/', 'public/images/', 'public/author/', 'public/'],
     toValue: (assetPath, origin) => (origin === 'public' ? assetPath.slice('public/'.length) : null)
+  },
+  'site.favicon': {
+    allowedOrigins: ['public'],
+    preferredPrefixes: ['public/favicon', 'public/apple-touch-icon', 'public/images/', 'public/'],
+    toValue: (assetPath, origin) => (origin === 'public' ? `/${assetPath.slice('public/'.length)}` : null)
   },
   'home.heroImageSrc': {
     allowedOrigins: ['src/assets', 'public'],
@@ -280,6 +287,13 @@ export const getAdminImageFieldPreviewSrc = (
   if (field === 'page.bits.defaultAuthor.avatar') {
     const normalized = normalizeBitsAvatarPath(value);
     return normalized ? withAdminPreviewBase(base, normalized) : null;
+  }
+
+  if (field === 'site.favicon') {
+    const normalized = normalizeSiteFaviconSrc(value);
+    if (!normalized) return null;
+    if (normalized.startsWith('https://')) return normalized;
+    return withAdminPreviewBase(base, normalized);
   }
 
   const normalized = normalizeHeroImageSrc(value);

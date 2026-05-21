@@ -2,6 +2,7 @@
   "title": "WZVico' Blog",
   "description": "这是一个关于写作、阅读、观看、聆听与日常生活的个人博客。",
   "defaultLocale": "zh-CN",
+  "favicon": null,
   "footer": {
     "startYear": 2026,
     "showCurrentYear": true,

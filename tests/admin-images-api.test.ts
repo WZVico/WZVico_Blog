@@ -166,6 +166,15 @@ describe('admin images api', () => {
     expect(remotePayload.result.previewSrc).toBe('https://example.com/demo.webp');
     expect(remotePayload.result.width).toBeNull();
     expect(remotePayload.result.height).toBeNull();
+
+    const faviconResponse = await GET({
+      url: new URL('http://127.0.0.1:4321/api/admin/images/meta?field=site.favicon&value=/favicon.png')
+    } as never);
+    expect(faviconResponse.status).toBe(200);
+    const faviconPayload = JSON.parse(await faviconResponse.text());
+    expect(faviconPayload.ok).toBe(true);
+    expect(faviconPayload.result.kind).toBe('local');
+    expect(faviconPayload.result.path).toBe('public/favicon.png');
   });
 
   it('rejects metadata previews that violate field image contracts', async () => {
@@ -183,6 +192,10 @@ describe('admin images api', () => {
       {
         field: 'page.bits.defaultAuthor.avatar',
         value: 'https://example.com/avatar.webp'
+      },
+      {
+        field: 'site.favicon',
+        value: 'src/assets/hero.png'
       }
     ];
 

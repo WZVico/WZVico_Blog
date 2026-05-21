@@ -49,6 +49,7 @@ export function toSafeHttpUrl(value: string, base?: string): string {
 }
 
 const HERO_IMAGE_LOCAL_EXT_RE = /\.(?:avif|gif|jpe?g|png|webp)$/i;
+const SITE_FAVICON_LOCAL_EXT_RE = /\.(?:avif|gif|ico|jpe?g|png|svg|webp)$/i;
 const BITS_AVATAR_LOCAL_EXT_RE = /\.(?:avif|gif|jpe?g|png|svg|webp)$/i;
 
 const hasInvalidLocalImagePathSegment = (value: string): boolean =>
@@ -96,6 +97,41 @@ export function normalizeHeroImageSrc(value: unknown): string | null | undefined
 
 export function getHeroImageLocalFilePath(value: string): string | null {
   if (value.startsWith('src/assets/')) return value;
+  if (value.startsWith('/')) return `public${value}`;
+  return null;
+}
+
+export function normalizeSiteFaviconSrc(value: unknown): string | null | undefined {
+  if (value === null) return null;
+  if (typeof value !== 'string') return undefined;
+
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  const safeRemoteUrl = toSafeHttpUrl(trimmed);
+  if (safeRemoteUrl.startsWith('https://')) return safeRemoteUrl;
+
+  const normalized = trimmed.replace(/\\/g, '/').replace(/^\.\/+/, '');
+  if (
+    !normalized ||
+    normalized.startsWith('//') ||
+    normalized.startsWith('src/') ||
+    /^[A-Za-z]+:\/\//.test(normalized) ||
+    hasInvalidLocalImagePathSegment(normalized)
+  ) {
+    return undefined;
+  }
+
+  const publicPath = normalized.startsWith('public/')
+    ? `/${normalized.slice('public/'.length)}`
+    : normalized.startsWith('/')
+      ? normalized
+      : `/${normalized}`;
+
+  return publicPath !== '/' && SITE_FAVICON_LOCAL_EXT_RE.test(publicPath) ? publicPath : undefined;
+}
+
+export function getSiteFaviconLocalFilePath(value: string): string | null {
   if (value.startsWith('/')) return `public${value}`;
   return null;
 }

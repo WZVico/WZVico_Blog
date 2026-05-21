@@ -164,6 +164,17 @@
   aspect-ratio: 1;
 }
 
+.admin-images-field-preview--favicon {
+  width: 52px;
+  aspect-ratio: 1;
+  border-radius: 8px;
+}
+
+.admin-images-field-preview--favicon img {
+  object-fit: contain;
+  padding: 8px;
+}
+
 .admin-images-field-preview--hero {
   aspect-ratio: 16 / 9;
 }
