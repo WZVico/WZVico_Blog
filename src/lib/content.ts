@@ -166,11 +166,12 @@ const loadSortedLongforms = async ({ includeDraft }: LongformQueryOptions = {}) 
 
 const buildLongformDerivedText = (entry: LongformEntry): LongformDerivedText => {
   const { plainText, excerptText } = deriveMarkdownText(entry.body ?? '');
+  const description = entry.data.description?.trim() ?? '';
 
   return {
     plainText,
     text: plainText.length > MAX_LONGFORM_INDEX_TEXT ? plainText.slice(0, MAX_LONGFORM_INDEX_TEXT) : plainText,
-    excerpt: truncateText(excerptText, 120)
+    excerpt: truncateText(description || excerptText, 120)
   };
 };
 

@@ -6,8 +6,7 @@ slug: getting-the-most-out-of-codex
 badge: 译文
 tags:
   - Codex
-  - vibe
-  - coding
+  - vibe coding
   - agent
 draft: false
 archive: true
