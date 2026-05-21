@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -63,6 +63,7 @@ describe('admin content write api', () => {
   });
 
   afterEach(async () => {
+    vi.useRealTimers();
     delete process.env.ASTRO_WHONO_INTERNAL_TEST_PROJECT_ROOT;
     if (tempRoot) {
       await rm(tempRoot, { recursive: true, force: true });
@@ -690,6 +691,125 @@ describe('admin content write api', () => {
 
     const after = await readFile(path.join(tempRoot, payload.result.relativePath), 'utf8');
     expect(after).toBe(markdown);
+  });
+
+  it('creates longform entries from the server creation date with draft off by default', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 4, 21, 9, 12, 13));
+
+    const { POST } = await import('../src/pages/api/admin/category/longform');
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/longform', {
+        item: {
+          title: '我的长文草稿',
+          slug: 'my-longform-draft',
+          description: '用于测试长文创建。',
+          date: '1999-01-01',
+          publishedAt: '1999-01-01T12:00:00+08:00',
+          cover: '/images/archive/legacy-cover.webp',
+          badge: '草稿',
+          tags: '写作 Markdown',
+          authors: [
+            {
+              name: 'Alice',
+              avatar: 'author/alice.webp',
+              showAvatar: false
+            },
+            {
+              name: 'Bob',
+              avatar: 'author/bob.webp'
+            }
+          ],
+          translationPerson: {
+            name: 'WZVico',
+            avatar: 'author/alice.webp',
+            showAvatar: false
+          },
+          translationSource: 'Original Essay',
+          translationSourceUrl: 'https://example.com/original',
+          body: '第一段。\n\n<!-- more -->\n\n后续正文。'
+        }
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/category/longform')
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+    expect(payload.result.relativePath).toBe('src/content/longform/2026/my-longform-draft.md');
+    expect(payload.result.publicHref).toBe('/archive/my-longform-draft/');
+
+    const after = await readFile(path.join(tempRoot, payload.result.relativePath), 'utf8');
+    expect(after).toContain('title: 我的长文草稿');
+    expect(after).toContain('description: 用于测试长文创建。');
+    expect(after).toContain('date: 2026-05-21');
+    expect(after).not.toContain('publishedAt:');
+    expect(after).not.toContain('cover:');
+    expect(after).toContain('slug: my-longform-draft');
+    expect(after).toContain('badge: 草稿');
+    expect(after).toContain('tags:\n  - 写作\n  - Markdown');
+    expect(after).toContain('draft: false');
+    expect(after).toContain('archive: true');
+    expect(after).toContain('authors:\n  - name: Alice\n    avatar: author/alice.webp\n    showAvatar: false\n  - name: Bob\n    avatar: author/bob.webp');
+    expect(after).toContain('translation:\n  translator: WZVico\n  avatar: author/alice.webp\n  showAvatar: false\n  source: Original Essay\n  sourceUrl: https://example.com/original');
+    expect(after).toContain('<!-- more -->');
+    expect(after.endsWith('后续正文。\n')).toBe(true);
+  });
+
+  it('saves the managed author library for longform author and translator options', async () => {
+    const { POST } = await import('../src/pages/api/admin/category/authors');
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/authors', {
+        authors: [
+          {
+            name: 'Alice',
+            avatar: 'author/alice.webp'
+          },
+          {
+            name: 'WZVico',
+            avatar: ''
+          }
+        ]
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/category/authors')
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+    expect(payload.result.relativePath).toBe('src/data/authors.json');
+
+    const after = JSON.parse(await readFile(path.join(tempRoot, 'src', 'data', 'authors.json'), 'utf8'));
+    expect(after).toEqual([
+      {
+        name: 'Alice',
+        avatar: 'author/alice.webp'
+      },
+      {
+        name: 'WZVico',
+        avatar: ''
+      }
+    ]);
+  });
+
+  it('rejects duplicate longform slugs before creating files', async () => {
+    const { POST } = await import('../src/pages/api/admin/category/longform');
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/longform', {
+        item: {
+          title: '重复长文',
+          slug: 'existing-longform',
+          date: '2026-05-20',
+          body: '正文。'
+        }
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/category/longform')
+    } as never);
+
+    expect(response.status).toBe(409);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(false);
+    expect(payload.errors[0]).toContain('已被占用');
   });
 
   it('rejects stale revisions after the source file changes externally', async () => {

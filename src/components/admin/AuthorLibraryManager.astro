@@ -1,0 +1,57 @@
+---
+import type { AdminAuthorProfile } from '../../lib/admin-console/authors';
+
+const {
+  authors = [],
+  endpoint = '',
+  sourceLabel = 'src/data/authors.json'
+} = Astro.props as {
+  authors?: AdminAuthorProfile[];
+  endpoint?: string;
+  sourceLabel?: string;
+};
+---
+
+<section
+  class="admin-category-author-manager"
+  aria-labelledby="admin-category-author-manager-title"
+  data-author-library-root
+  data-author-library-endpoint={endpoint || undefined}
+  data-author-library-initial={JSON.stringify(authors)}
+>
+  <div class="admin-category-author-manager__head">
+    <div>
+      <p class="admin-overview-card__eyebrow">Author</p>
+      <h3 id="admin-category-author-manager-title" class="admin-category-author-manager__title">
+        作者库
+      </h3>
+    </div>
+    <p class="admin-category-author-manager__hint">
+      写入 <code>{sourceLabel}</code>
+    </p>
+  </div>
+
+  <form class="admin-category-author-manager__add" data-author-library-add-form>
+    <label class="admin-category-author-manager__field admin-category-author-manager__field--name">
+      <span>名称 *</span>
+      <input class="admin-field__control" data-author-library-add-name type="text" autocomplete="off" placeholder="Alice" />
+    </label>
+    <label class="admin-category-author-manager__field admin-category-author-manager__field--avatar">
+      <span>头像（可选）</span>
+      <input class="admin-field__control" data-author-library-add-avatar type="text" autocomplete="off" spellcheck="false" placeholder="author/alice.webp" />
+    </label>
+    <button class="admin-btn admin-btn--secondary" type="submit" data-author-library-add-submit>新增作者</button>
+  </form>
+
+  <div class="admin-category-author-manager__list" data-author-library-list aria-label="作者列表"></div>
+  <p class="admin-category-author-manager__empty" data-author-library-empty hidden>
+    当前还没有作者。先新增一个作者，再保存作者库。
+  </p>
+
+  <div class="admin-category-author-manager__footer">
+    <p class="admin-category-author-manager__status" data-author-library-status role="status" aria-live="polite"></p>
+    <div class="admin-category-author-manager__actions">
+      <button class="admin-btn admin-btn--primary" type="button" data-author-library-save>保存作者库</button>
+    </div>
+  </div>
+</section>

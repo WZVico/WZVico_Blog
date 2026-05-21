@@ -1,4 +1,5 @@
 import { createWithBase, normalizeBitsAvatarPath, toSafeHttpUrl } from '../utils/format';
+import { splitTagInput } from '../utils/tag-input';
 
 type Tone = 'info' | 'error' | 'success';
 type ToolbarSnapshot = { value: string; start: number; end: number };
@@ -46,15 +47,7 @@ const formatDateLocal = () => {
   return `${datePart}T${timePart}${sign}${tzHours}:${tzRemainder}`;
 };
 
-const splitTags = (value: string) =>
-  Array.from(
-    new Set(
-      value
-        .split(/[,\s，]+/)
-        .map((part) => part.trim())
-        .filter(Boolean)
-    )
-  );
+const splitTags = (value: string) => splitTagInput(value);
 
 const squashTagSpaces = (value: string) => value.replace(/，/g, ',').replace(/\s{2,}/g, ' ');
 

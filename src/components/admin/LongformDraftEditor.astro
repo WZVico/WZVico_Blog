@@ -1,0 +1,274 @@
+---
+import UiIcon from '../UiIcon.astro';
+import { readAdminAuthorProfiles } from '../../lib/admin-console/authors';
+
+const { createEndpoint = '' } = Astro.props as {
+  createEndpoint?: string;
+};
+
+type AuthorLibraryItem = {
+  name: string;
+  avatar: string;
+  showAvatar: boolean;
+  source: string;
+};
+
+const authorsByName = new Map<string, AuthorLibraryItem>();
+
+const addAuthor = ({
+  name,
+  avatar = '',
+  showAvatar = true,
+  source
+}: {
+  name?: string | null | undefined;
+  avatar?: string | null | undefined;
+  showAvatar?: boolean;
+  source: string;
+}) => {
+  const normalizedName = name?.trim() ?? '';
+  if (!normalizedName) return;
+
+  const key = normalizedName.toLocaleLowerCase();
+  const existing = authorsByName.get(key);
+  if (existing) {
+    if (!existing.avatar && avatar?.trim()) existing.avatar = avatar.trim();
+    if (existing.showAvatar && showAvatar === false) existing.showAvatar = false;
+    return;
+  }
+
+  authorsByName.set(key, {
+    name: normalizedName,
+    avatar: avatar?.trim() ?? '',
+    showAvatar,
+    source
+  });
+};
+
+const managedAuthors = await readAdminAuthorProfiles();
+
+managedAuthors.forEach((author) => {
+  addAuthor({
+    name: author.name,
+    avatar: author.avatar,
+    source: '作者库'
+  });
+});
+
+const authorLibrary = Array.from(authorsByName.values()).sort((left, right) =>
+  left.name.localeCompare(right.name, 'zh-Hans-CN')
+);
+---
+
+<section
+  class="admin-category-longform-create"
+  aria-labelledby="admin-category-longform-create-title"
+  data-longform-create-root
+  data-longform-create-endpoint={createEndpoint || undefined}
+  data-author-library={JSON.stringify(authorLibrary)}
+>
+  <div class="admin-category-longform-create__head">
+    <div>
+      <p class="admin-overview-card__eyebrow">Longform</p>
+      <h3 id="admin-category-longform-create-title" class="admin-category-longform-create__title">
+        新增长文
+      </h3>
+    </div>
+  </div>
+
+  <form class="admin-category-longform-create__form" data-longform-create-form>
+    <div class="admin-category-longform-create__grid">
+      <label class="admin-category-longform-create__field admin-category-longform-create__field--title">
+        <span>标题 *</span>
+        <input class="admin-field__control" data-longform-field="title" type="text" autocomplete="off" placeholder="写作标题" />
+      </label>
+
+      <label class="admin-category-longform-create__field admin-category-longform-create__field--slug">
+        <span>slug *</span>
+        <input class="admin-field__control" data-longform-field="slug" type="text" autocomplete="off" spellcheck="false" placeholder="my-longform-note" />
+      </label>
+
+      <label class="admin-category-longform-create__field admin-category-longform-create__field--badge">
+        <span>徽标</span>
+        <input class="admin-field__control" data-longform-field="badge" type="text" autocomplete="off" placeholder="指南 / 翻译" />
+      </label>
+
+      <label class="admin-category-longform-create__field admin-category-longform-create__field--description">
+        <span>描述</span>
+        <textarea class="admin-field__control" data-longform-field="description" rows="3" placeholder="列表、SEO 与分享摘要"></textarea>
+      </label>
+
+      <label class="admin-category-longform-create__field admin-category-longform-create__field--tags">
+        <span>标签</span>
+        <input class="admin-field__control" data-longform-field="tags" type="text" autocomplete="off" placeholder="agent, Vibe coding" />
+        <small class="admin-category-longform-create__help">带空格的标签用逗号隔开，例如 agent, Vibe coding。</small>
+      </label>
+    </div>
+
+    <div class="admin-category-longform-create__split">
+      <fieldset class="admin-category-longform-create__box">
+        <legend>作者</legend>
+        <div class="admin-category-longform-create__person-picker" data-longform-person-picker="author">
+          <label class="admin-category-longform-create__field admin-category-longform-create__person-field">
+            <span>作者名</span>
+            <input
+              class="admin-field__control"
+              data-longform-author-input
+              type="text"
+              autocomplete="off"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded="false"
+              aria-controls="admin-category-longform-author-suggestions"
+              placeholder="输入新作者或筛选已有作者"
+            />
+            <div
+              id="admin-category-longform-author-suggestions"
+              class="admin-category-longform-create__suggestions"
+              data-longform-author-suggestions
+              role="listbox"
+              hidden
+            ></div>
+          </label>
+          <button class="admin-btn admin-btn--secondary admin-btn--compact" type="button" data-longform-add-author>添加作者</button>
+        </div>
+        <ul class="admin-category-longform-create__authors" data-longform-author-list hidden></ul>
+        <label class="admin-category-longform-create__field">
+          <span>头像（可选）</span>
+          <input class="admin-field__control" data-longform-field="authorAvatar" type="text" inputmode="url" autocomplete="off" placeholder="author/avatar.webp" />
+        </label>
+        <label class="admin-category-longform-create__check">
+          <input data-longform-field="authorShowAvatar" type="checkbox" checked />
+          <span>显示头像</span>
+        </label>
+      </fieldset>
+
+      <fieldset class="admin-category-longform-create__box">
+        <legend>翻译</legend>
+        <div class="admin-category-longform-create__person-picker" data-longform-person-picker="translator">
+          <label class="admin-category-longform-create__field admin-category-longform-create__person-field">
+            <span>译者</span>
+            <input
+              class="admin-field__control"
+              data-longform-translator-input
+              type="text"
+              autocomplete="off"
+              role="combobox"
+              aria-autocomplete="list"
+              aria-expanded="false"
+              aria-controls="admin-category-longform-translator-suggestions"
+              placeholder="输入新译者或筛选已有作者"
+            />
+            <div
+              id="admin-category-longform-translator-suggestions"
+              class="admin-category-longform-create__suggestions"
+              data-longform-translator-suggestions
+              role="listbox"
+              hidden
+            ></div>
+          </label>
+          <button class="admin-btn admin-btn--secondary admin-btn--compact" type="button" data-longform-set-translator>添加译者</button>
+        </div>
+        <input data-longform-field="translationTranslator" type="hidden" />
+        <ul class="admin-category-longform-create__authors" data-longform-translator-list hidden></ul>
+        <label class="admin-category-longform-create__field">
+          <span>原文标题 / 来源</span>
+          <input class="admin-field__control" data-longform-field="translationSource" type="text" autocomplete="off" placeholder="Original Essay" />
+        </label>
+        <label class="admin-category-longform-create__field">
+          <span>原文链接</span>
+          <input class="admin-field__control" data-longform-field="translationSourceUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://example.com/original" />
+        </label>
+        <div class="admin-category-longform-create__inline">
+          <label class="admin-category-longform-create__field">
+            <span>译者头像（可选）</span>
+            <input class="admin-field__control" data-longform-field="translationAvatar" type="text" inputmode="url" autocomplete="off" placeholder="author/avatar.webp" />
+          </label>
+          <label class="admin-category-longform-create__check">
+            <input data-longform-field="translationShowAvatar" type="checkbox" checked />
+            <span>显示头像</span>
+          </label>
+        </div>
+      </fieldset>
+    </div>
+
+    <div class="admin-category-longform-create__editor">
+      <div class="admin-category-longform-create__editor-head">
+        <label for="admin-category-longform-body">正文 *</label>
+        <div class="admin-category-longform-create__toolbar" role="toolbar" aria-label="长文常用格式">
+          <button type="button" class="admin-category-longform-create__tool" data-longform-action="bold" title="加粗" aria-label="加粗">
+            <UiIcon name="bold" />
+          </button>
+          <button type="button" class="admin-category-longform-create__tool" data-longform-action="italic" title="斜体" aria-label="斜体">
+            <UiIcon name="italic" />
+          </button>
+          <button type="button" class="admin-category-longform-create__tool" data-longform-action="code" title="行内代码" aria-label="行内代码">
+            <UiIcon name="code" />
+          </button>
+          <button type="button" class="admin-category-longform-create__tool" data-longform-action="quote" title="引用" aria-label="引用">
+            <UiIcon name="quote" />
+          </button>
+          <button type="button" class="admin-category-longform-create__tool" data-longform-action="list" title="列表" aria-label="列表">
+            <UiIcon name="list" />
+          </button>
+          <button type="button" class="admin-category-longform-create__tool" data-longform-action="link" title="链接" aria-label="链接">
+            <UiIcon name="link" />
+          </button>
+          <button type="button" class="admin-category-longform-create__tool" data-longform-action="more" title="摘要分隔" aria-label="摘要分隔">
+            <UiIcon name="paragraph" />
+          </button>
+        </div>
+      </div>
+
+      <div class="admin-category-longform-create__blocks" role="toolbar" aria-label="插入长文块">
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="h2">H2</button>
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="h3">H3</button>
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="callout">Callout</button>
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="codeblock">代码块</button>
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="table">表格</button>
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="figure">Figure</button>
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="gallery">Gallery</button>
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="pullquote">Pullquote</button>
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="hr">分割线</button>
+      </div>
+
+      <textarea
+        id="admin-category-longform-body"
+        class="admin-field__control admin-category-longform-create__body"
+        data-longform-field="body"
+        rows="18"
+        placeholder="从这里开始写正文..."
+      ></textarea>
+    </div>
+
+    <div class="admin-category-longform-create__footer">
+      <div class="admin-category-longform-create__toggles">
+        <label class="admin-category-longform-create__check">
+          <input data-longform-field="draft" type="checkbox" />
+          <span>保存为草稿</span>
+        </label>
+        <label class="admin-category-longform-create__check">
+          <input data-longform-field="archive" type="checkbox" checked />
+          <span>进入归档</span>
+        </label>
+      </div>
+      <div class="admin-category-longform-create__actions">
+        <button class="admin-btn admin-btn--secondary" type="button" data-longform-preview>预览 Markdown</button>
+        <button class="admin-btn admin-btn--primary" type="submit" data-longform-submit>创建长文</button>
+      </div>
+    </div>
+
+    <p class="admin-category-longform-create__status" data-longform-status role="status" aria-live="polite"></p>
+
+    <div class="admin-category-longform-create__result" data-longform-result hidden>
+      <div class="admin-category-longform-create__result-head">
+        <strong>生成结果</strong>
+        <div class="admin-category-longform-create__result-actions">
+          <a class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-public-link href="#" hidden>打开文章</a>
+          <button class="admin-btn admin-btn--ghost admin-btn--compact" type="button" data-longform-copy>复制 Markdown</button>
+        </div>
+      </div>
+      <textarea class="admin-field__control admin-category-longform-create__markdown" data-longform-markdown rows="10" readonly></textarea>
+    </div>
+  </form>
+</section>

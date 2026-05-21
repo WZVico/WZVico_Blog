@@ -2,13 +2,19 @@
 import AdminLayout from '../../../components/admin/AdminLayout.astro';
 import AdminReadonlyNotice from '../../../components/admin/AdminReadonlyNotice.astro';
 import AdminShell from '../../../components/admin/AdminShell.astro';
+import AuthorLibraryManager from '../../../components/admin/AuthorLibraryManager.astro';
+import LongformDraftEditor from '../../../components/admin/LongformDraftEditor.astro';
 import BitsDraftDialog from '../../../components/BitsDraftDialog.astro';
+import {
+  ADMIN_AUTHOR_LIBRARY_RELATIVE_PATH,
+  readAdminAuthorProfiles
+} from '../../../lib/admin-console/authors';
 import { getAdminContentOverviewData } from '../../../lib/admin-console/content';
 import { readAdminPicksIntro, readAdminPicksStats } from '../../../lib/admin-console/picks';
 import { getMaterials } from '../../../lib/materials';
 import { createWithBase } from '../../../utils/format';
 
-type AdminCategoryTabId = 'longform' | 'bits' | 'picks' | 'materials' | 'about';
+type AdminCategoryTabId = 'longform' | 'bits' | 'picks' | 'materials' | 'about' | 'author';
 
 type AdminCategoryTab = {
   id: AdminCategoryTabId;
@@ -61,6 +67,13 @@ const tabs = [
     description: '管理关于页分类入口，适合维护个人介绍、站点说明与联系信息。',
     publicHref: '/about/',
     sourceLabel: 'src/pages/about'
+  },
+  {
+    id: 'author',
+    label: '作者',
+    description: '管理文章作者资料库，新增或删除作者，并维护可用于长文作者与译者选择的名称和可选头像。',
+    publicHref: '/longform/',
+    sourceLabel: ADMIN_AUTHOR_LIBRARY_RELATIVE_PATH
   }
 ] as const satisfies readonly AdminCategoryTab[];
 
@@ -77,15 +90,20 @@ const contentSummary = contentOverview?.summaries.find((summary) => summary.key 
 const picksStats = selectedTabId === 'picks' ? await readAdminPicksStats() : null;
 const picksIntro = selectedTabId === 'picks' ? await readAdminPicksIntro() : [];
 const materialItems = selectedTabId === 'materials' ? await getMaterials() : [];
+const authorProfiles = selectedTabId === 'author' ? await readAdminAuthorProfiles() : [];
 const latestMaterialDate = materialItems
   .map((item) => item.dateValue)
   .sort((left, right) => right.localeCompare(left))[0] ?? '未设置日期';
+const shouldShowLongformCreateConsole = isDev && selectedTabId === 'longform';
 const shouldShowBitsDraftConsole = isDev && selectedTabId === 'bits';
 const shouldShowPicksCreateConsole = isDev && selectedTabId === 'picks';
 const shouldShowMaterialsCreateConsole = isDev && selectedTabId === 'materials';
+const shouldShowAuthorConsole = isDev && selectedTabId === 'author';
+const longformCreateEndpoint = withBase('/api/admin/category/longform/');
 const bitsDraftCreateEndpoint = withBase('/api/admin/category/bits/');
 const picksCreateEndpoint = withBase('/api/admin/category/picks/');
 const materialsCreateEndpoint = withBase('/api/admin/category/materials/');
+const authorLibraryEndpoint = withBase('/api/admin/category/authors/');
 const bitsDraftStylesHref = shouldShowBitsDraftConsole
   ? (await import('../../../styles/components/bits.css?url')).default
   : null;
@@ -100,7 +118,13 @@ const buildCategoryHref = (tabId: AdminCategoryTabId): string =>
     ? withBase('/admin/category/')
     : withBase(`/admin/category/?tab=${tabId}`);
 
-const selectedStats = shouldShowMaterialsCreateConsole
+const selectedStats = shouldShowAuthorConsole
+  ? [
+      { label: '当前作者', value: `${authorProfiles.length} 位` },
+      { label: '已有头像', value: `${authorProfiles.filter((author) => author.avatar.trim()).length} 位` },
+      { label: '保存位置', value: ADMIN_AUTHOR_LIBRARY_RELATIVE_PATH }
+    ]
+  : shouldShowMaterialsCreateConsole
   ? [
       { label: '当前资料', value: `${materialItems.length} 项` },
       { label: '最近创建', value: latestMaterialDate },
@@ -170,10 +194,25 @@ const selectedStats = shouldShowMaterialsCreateConsole
               }
             </div>
 
-            <div class="admin-overview-card__actions">
-              <a class="admin-btn admin-btn--secondary" href={withBase(selectedTab.publicHref)}>查看公开页</a>
-              <a class="admin-btn admin-btn--ghost" href={withBase('/admin/content/')}>打开 Content Console</a>
-            </div>
+            {
+              shouldShowAuthorConsole ? (
+                <div class="admin-overview-card__actions">
+                  <a class="admin-btn admin-btn--secondary" href={buildCategoryHref('longform')}>用于新增长文</a>
+                  <a class="admin-btn admin-btn--ghost" href={withBase('/admin/images/')}>管理头像图片</a>
+                </div>
+              ) : (
+                <div class="admin-overview-card__actions">
+                  <a class="admin-btn admin-btn--secondary" href={withBase(selectedTab.publicHref)}>查看公开页</a>
+                  <a class="admin-btn admin-btn--ghost" href={withBase('/admin/content/')}>打开 Content Console</a>
+                </div>
+              )
+            }
+
+            {
+              shouldShowLongformCreateConsole ? (
+                <LongformDraftEditor createEndpoint={longformCreateEndpoint} />
+              ) : null
+            }
 
             {
               shouldShowBitsDraftConsole ? (
@@ -249,8 +288,8 @@ const selectedStats = shouldShowMaterialsCreateConsole
                         </label>
                         <label class="admin-category-picks-create__field admin-category-picks-create__field--tags">
                           <span>标签</span>
-                          <input class="admin-field__control" data-pick-field="tags" type="text" autocomplete="off" placeholder="经济 财政 中国" />
-                          <small class="admin-category-picks-create__help">多标签用空格、逗号、顿号分隔；可以不写 #，系统会自动处理。</small>
+                          <input class="admin-field__control" data-pick-field="tags" type="text" autocomplete="off" placeholder="agent, Vibe coding" />
+                          <small class="admin-category-picks-create__help">带空格的标签用逗号隔开；可以不写 #，系统会自动处理。</small>
                         </label>
                       </article>
 
@@ -313,6 +352,16 @@ const selectedStats = shouldShowMaterialsCreateConsole
                 </section>
               ) : null
             }
+
+            {
+              shouldShowAuthorConsole ? (
+                <AuthorLibraryManager
+                  authors={authorProfiles}
+                  endpoint={authorLibraryEndpoint}
+                  sourceLabel={ADMIN_AUTHOR_LIBRARY_RELATIVE_PATH}
+                />
+              ) : null
+            }
           </section>
         </section>
       ) : (
@@ -322,6 +371,16 @@ const selectedStats = shouldShowMaterialsCreateConsole
       )
     }
   </AdminShell>
+
+  {
+    shouldShowLongformCreateConsole ? (
+      <script>
+        import { initLongformDraft } from '../../../scripts/longform-draft';
+
+        initLongformDraft();
+      </script>
+    ) : null
+  }
 
   {
     shouldShowBitsDraftConsole ? (
@@ -349,6 +408,16 @@ const selectedStats = shouldShowMaterialsCreateConsole
         import { initPicksCreate } from '../../../scripts/picks-create';
 
         initPicksCreate();
+      </script>
+    ) : null
+  }
+
+  {
+    shouldShowAuthorConsole ? (
+      <script>
+        import { initAuthorLibrary } from '../../../scripts/author-library';
+
+        initAuthorLibrary();
       </script>
     ) : null
   }

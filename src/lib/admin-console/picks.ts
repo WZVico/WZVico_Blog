@@ -6,6 +6,7 @@ import {
   splitMarkdownFrontmatter
 } from './frontmatter';
 import { formatISODate } from '../../utils/format';
+import { splitTagInput } from '../../utils/tag-input';
 
 export type AdminPickCreateItem = {
   year: number;
@@ -97,15 +98,7 @@ const splitLooseList = (value: string): string[] =>
     )
   );
 
-const splitTags = (value: string): string[] =>
-  Array.from(
-    new Set(
-      value
-        .split(/[,\s，、#]+/)
-        .map((part) => part.trim().replace(/^#+/, ''))
-        .filter(Boolean)
-    )
-  );
+const splitTags = (value: string): string[] => splitTagInput(value, { stripLeadingHash: true });
 
 const normalizeTags = (value: unknown): string[] => {
   if (Array.isArray(value)) {
