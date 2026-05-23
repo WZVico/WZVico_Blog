@@ -107,7 +107,8 @@ const authorLibrary = Array.from(authorsByName.values()).sort((left, right) =>
 
     <div class="admin-category-longform-create__split">
       <fieldset class="admin-category-longform-create__box">
-        <legend>作者</legend>
+        <legend class="sr-only">作者</legend>
+        <div class="admin-category-longform-create__box-heading" aria-hidden="true">作者</div>
         <div class="admin-category-longform-create__person-picker" data-longform-person-picker="author">
           <label class="admin-category-longform-create__field admin-category-longform-create__person-field">
             <span>作者名</span>
@@ -144,7 +145,8 @@ const authorLibrary = Array.from(authorsByName.values()).sort((left, right) =>
       </fieldset>
 
       <fieldset class="admin-category-longform-create__box">
-        <legend>翻译</legend>
+        <legend class="sr-only">翻译</legend>
+        <div class="admin-category-longform-create__box-heading" aria-hidden="true">翻译</div>
         <div class="admin-category-longform-create__person-picker" data-longform-person-picker="translator">
           <label class="admin-category-longform-create__field admin-category-longform-create__person-field">
             <span>译者</span>
