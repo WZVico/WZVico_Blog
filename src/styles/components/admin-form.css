@@ -165,14 +165,9 @@
 }
 
 .admin-images-field-preview--favicon {
-  width: 52px;
+  width: 72px;
   aspect-ratio: 1;
   border-radius: 8px;
-}
-
-.admin-images-field-preview--favicon img {
-  object-fit: contain;
-  padding: 8px;
 }
 
 .admin-images-field-preview--hero {
@@ -202,6 +197,12 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+.admin-images-field-preview.admin-images-field-preview--favicon img {
+  box-sizing: border-box;
+  object-fit: contain;
+  padding: 8px;
 }
 
 .admin-images-field-placeholder {
