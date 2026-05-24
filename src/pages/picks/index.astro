@@ -8,6 +8,7 @@ import '../../styles/picks.css';
 import { getCollection, getEntry, render } from 'astro:content';
 import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
 import { getThemeSettings } from '../../lib/theme-settings';
+import { isPicksIndexEntryId } from '../../lib/content';
 
 const prod = import.meta.env.PROD;
 const DEFAULT_READS_TITLE = '拾选';
@@ -50,7 +51,6 @@ type PickFileItem = {
 };
 
 const getPickTocText = (text: string) => text.replace(/^(《[^》]+》)\s*-\s*.+$/, '$1');
-const isPicksIndexEntry = (id: string) => id === 'index' || id === 'index.md';
 const getPickFileTitle = (item: Pick<{ title: string; authors: string[] }, 'title' | 'authors'>) =>
   item.authors.length > 0 ? `${item.title}- ${item.authors.join('、')}` : item.title;
 const getPickFileAnchorId = (id: string) =>
@@ -63,7 +63,7 @@ const getPickFileYear = (id: string, year: number | undefined, date: Date | unde
 };
 
 const pickEntries = await getCollection('picks', ({ id, data }) =>
-  !isPicksIndexEntry(id) && (!prod || data.draft !== true)
+  !isPicksIndexEntryId(id) && (!prod || data.draft !== true)
 );
 const pickFileItems = await Promise.all(
   pickEntries.map(async (pickEntry) => {

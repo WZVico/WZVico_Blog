@@ -13,16 +13,18 @@ import {
   getReadsDerivedText,
   getPublished,
   getSortedLongforms,
+  isPicksIndexEntryId,
   isReservedSlug,
   type LongformEntry,
   type ReadsEntry
 } from '../content';
+import { getMaterials, type MaterialItem } from '../materials';
 import { collectTagSummary, getTagPath } from '../tags';
 import { formatDateTime, formatISODate, formatISODateUtc } from '../../utils/format';
 import { cleanMarkdownToText } from '../../utils/excerpt';
 import packageJson from '../../../package.json';
 
-export type AdminOverviewCollectionKey = 'longform' | 'bits' | 'picks';
+export type AdminOverviewCollectionKey = 'longform' | 'bits' | 'picks' | 'materials';
 
 export type AdminOverviewDataOptions = {
   includeMaintainer: boolean;
@@ -44,6 +46,7 @@ export type AdminOverviewPublicSource = {
   archiveLongforms: LongformEntry[];
   bits: BitsEntry[];
   picks: ReadsEntry[];
+  materials: MaterialItem[];
   bitsHrefById: Map<string, string>;
 };
 
@@ -51,6 +54,7 @@ export type AdminOverviewMaintainerSource = {
   longforms: LongformEntry[];
   bits: BitsEntry[];
   picks: ReadsEntry[];
+  materials: MaterialItem[];
 };
 
 export type AdminOverviewStats = {
@@ -149,19 +153,22 @@ type RecentSource = {
   longforms: LongformEntry[];
   bits: BitsEntry[];
   picks: ReadsEntry[];
+  materials: MaterialItem[];
   bitsHrefById: ReadonlyMap<string, string>;
 };
 
 const COLLECTION_LABELS: Record<AdminOverviewCollectionKey, string> = {
   longform: 'Longform',
   bits: 'Bits',
-  picks: 'picks'
+  picks: 'picks',
+  materials: 'Materials'
 };
 
 const COLLECTION_DETAILS: Record<AdminOverviewCollectionKey, string> = {
   longform: '文章',
   bits: '动态',
-  picks: '拾选'
+  picks: '拾选',
+  materials: '资料'
 };
 
 const RECENT_LIMIT = 6;
@@ -217,6 +224,9 @@ const getCollectionDraftCount = (
 const filterPublishedEntries = <Entry extends { data: { draft?: boolean } }>(
   entries: readonly Entry[]
 ): Entry[] => entries.filter((entry) => entry.data.draft !== true);
+
+const filterPicksContentEntries = (entries: readonly ReadsEntry[]): ReadsEntry[] =>
+  entries.filter((entry) => !isPicksIndexEntryId(entry.id));
 
 const filterArchiveLongforms = (longforms: readonly LongformEntry[]): LongformEntry[] =>
   longforms.filter((entry) => entry.data.archive !== false && !isReservedSlug(getLongformSlug(entry)));
@@ -283,11 +293,23 @@ const getRecentReadsPublication = (entry: ReadsEntry): AdminOverviewRecentPublic
   };
 };
 
+const getRecentMaterialPublication = (entry: MaterialItem): AdminOverviewRecentPublication => ({
+  collection: 'materials',
+  collectionLabel: COLLECTION_LABELS.materials,
+  title: entry.title,
+  href: entry.href,
+  isDraft: false,
+  date: entry.date,
+  dateLabel: formatCompactDateUtc(entry.date),
+  shortDateLabel: formatShortDate(entry.date, true)
+});
+
 const buildRecentPublications = (source: RecentSource): AdminOverviewRecentPublication[] =>
   [
     ...source.longforms.map((entry) => getRecentLongformPublication(entry)),
     ...source.bits.map((entry) => getRecentBitsPublication(entry, source.bitsHrefById)),
-    ...source.picks.map((entry) => getRecentReadsPublication(entry))
+    ...source.picks.map((entry) => getRecentReadsPublication(entry)),
+    ...source.materials.map((entry) => getRecentMaterialPublication(entry))
   ]
     .sort((left, right) => orderByNullableDateDesc(left.date, right.date))
     .slice(0, RECENT_LIMIT);
@@ -307,6 +329,10 @@ const getLatestUpdate = (source: AdminOverviewPublicSource): AdminOverviewStats[
       .map((entry) => ({
         date: entry.data.date as Date,
         dateLabel: formatCompactDate(entry.data.date as Date)
+      })),
+    ...source.materials.map((entry) => ({
+      date: entry.date,
+      dateLabel: formatCompactDateUtc(entry.date)
       }))
   ].sort((left, right) => orderByNullableDateDesc(left.date, right.date));
 
@@ -315,11 +341,12 @@ const getLatestUpdate = (source: AdminOverviewPublicSource): AdminOverviewStats[
 };
 
 const buildCollectionShares = (source: AdminOverviewPublicSource): AdminOverviewCollectionShare[] => {
-  const total = source.longforms.length + source.bits.length + source.picks.length;
+  const total = source.longforms.length + source.bits.length + source.picks.length + source.materials.length;
   const counts: Record<AdminOverviewCollectionKey, number> = {
     longform: source.longforms.length,
     bits: source.bits.length,
-    picks: source.picks.length
+    picks: source.picks.length,
+    materials: source.materials.length
   };
 
   return (Object.keys(counts) as AdminOverviewCollectionKey[]).map((key) => {
@@ -480,7 +507,7 @@ export const buildAdminOverviewPublicSummary = (
 
   return {
     stats: {
-      publishedCount: source.longforms.length + source.bits.length + source.picks.length,
+      publishedCount: source.longforms.length + source.bits.length + source.picks.length + source.materials.length,
       tagCount: topTags.length,
       wordCount: buildAdminOverviewWordCount(source),
       lastUpdate: getLatestUpdate(source)
@@ -521,12 +548,19 @@ export const buildAdminOverviewMaintainerSummary = (
       label: COLLECTION_LABELS.picks,
       draftCount: getCollectionDraftCount(source.picks),
       totalCount: source.picks.length
+    },
+    {
+      key: 'materials',
+      label: COLLECTION_LABELS.materials,
+      draftCount: 0,
+      totalCount: source.materials.length
     }
   ];
   const recentPublications = buildRecentPublications({
     longforms: source.longforms,
     bits: source.bits,
     picks: source.picks,
+    materials: source.materials,
     bitsHrefById
   });
 
@@ -542,20 +576,23 @@ export const loadAdminOverviewSource = async (
   options: AdminOverviewSourceOptions
 ): Promise<AdminOverviewSource> => {
   const includeDraft = options.includeMaintainer;
-  const [sourceLongforms, sourceBits, sourceReads] = await Promise.all([
+  const [sourceLongforms, sourceBits, sourceReads, sourceMaterials] = await Promise.all([
     getSortedLongforms({ includeDraft }),
     getSortedBits({ includeDraft }),
-    getPublished('picks', { includeDraft, orderBy: orderByReadsDate })
+    getPublished('picks', { includeDraft, orderBy: orderByReadsDate }),
+    getMaterials()
   ]);
   const longforms = filterPublishedEntries(sourceLongforms);
   const bits = filterPublishedEntries(sourceBits);
-  const picks = filterPublishedEntries(sourceReads);
+  const contentReads = filterPicksContentEntries(sourceReads);
+  const picks = filterPublishedEntries(contentReads);
 
   const publicSource: AdminOverviewPublicSource = {
     longforms,
     archiveLongforms: filterArchiveLongforms(longforms),
     bits,
     picks,
+    materials: sourceMaterials,
     bitsHrefById: buildAdminOverviewBitsHrefById(bits)
   };
 
@@ -571,7 +608,8 @@ export const loadAdminOverviewSource = async (
     maintainer: {
       longforms: sourceLongforms,
       bits: sourceBits,
-      picks: sourceReads
+      picks: contentReads,
+      materials: sourceMaterials
     }
   };
 };

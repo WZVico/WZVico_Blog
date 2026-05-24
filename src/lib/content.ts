@@ -30,6 +30,11 @@ export type GetPublishedOptions<K extends DraftableCollectionKey> = {
  */
 export const isReservedSlug = (slug: string) => RESERVED_LONGFORM_SLUGS.has(slug);
 
+export const isPicksIndexEntryId = (id: string): boolean => {
+  const normalized = id.replace(/\\/g, '/').replace(/\.md$/i, '');
+  return normalized === 'index';
+};
+
 export const getTotalPages = (itemCount: number, pageSize: number) =>
   Math.ceil(itemCount / pageSize);
 

@@ -453,10 +453,11 @@ export const parsePicksMarkdownStats = (sourceText: string): AdminPicksStats => 
   const bodyText = getBodyWithNormalizedLineEndings(sourceText);
   const itemCount = Array.from(bodyText.matchAll(/^###\s+.+$/gm)).length;
   const frontmatterDate = normalizeFrontmatterDate(getFrontmatterRecord(sourceText).date);
+  const latestDate = itemCount > 0 ? frontmatterDate : null;
 
   return {
     itemCount,
-    latestPickDateLabel: frontmatterDate ? formatISODate(frontmatterDate) : '未设置日期',
+    latestPickDateLabel: latestDate ? formatISODate(latestDate) : '未设置日期',
     storagePathLabel: getPicksStoragePathLabel()
   };
 };
@@ -503,7 +504,9 @@ export const readAdminPicksStats = async (): Promise<AdminPicksStats | null> => 
           storagePathLabel: getPicksStoragePathLabel()
         };
     const fileStats = await readPicksFileStats();
-    const indexDate = sourceText ? normalizeFrontmatterDate(getFrontmatterRecord(sourceText).date) : null;
+    const indexDate = indexStats.itemCount > 0 && sourceText
+      ? normalizeFrontmatterDate(getFrontmatterRecord(sourceText).date)
+      : null;
     const latestDate = [indexDate, fileStats.latestDate]
       .filter((date): date is Date => date instanceof Date)
       .sort((left, right) => right.valueOf() - left.valueOf())[0] ?? null;

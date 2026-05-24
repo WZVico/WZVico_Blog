@@ -54,6 +54,18 @@ const picks = (id: string, options: Record<string, unknown> = {}) => ({
   }
 });
 
+const material = (id: string, options: Record<string, unknown> = {}) => ({
+  id,
+  collection: 'materials',
+  data: {
+    title: `Material ${id}`,
+    href: `/Materials/${id}/`,
+    date: date('2026-01-13T00:00:00.000Z'),
+    description: '',
+    ...options
+  }
+});
+
 const withBody = <T extends object>(entry: T, body: string): T & { body: string } => ({
   ...entry,
   body
@@ -87,6 +99,15 @@ describe('admin-console/overview', () => {
       ],
       bits: [bit('published-bit', { date: date('2026-01-12T12:00:00.000Z') })],
       picks: [picks('published-picks')],
+      materials: [
+        {
+          slug: 'material-latest',
+          title: 'Material latest',
+          href: '/Materials/material-latest/',
+          date: date('2026-01-13T00:00:00.000Z'),
+          dateValue: '2026-01-13'
+        }
+      ],
       bitsHrefById: new Map([['published-bit', '/bits/#bit-published-bit']])
     } as unknown as AdminOverviewPublicSource;
 
@@ -94,10 +115,15 @@ describe('admin-console/overview', () => {
       now: date('2026-01-20T06:00:00.000Z')
     });
 
-    expect(summary.stats.publishedCount).toBe(4);
+    expect(summary.stats.publishedCount).toBe(5);
     expect(summary.stats.tagCount).toBe(2);
     expect(summary.stats.wordCount).toBe(0);
-    expect(summary.stats.lastUpdate?.date.toISOString()).toBe('2026-01-12T12:00:00.000Z');
+    expect(summary.stats.lastUpdate?.date.toISOString()).toBe('2026-01-13T00:00:00.000Z');
+    expect(summary.recentPublications[0]).toMatchObject({
+      collection: 'materials',
+      title: 'Material latest',
+      href: '/Materials/material-latest/'
+    });
     expect(summary.topTags.map((tag) => tag.label)).toEqual(['Astro', 'Design']);
     expect(summary).not.toHaveProperty('archiveYears');
     expect(summary.writingActivity).toHaveLength(90);
@@ -109,6 +135,82 @@ describe('admin-console/overview', () => {
     expect(summary.writingActivity.find((day) => day.date === '2026-01-12')).toMatchObject({
       count: 1,
       level: 1
+    });
+  });
+
+  it('includes materials in recent publications without affecting writing activity', async () => {
+    mockCollections({
+      longform: [],
+      bits: [],
+      picks: [],
+      materials: [
+        material('guide', {
+          title: 'Resource Guide',
+          href: 'https://example.com/guide',
+          date: date('2026-05-20T00:00:00.000Z'),
+          description: 'External resource'
+        })
+      ]
+    });
+
+    const data = await getAdminOverviewData({
+      includeMaintainer: true,
+      includeDraftInRecent: true,
+      now: date('2026-05-24T00:00:00.000Z')
+    });
+
+    expect(data.stats.publishedCount).toBe(1);
+    expect(data.stats.lastUpdate?.date.toISOString()).toBe('2026-05-20T00:00:00.000Z');
+    expect(data.collections.find((summary) => summary.key === 'materials')).toMatchObject({
+      count: 1,
+      percentage: 100
+    });
+    expect(data.recentPublications).toEqual([
+      expect.objectContaining({
+        collection: 'materials',
+        collectionLabel: 'Materials',
+        title: 'Resource Guide',
+        href: 'https://example.com/guide',
+        isDraft: false
+      })
+    ]);
+    expect(data.writingActivity).toEqual([]);
+    expect(data.maintainerSummary?.collectionDrafts.find((summary) => summary.key === 'materials')).toMatchObject({
+      totalCount: 1,
+      draftCount: 0
+    });
+  });
+
+  it('does not count the picks page metadata entry as published content', async () => {
+    mockCollections({
+      longform: [],
+      bits: [],
+      picks: [
+        picks('index', {
+          title: '拾选',
+          subtitle: '页面说明',
+          date: date('2026-05-19T00:00:00.000Z')
+        })
+      ]
+    });
+
+    const data = await getAdminOverviewData({
+      includeMaintainer: true,
+      includeDraftInRecent: true,
+      now: date('2026-05-24T00:00:00.000Z')
+    });
+
+    expect(data.stats.publishedCount).toBe(0);
+    expect(data.stats.lastUpdate).toBeNull();
+    expect(data.collections.find((summary) => summary.key === 'picks')).toMatchObject({
+      count: 0,
+      percentage: 0
+    });
+    expect(data.recentPublications).toEqual([]);
+    expect(data.writingActivity).toEqual([]);
+    expect(data.maintainerSummary?.collectionDrafts.find((summary) => summary.key === 'picks')).toMatchObject({
+      totalCount: 0,
+      draftCount: 0
     });
   });
 
@@ -179,7 +281,8 @@ describe('admin-console/overview', () => {
           date: date('2026-01-12T12:00:00.000Z')
         })
       ],
-      picks: []
+      picks: [],
+      materials: []
     } as unknown as AdminOverviewMaintainerSource;
 
     const summary = buildAdminOverviewMaintainerSummary(

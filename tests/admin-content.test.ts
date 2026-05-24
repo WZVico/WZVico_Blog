@@ -7,7 +7,8 @@ vi.mock('../src/lib/content', () => ({
   getPageSlice: vi.fn(),
   getPublished: vi.fn(),
   getSortedLongforms: vi.fn(),
-  getTotalPages: vi.fn()
+  getTotalPages: vi.fn(),
+  isPicksIndexEntryId: (id: string) => id.replace(/\\/g, '/').replace(/\.md$/i, '') === 'index'
 }));
 
 vi.mock('../src/lib/bits', () => ({
@@ -168,6 +169,13 @@ describe('admin-console/content', () => {
       } as never
     ]);
     mockGetPublished.mockResolvedValue([
+      {
+        id: 'index',
+        data: {
+          date: new Date('2026-05-19T08:00:00.000Z'),
+          draft: false
+        }
+      } as never,
       {
         id: 'picks/latest.md',
         data: {

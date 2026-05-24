@@ -8,6 +8,7 @@ import {
   getPublished,
   getSortedLongforms,
   getTotalPages,
+  isPicksIndexEntryId,
   type LongformEntry
 } from '../content';
 import {
@@ -159,6 +160,9 @@ const orderByNullableDateDesc = (left: Date | null, right: Date | null): number 
 
 const orderByReadsDate = (left: ReadsEntry, right: ReadsEntry): number =>
   orderByNullableDateDesc(left.data.date ?? null, right.data.date ?? null);
+
+const filterPicksContentEntries = (entries: readonly ReadsEntry[]): ReadsEntry[] =>
+  entries.filter((entry) => !isPicksIndexEntryId(entry.id));
 
 const formatNullableDate = (date: Date | null): { label: string; value: string | null; year: number | null } => {
   if (!date) {
@@ -404,7 +408,7 @@ const loadCollectionItems = async (collection: AdminContentCollectionKey): Promi
       return entries.map((entry) => createBitsIndexItem(entry, publicHrefById));
     }
     case 'picks':
-      return (await getPublished('picks', { includeDraft: true, orderBy: orderByReadsDate }))
+      return filterPicksContentEntries(await getPublished('picks', { includeDraft: true, orderBy: orderByReadsDate }))
         .map((entry) => createReadsIndexItem(entry));
     default:
       throw new Error(`Unsupported admin content collection: ${String(collection)}`);
@@ -440,7 +444,9 @@ const loadCollectionSummary = async (
       };
     }
     case 'picks': {
-      const entries = await getPublished('picks', { includeDraft: true, orderBy: orderByReadsDate });
+      const entries = filterPicksContentEntries(
+        await getPublished('picks', { includeDraft: true, orderBy: orderByReadsDate })
+      );
       const latestDate = entries.find((entry) => entry.data.date !== null)?.data.date ?? null;
 
       return {
