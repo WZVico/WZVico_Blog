@@ -45,6 +45,10 @@
   margin: 20px 0 4px;
 }
 
+.bits-toolbar--empty {
+  margin-top: 16px;
+}
+
 .bits-controls {
   display: flex;
   align-items: center;
@@ -1085,6 +1089,10 @@
     align-items: flex-start;
     margin: 20px 0 4px;
     padding-bottom: 2px;
+  }
+
+  .bits-toolbar--empty {
+    margin-top: 16px;
   }
 
   .bits-controls {

@@ -283,14 +283,6 @@ export const buildPickMarkdownFile = (item: AdminPickCreateItem): string => {
   return `${lines.join('\n')}\n`;
 };
 
-const normalizeFilenamePart = (value: string): string => {
-  const normalized = value
-    .toLowerCase()
-    .replace(/[^a-z0-9\u4e00-\u9fa5]+/g, '-')
-    .replace(/^-+|-+$/g, '');
-  return normalized || 'pick';
-};
-
 const fileExists = async (filePath: string): Promise<boolean> => {
   try {
     await access(filePath);
@@ -303,10 +295,9 @@ const fileExists = async (filePath: string): Promise<boolean> => {
 export const getAvailablePickPath = async (
   item: AdminPickCreateItem
 ): Promise<{ filePath: string; relativePath: string }> => {
-  const fileStamp = item.date
+  const filenameBase = item.date
     .replace(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2}).*$/, '$1-$2$3$4')
-    .replace(/[^0-9-]/g, '');
-  const filenameBase = `${normalizeFilenamePart(item.title)}-${fileStamp || createPickLocalTimestamp().fileStamp}`;
+    .replace(/[^0-9-]/g, '') || createPickLocalTimestamp().fileStamp;
   const year = String(item.year);
   const yearDir = path.join(getPicksContentDir(), year);
 

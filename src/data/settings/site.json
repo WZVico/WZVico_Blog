@@ -1,12 +1,12 @@
 {
-  "title": "WZVico' Blog",
-  "description": "这是一个关于写作、阅读、观看、聆听与日常生活的个人博客。",
+  "title": "WZVico' log",
+  "description": "搬运、翻译、创作、分享，不止学习，还有生活。",
   "defaultLocale": "zh-CN",
   "favicon": null,
   "footer": {
     "startYear": 2026,
     "showCurrentYear": true,
-    "copyright": "WZVico' Blog · by 未可 · Based on whono"
+    "copyright": "WZVico' log · by 未可 · Based on whono"
   },
   "adminOverview": {
     "publicVisible": true,

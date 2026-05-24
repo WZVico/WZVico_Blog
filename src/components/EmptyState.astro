@@ -1,0 +1,11 @@
+---
+const {
+  id,
+  message
+} = Astro.props as {
+  id?: string;
+  message: string;
+};
+---
+
+<p id={id} class="empty-state" role="status">{message}</p>

@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import EmptyState from './EmptyState.astro';
 import TagFilterHeader from './TagFilterHeader.astro';
 import { getArchiveAuthorHref } from '../lib/archive-links';
 import { createWithBase, getLongformSlug, type LongformEntry } from '../lib/content';
@@ -90,41 +91,45 @@ const currentTagState = currentTag
     />
   </div>
 
-  {groups.map((group) => (
-    <section data-entry-section>
-      <h2 class="archive-year">{group.year}</h2>
-      <div class="archive-list">
-        {group.list.map((entry) => {
-          const slug = getLongformSlug(entry);
-          const href = withBase(`/archive/${slug}/`);
-          const authors = getLongformArticlePeople(entry, settings, withBase).authors;
-          return (
-            <div class="archive-row" data-entry-item data-slug={slug}>
-              <div class="archive-title">
-                <a href={href}>{entry.data.title}</a>
-              </div>
-              <div class="archive-meta">
-                <div class="archive-date">
-                  <span class="archive-date-md">{formatMonthDayUtc(entry.data.date)}</span>
-                  <span class="archive-date-full">{formatISODateUtc(entry.data.date)}</span>
+  {groups.length ? (
+    groups.map((group) => (
+      <section data-entry-section>
+        <h2 class="archive-year">{group.year}</h2>
+        <div class="archive-list">
+          {group.list.map((entry) => {
+            const slug = getLongformSlug(entry);
+            const href = withBase(`/archive/${slug}/`);
+            const authors = getLongformArticlePeople(entry, settings, withBase).authors;
+            return (
+              <div class="archive-row" data-entry-item data-slug={slug}>
+                <div class="archive-title">
+                  <a href={href}>{entry.data.title}</a>
                 </div>
-                {authors.length ? (
-                  <div class="archive-author">
-                    {authors.map((author, index) => (
-                      <>
-                        {index > 0 ? '、' : null}
-                        <a href={getArchiveAuthorHref(author.name, withBase)}>{author.name}</a>
-                      </>
-                    ))}
+                <div class="archive-meta">
+                  <div class="archive-date">
+                    <span class="archive-date-md">{formatMonthDayUtc(entry.data.date)}</span>
+                    <span class="archive-date-full">{formatISODateUtc(entry.data.date)}</span>
                   </div>
-                ) : null}
+                  {authors.length ? (
+                    <div class="archive-author">
+                      {authors.map((author, index) => (
+                        <>
+                          {index > 0 ? '、' : null}
+                          <a href={getArchiveAuthorHref(author.name, withBase)}>{author.name}</a>
+                        </>
+                      ))}
+                    </div>
+                  ) : null}
+                </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
-    </section>
-  ))}
+            );
+          })}
+        </div>
+      </section>
+    ))
+  ) : (
+    <EmptyState id={fallbackListId} message="暂无长文归档" />
+  )}
 
   {totalPages > 1 ? (
     <nav class="pagination" aria-label={`${pageTitleText}分页`}>

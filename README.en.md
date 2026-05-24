@@ -218,7 +218,7 @@ For more details, see the [Theme Console configuration guide](https://astro.whon
 Content Collections:
 - Longform: `src/content/longform`
 - Bits: `src/content/bits`
-- picks: `src/content/picks/index.md`
+- picks: entries live in `src/content/picks/YYYY/YYYY-MM-DD-HHMMSS.md`; `src/content/picks/index.md` only keeps page metadata such as title and intro copy
 - Archive: generated from longform entries via the `archive` field
 
 Main routes:

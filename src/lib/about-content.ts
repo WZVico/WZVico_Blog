@@ -46,7 +46,7 @@ export const ABOUT_CONTENT_RELATIVE_PATH = 'src/data/about.json';
 
 export const DEFAULT_ABOUT_CONTENT: AboutContent = {
   introLines: [
-    "WZVico' Blog 基于 Astro 主题 Whono 搭建。",
+    "WZVico' Blog 基于 Astro 主题 [Whono by cxro](https://github.com/cxro/astro-whono) 搭建。",
     '利用 Codex 进行编辑修改，满足个人记录、分享、管理、发布、部署的需求。'
   ],
   guide: {

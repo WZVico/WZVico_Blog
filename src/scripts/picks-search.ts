@@ -516,5 +516,5 @@ if (initialQuery) {
 if (!indexItems.length && input && btn) {
   input.disabled = true;
   btn.disabled = true;
-  setStatus('暂无可搜索内容');
+  setStatus('');
 }

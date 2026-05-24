@@ -2,6 +2,7 @@
 import { render } from 'astro:content';
 import BaseLayout from '../layouts/BaseLayout.astro';
 import BitCard from './BitCard.astro';
+import EmptyState from './EmptyState.astro';
 import Lightbox from './Lightbox.astro';
 import UiIcon from './UiIcon.astro';
 import '../styles/bits-page.css';
@@ -126,91 +127,95 @@ const cards = await Promise.all(
     </div>
   </div>
 
-  <div class="bits-toolbar">
-    <div class="bits-controls">
-      {yearOptions.length > 0 ? (
-        <div
-          class="bits-year-filter"
-          data-bits-year-filter
-          data-bits-client-control
-          role="group"
-          aria-label="按年份筛选絮语"
-        >
-          <span class="bits-year-filter__cursor" data-bits-year-cursor aria-hidden="true"></span>
-          <button
-            class="bits-year-filter__item bits-year-filter__item--all is-active"
-            type="button"
-            data-bits-year-item
-            data-bits-year=""
-            aria-label="显示全部絮语"
-            aria-pressed="true"
+  <div class:list={['bits-toolbar', !cards.length && !yearOptions.length && 'bits-toolbar--empty']}>
+      <div class="bits-controls">
+        {yearOptions.length > 0 ? (
+          <div
+            class="bits-year-filter"
+            data-bits-year-filter
+            data-bits-client-control
+            role="group"
+            aria-label="按年份筛选絮语"
           >
-            全部
-          </button>
-          {primaryYearOptions.map((option) => (
+            <span class="bits-year-filter__cursor" data-bits-year-cursor aria-hidden="true"></span>
             <button
-              class="bits-year-filter__item"
+              class="bits-year-filter__item bits-year-filter__item--all is-active"
               type="button"
               data-bits-year-item
-              data-bits-year={option.value}
-              aria-label={`筛选 ${option.value} 年絮语，共 ${option.count} 条`}
-              aria-pressed="false"
+              data-bits-year=""
+              aria-label="显示全部絮语"
+              aria-pressed="true"
             >
-              {option.value}
+              全部
             </button>
-          ))}
-          {overflowYearOptions.length > 0 ? (
-            <div class="bits-year-more" data-bits-year-more data-open="false">
+            {primaryYearOptions.map((option) => (
               <button
-                class="bits-year-filter__item bits-year-filter__item--more"
+                class="bits-year-filter__item"
                 type="button"
-                data-bits-year-more-trigger
-                aria-label="打开更多年份筛选"
-                aria-expanded="false"
-                aria-controls="bits-year-more-menu"
+                data-bits-year-item
+                data-bits-year={option.value}
+                aria-label={`筛选 ${option.value} 年絮语，共 ${option.count} 条`}
+                aria-pressed="false"
               >
-                <span data-bits-year-more-label>更多</span>
-                <span class="bits-year-filter__caret" aria-hidden="true"></span>
+                {option.value}
               </button>
-              <div
-                class="bits-year-menu"
-                id="bits-year-more-menu"
-                data-bits-year-menu
-                hidden
-                aria-label="更多年份筛选"
-              >
-                <div class="bits-year-menu__list">
-                  {overflowYearOptions.map((option) => (
-                    <button
-                      class="bits-year-menu__item"
-                      type="button"
-                      data-bits-year-menu-item
-                      data-bits-year={option.value}
-                      aria-label={`筛选 ${option.value} 年絮语，共 ${option.count} 条`}
-                      aria-pressed="false"
-                    >
-                      <span class="bits-year-menu__item-label">{option.value}</span>
-                      <span class="bits-year-menu__item-count">{option.count} 条</span>
-                    </button>
-                  ))}
+            ))}
+            {overflowYearOptions.length > 0 ? (
+              <div class="bits-year-more" data-bits-year-more data-open="false">
+                <button
+                  class="bits-year-filter__item bits-year-filter__item--more"
+                  type="button"
+                  data-bits-year-more-trigger
+                  aria-label="打开更多年份筛选"
+                  aria-expanded="false"
+                  aria-controls="bits-year-more-menu"
+                >
+                  <span data-bits-year-more-label>更多</span>
+                  <span class="bits-year-filter__caret" aria-hidden="true"></span>
+                </button>
+                <div
+                  class="bits-year-menu"
+                  id="bits-year-more-menu"
+                  data-bits-year-menu
+                  hidden
+                  aria-label="更多年份筛选"
+                >
+                  <div class="bits-year-menu__list">
+                    {overflowYearOptions.map((option) => (
+                      <button
+                        class="bits-year-menu__item"
+                        type="button"
+                        data-bits-year-menu-item
+                        data-bits-year={option.value}
+                        aria-label={`筛选 ${option.value} 年絮语，共 ${option.count} 条`}
+                        aria-pressed="false"
+                      >
+                        <span class="bits-year-menu__item-label">{option.value}</span>
+                        <span class="bits-year-menu__item-count">{option.count} 条</span>
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
-          ) : null}
-        </div>
-      ) : null}
+            ) : null}
+          </div>
+        ) : null}
 
+      </div>
+      <div class="bits-status" id="bits-search-status"></div>
+      <p class="sr-only" id="bits-search-live" role="status" aria-live="polite" aria-atomic="true"></p>
     </div>
-    <div class="bits-status" id="bits-search-status"></div>
-    <p class="sr-only" id="bits-search-live" role="status" aria-live="polite" aria-atomic="true"></p>
-  </div>
 
   <div data-bits-browse>
-    <div id="bits-list">
-      {cards.map(({ bit, excerpt, Content }) => (
-        <BitCard bit={bit} excerpt={excerpt} Content={Content} prioritizeLeadMedia={bit.id === priorityMediaBitId} />
-      ))}
-    </div>
+    {cards.length ? (
+      <div id="bits-list">
+        {cards.map(({ bit, excerpt, Content }) => (
+          <BitCard bit={bit} excerpt={excerpt} Content={Content} prioritizeLeadMedia={bit.id === priorityMediaBitId} />
+        ))}
+      </div>
+    ) : (
+      <EmptyState id="bits-list" message="暂无絮语分享" />
+    )}
 
     {totalPages > 1 ? (
       <nav class="pagination" aria-label={`${pageTitleText}分页`}>

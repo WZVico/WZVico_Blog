@@ -53,6 +53,38 @@ const contactItems: ContactItem[] = [
     text: item.displayText || (item.id === 'email' ? item.href.replace(/^mailto:/i, '') : formatExternalLabel(item.href))
   }))
 ];
+
+type IntroLinePart = {
+  text: string;
+  href?: string;
+};
+
+const parseIntroLineLinks = (line: string): IntroLinePart[] => {
+  const parts: IntroLinePart[] = [];
+  const linkPattern = /\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g;
+  let cursor = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = linkPattern.exec(line)) !== null) {
+    if (match.index > cursor) {
+      parts.push({ text: line.slice(cursor, match.index) });
+    }
+
+    const text = match[1] ?? '';
+    const href = match[2];
+
+    if (href) {
+      parts.push({ text, href });
+    }
+    cursor = match.index + match[0].length;
+  }
+
+  if (cursor < line.length) {
+    parts.push({ text: line.slice(cursor) });
+  }
+
+  return parts.length ? parts : [{ text: line }];
+};
 ---
 
 <BaseLayout title={aboutTitle} bodyClass="about-page">
@@ -74,7 +106,14 @@ const contactItems: ContactItem[] = [
     }
   </div>
   <p class="about-intro-line">
-    {aboutContent.introLines.map((line) => <>{line}<br /></>)}
+    {aboutContent.introLines.map((line) => (
+      <>
+        {parseIntroLineLinks(line).map((part) =>
+          part.href ? <a href={part.href} target="_blank" rel="noreferrer">{part.text}</a> : <>{part.text}</>
+        )}
+        <br />
+      </>
+    ))}
   </p>
   <h2 class="section-title about-section-title">{aboutContent.guide.title}</h2>
   <div class="site-guide">

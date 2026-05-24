@@ -1,7 +1,7 @@
 {
   "introLines": [
-    "WZVico' Blog 基于 Astro 主题 Whono 搭建。",
-    "利用 Codex 进行编辑修改，满足个人记录、分享、管理、发布、部署的需求。"
+    "WZVico' log 基于 Astro 主题 [Whono by cxro](https://github.com/cxro/astro-whono) 搭建。",
+    "利用 Codex 进行编辑修改，以满足个人记录、分享、管理、部署的需求。"
   ],
   "guide": {
     "title": "栏目指引",
@@ -9,17 +9,17 @@
       {
         "title": "长文",
         "href": "/longform/",
-        "description": "长篇原创、翻译、系列文章。"
+        "description": "较完整的思考、文章、译文与系列整理。"
       },
       {
         "title": "絮语",
         "href": "/bits/",
-        "description": "记录零散的想法、片段、即时感。"
+        "description": "即时想法、灵感和生活小记录。"
       },
       {
         "title": "拾选",
         "href": "/picks/",
-        "description": "分享书单、影视、音乐等。"
+        "description": "热乎分享的书单、影视、音乐。"
       },
       {
         "title": "归档",
@@ -29,36 +29,36 @@
       {
         "title": "资料",
         "href": "/Materials/",
-        "description": "视频与文件资料索引。"
+        "description": "双语视频与文件资料索引。"
       }
     ]
   },
   "tech": {
-    "title": "技术栈",
+    "title": "关于这里",
     "groups": [
       {
-        "title": "构建与渲染",
+        "title": "为什么写",
         "items": [
           {
-            "title": "Astro / Vite",
-            "description": "内容站点与构建"
+            "title": "脑袋空空",
+            "description": "需要灌点东西"
           },
           {
-            "title": "CSS / 排版",
-            "description": "排版与阅读体验"
+            "title": "一无所知",
+            "description": "那就学去呗"
           }
         ]
       },
       {
-        "title": "语言与工具",
+        "title": "要怎么写",
         "items": [
           {
-            "title": "TypeScript",
-            "description": "类型约束与脚本支持"
+            "title": "AI 辅助",
+            "description": "找帮手总没错"
           },
           {
-            "title": "Markdown",
-            "description": "内容写作与发布流程"
+            "title": "持续更新",
+            "description": "活到老，学到老"
           }
         ]
       }
@@ -68,20 +68,20 @@
     "title": "常见问题",
     "items": [
       {
-        "question": "为什么我部署后会看到 SITE_URL is not set 警告？",
-        "answer": "因为没配置生产域名。未设置时会用占位域名，canonical / og:url / sitemap / robots 会不完整。部署平台里环境变量中添加 SITE_URL=https://你的域名，重新构建即可。"
+        "question": "为什么没有什么内容？",
+        "answer": "一个是日志刚刚上线，无知的我也不知道分享什么；如果不是前面的原因，那就是鸽了。毕竟口号总要喊的，真正做到的是没几个人的。"
       },
       {
-        "question": "为什么有的文章没出现在归档里？",
-        "answer": "归档会过滤掉 archive: false 的文章。它们仍然是“已发布可访问”的，但不会出现在归档列表与归档 RSS 中（用于少数不想被目录收录的内容）。"
+        "question": "为什么分享的内容有错误？",
+        "answer": "我也是在学习，不知道什么是错，只能踩坑总结经验。所以如果发现有错误，务必告诉我，让我也从坑里爬出来。"
       },
       {
-        "question": "为什么我在 /longform/ 点开文章会跳到 /archive/.../？",
-        "answer": "项目把文章详情统一在 /archive/{slug}/，/longform/ 主要作为文章流列表入口，这样可以避免重复详情路由，便于长期维护。"
+        "question": "为什么看到像是 AI 生成的内容？",
+        "answer": "如果是译文，那么肯定是 AI 生成的，我英文又差，只能靠 AI 翻译来学习，但我会标注使用的模型。如果是分享的原创文章，我会保证思路想法文字是自己的，可能是文笔差的像 AI。"
       },
       {
-        "question": "如何反馈问题或参与改进？",
-        "answer": "直接在仓库创建 Issue，或提交 Pull Request。"
+        "question": "为什么看起来乱七八糟，什么都有？",
+        "answer": "好听一点就是，十八般武艺傍身，啥都不怕；再好听一点就是我十窍通了九窍。"
       }
     ]
   },

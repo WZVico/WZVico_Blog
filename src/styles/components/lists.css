@@ -9,6 +9,24 @@
   margin-top: 16px;
 }
 
+.empty-state {
+  margin: 28px 0 0;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.7;
+  font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
+}
+
+.bits-toolbar--empty {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: 8px;
+  padding-bottom: 0;
+  margin: 16px 0 4px;
+}
+
 .page-header.page-header--with-search {
   align-items: flex-start;
   justify-content: space-between;
@@ -434,17 +452,12 @@
   outline: none;
 }
 
-.materials-description,
-.materials-empty {
+.materials-description {
   margin: 6px 0 0;
   color: var(--muted);
   font-size: 13px;
   line-height: 1.6;
   font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
-}
-
-.materials-empty {
-  margin-top: 24px;
 }
 
 .archive-meta {
@@ -488,6 +501,11 @@
 }
 
 @media (max-width: 900px) {
+  .bits-toolbar--empty {
+    align-items: flex-start;
+    padding-bottom: 2px;
+  }
+
   .page-header.page-header--with-search {
     flex-direction: row;
     align-items: flex-start;

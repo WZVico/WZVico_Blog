@@ -599,7 +599,7 @@ describe('admin content write api', () => {
     expect(response.status).toBe(200);
     const payload = JSON.parse(await response.text());
     expect(payload.ok).toBe(true);
-    expect(payload.result.relativePath).toMatch(/^src\/content\/picks\/\d{4}\/新书-\d{4}-\d{2}-\d{2}-\d{6}\.md$/);
+    expect(payload.result.relativePath).toMatch(/^src\/content\/picks\/\d{4}\/\d{4}-\d{2}-\d{2}-\d{6}\.md$/);
 
     const createdPath = path.join(tempRoot, payload.result.relativePath);
     const after = await readFile(createdPath, 'utf8');

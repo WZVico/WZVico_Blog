@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../layouts/BaseLayout.astro';
+import EmptyState from './EmptyState.astro';
 import TagFilterHeader from './TagFilterHeader.astro';
 import LongformCard from './LongformCard.astro';
 import { createWithBase, getLongformDerivedText, getLongformSlug, type LongformEntry } from '../lib/content';
@@ -67,21 +68,25 @@ const fallbackListId = 'longform-tag-list';
     />
   </div>
 
-  <div class="list">
-    {items.map((entry) => (
-      <LongformCard
-        href={withBase(`/archive/${getLongformSlug(entry)}/`)}
-        slug={getLongformSlug(entry)}
-        title={entry.data.title}
-        excerpt={getLongformDerivedText(entry).excerpt}
-        date={entry.data.date}
-        visibleTags={getVisibleArticleMetaTags(entry.data.tags, 'list')}
-        articleMetaSettings={articleMeta}
-        articlePeople={getLongformArticlePeople(entry, settings, withBase)}
-        badge={entry.data.badge}
-      />
-    ))}
-  </div>
+  {items.length ? (
+    <div class="list">
+      {items.map((entry) => (
+        <LongformCard
+          href={withBase(`/archive/${getLongformSlug(entry)}/`)}
+          slug={getLongformSlug(entry)}
+          title={entry.data.title}
+          excerpt={getLongformDerivedText(entry).excerpt}
+          date={entry.data.date}
+          visibleTags={getVisibleArticleMetaTags(entry.data.tags, 'list')}
+          articleMetaSettings={articleMeta}
+          articlePeople={getLongformArticlePeople(entry, settings, withBase)}
+          badge={entry.data.badge}
+        />
+      ))}
+    </div>
+  ) : (
+    <EmptyState id={fallbackListId} message="暂无长文分享" />
+  )}
 
   {totalPages > 1 ? (
     <nav class="pagination" aria-label={`${pageTitleText}分页`}>

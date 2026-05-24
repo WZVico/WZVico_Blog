@@ -1,5 +1,6 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
+import EmptyState from '../../components/EmptyState.astro';
 import TagFilterHeader from '../../components/TagFilterHeader.astro';
 import { createWithBase, joinPageSubtitleText } from '../../utils/format';
 import { groupMaterials, getMaterials } from '../../lib/materials';
@@ -71,7 +72,7 @@ const isExternalHref = (href: string): boolean => /^https?:\/\//i.test(href);
       </section>
     ))
   ) : (
-    <p id="materials-list" class="materials-empty">暂无资料链接。</p>
+    <EmptyState id="materials-list" message="暂无资料分享" />
   )}
 
   <script>
