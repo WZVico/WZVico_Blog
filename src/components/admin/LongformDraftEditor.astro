@@ -204,14 +204,29 @@ const authorLibrary = Array.from(authorsByName.values()).sort((left, right) =>
           <button type="button" class="admin-category-longform-create__tool" data-longform-action="italic" title="斜体" aria-label="斜体">
             <UiIcon name="italic" />
           </button>
+          <button type="button" class="admin-category-longform-create__tool" data-longform-action="strike" title="删除线" aria-label="删除线">
+            <UiIcon name="strikethrough" />
+          </button>
           <button type="button" class="admin-category-longform-create__tool" data-longform-action="code" title="行内代码" aria-label="行内代码">
             <UiIcon name="code" />
           </button>
+          <button type="button" class="admin-category-longform-create__tool admin-category-longform-create__tool--text" data-longform-action="h2" title="二级标题" aria-label="二级标题">H2</button>
+          <button type="button" class="admin-category-longform-create__tool admin-category-longform-create__tool--text" data-longform-action="h3" title="三级标题" aria-label="三级标题">H3</button>
+          <button type="button" class="admin-category-longform-create__tool admin-category-longform-create__tool--text" data-longform-action="h4" title="四级标题" aria-label="四级标题">H4</button>
           <button type="button" class="admin-category-longform-create__tool" data-longform-action="quote" title="引用" aria-label="引用">
             <UiIcon name="quote" />
           </button>
-          <button type="button" class="admin-category-longform-create__tool" data-longform-action="list" title="列表" aria-label="列表">
+          <button type="button" class="admin-category-longform-create__tool admin-category-longform-create__tool--pullquote" data-longform-action="pullquote" title="来源引用" aria-label="来源引用">
+            <UiIcon name="quote" class="admin-category-longform-create__pullquote-icon" />
+          </button>
+          <button type="button" class="admin-category-longform-create__tool" data-longform-action="ordered-list" title="有序列表" aria-label="有序列表">
+            <UiIcon name="list-ordered" />
+          </button>
+          <button type="button" class="admin-category-longform-create__tool" data-longform-action="unordered-list" title="无序列表" aria-label="无序列表">
             <UiIcon name="list" />
+          </button>
+          <button type="button" class="admin-category-longform-create__tool" data-longform-action="task-list" title="任务列表" aria-label="任务列表">
+            <UiIcon name="list-todo" />
           </button>
           <button type="button" class="admin-category-longform-create__tool" data-longform-action="link" title="链接" aria-label="链接">
             <UiIcon name="link" />
@@ -223,14 +238,14 @@ const authorLibrary = Array.from(authorsByName.values()).sort((left, right) =>
       </div>
 
       <div class="admin-category-longform-create__blocks" role="toolbar" aria-label="插入长文块">
-        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="h2">H2</button>
-        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="h3">H3</button>
-        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="callout">Callout</button>
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="callout-note">note</button>
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="callout-tip">tip</button>
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="callout-info">info</button>
+        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="callout-warning">warning</button>
         <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="codeblock">代码块</button>
         <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="table">表格</button>
         <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="figure">Figure</button>
         <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="gallery">Gallery</button>
-        <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="pullquote">Pullquote</button>
         <button type="button" class="admin-btn admin-btn--ghost admin-btn--compact" data-longform-action="hr">分割线</button>
       </div>
 

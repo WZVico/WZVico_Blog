@@ -610,6 +610,10 @@
   gap: 8px;
 }
 
+.admin-category-longform-create__blocks {
+  justify-content: flex-end;
+}
+
 .admin-category-longform-create__tool {
   display: inline-flex;
   align-items: center;
@@ -646,6 +650,26 @@
   fill: none;
   stroke-linecap: round;
   stroke-linejoin: round;
+}
+
+.admin-category-longform-create__tool--text {
+  font-size: var(--admin-text-2xs);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.admin-category-longform-create__tool--pullquote {
+  color: var(--text);
+}
+
+.admin-category-longform-create__tool .admin-category-longform-create__pullquote-icon {
+  fill: currentColor;
+  stroke: none;
+}
+
+.admin-category-longform-create__tool .admin-category-longform-create__pullquote-icon path {
+  fill: currentColor;
+  stroke: none;
 }
 
 .admin-category-longform-create__body {

@@ -315,6 +315,27 @@ const prefixLines = (textarea: HTMLTextAreaElement, prefix: string) => {
   textarea.focus();
 };
 
+const prefixLinesByIndex = (textarea: HTMLTextAreaElement, getPrefix: (index: number) => string) => {
+  textarea.focus();
+  const value = textarea.value;
+  const start = textarea.selectionStart ?? 0;
+  const end = textarea.selectionEnd ?? 0;
+  const lineStart = value.lastIndexOf('\n', start - 1) + 1;
+  const lineEndIndex = value.indexOf('\n', end);
+  const lineEnd = lineEndIndex === -1 ? value.length : lineEndIndex;
+  const segment = value.slice(lineStart, lineEnd);
+  const prefixed = segment
+    .split('\n')
+    .map((line, index) => {
+      const prefix = getPrefix(index);
+      return line.startsWith(prefix) ? line : `${prefix}${line}`;
+    })
+    .join('\n');
+  textarea.setRangeText(prefixed, lineStart, lineEnd, 'select');
+  textarea.setSelectionRange(lineStart, lineStart + prefixed.length);
+  textarea.focus();
+};
+
 const getTextareaSelection = (textarea: HTMLTextAreaElement): TextareaSelection => {
   const value = textarea.value;
   const start = textarea.selectionStart ?? value.length;
@@ -346,7 +367,10 @@ const blockSnippets = {
   h2: '## 小标题\n\n',
   h3: '### 小标题\n\n',
   more: '<!-- more -->\n\n',
-  callout: ':::note[标题]\n这里写提示内容。\n:::\n\n',
+  'callout-note': ':::note[标题]\n这里写提示内容。\n:::\n\n',
+  'callout-tip': ':::tip[标题]\n这里写提示内容。\n:::\n\n',
+  'callout-info': ':::info[标题]\n这里写提示内容。\n:::\n\n',
+  'callout-warning': ':::warning[标题]\n这里写提示内容。\n:::\n\n',
   codeblock: '```ts\nconst hello = "world";\n```\n\n',
   table: '| 项目 | 说明 |\n| :--- | :--- |\n| 示例 | 内容 |\n\n',
   figure: '<figure class="figure">\n  <img src="/images/archive/example.webp" alt="图片说明" />\n  <figcaption class="figure-caption">图注文字。</figcaption>\n</figure>\n\n',
@@ -426,6 +450,20 @@ const insertSelectedBlock = (
   replaceSelectionWithBlock(textarea, selected ? createBlock(selected) : blockSnippets[fallbackAction]);
 };
 
+const insertCallout = (
+  textarea: HTMLTextAreaElement,
+  selected: string,
+  type: 'note' | 'tip' | 'info' | 'warning'
+) => {
+  const fallbackAction = `callout-${type}` as const;
+  insertSelectedBlock(
+    textarea,
+    selected,
+    fallbackAction,
+    (value) => `:::${type}[标题]\n${cleanSelectedBlock(value, '这里写提示内容。')}\n:::\n\n`
+  );
+};
+
 const applyEditorAction = (textarea: HTMLTextAreaElement, action: string) => {
   const selected = getTextareaSelection(textarea).selected;
 
@@ -436,6 +474,9 @@ const applyEditorAction = (textarea: HTMLTextAreaElement, action: string) => {
     case 'italic':
       wrapSelection(textarea, '*', '*', '文字');
       break;
+    case 'strike':
+      wrapSelection(textarea, '~~', '~~', '文字');
+      break;
     case 'code':
       wrapSelection(textarea, '`', '`', 'code');
       break;
@@ -443,7 +484,14 @@ const applyEditorAction = (textarea: HTMLTextAreaElement, action: string) => {
       prefixLines(textarea, '> ');
       break;
     case 'list':
+    case 'unordered-list':
       prefixLines(textarea, '- ');
+      break;
+    case 'ordered-list':
+      prefixLinesByIndex(textarea, (index) => `${index + 1}. `);
+      break;
+    case 'task-list':
+      prefixLines(textarea, '- [ ] ');
       break;
     case 'link':
       wrapSelection(textarea, '[', '](https://example.com)', '链接文字');
@@ -454,8 +502,20 @@ const applyEditorAction = (textarea: HTMLTextAreaElement, action: string) => {
     case 'h3':
       prefixLines(textarea, '### ');
       break;
-    case 'callout':
-      insertSelectedBlock(textarea, selected, 'callout', (value) => `:::note[标题]\n${cleanSelectedBlock(value, '这里写提示内容。')}\n:::\n\n`);
+    case 'h4':
+      prefixLines(textarea, '#### ');
+      break;
+    case 'callout-note':
+      insertCallout(textarea, selected, 'note');
+      break;
+    case 'callout-tip':
+      insertCallout(textarea, selected, 'tip');
+      break;
+    case 'callout-info':
+      insertCallout(textarea, selected, 'info');
+      break;
+    case 'callout-warning':
+      insertCallout(textarea, selected, 'warning');
       break;
     case 'codeblock':
       insertSelectedBlock(textarea, selected, 'codeblock', (value) => `\`\`\`\n${cleanSelectedBlock(value, 'code')}\n\`\`\`\n\n`);

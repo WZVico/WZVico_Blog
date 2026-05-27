@@ -12,6 +12,8 @@ import Eye from '@lucide/astro/icons/eye';
 import Italic from '@lucide/astro/icons/italic';
 import Link from '@lucide/astro/icons/link';
 import List from '@lucide/astro/icons/list';
+import ListOrdered from '@lucide/astro/icons/list-ordered';
+import ListTodo from '@lucide/astro/icons/list-todo';
 import MapPin from '@lucide/astro/icons/map-pin';
 import Moon from '@lucide/astro/icons/moon';
 import MonitorDot from '@lucide/astro/icons/monitor-dot';
@@ -21,6 +23,7 @@ import Quote from '@lucide/astro/icons/quote';
 import Rss from '@lucide/astro/icons/rss';
 import Search from '@lucide/astro/icons/search';
 import SquareArrowRightExit from '@lucide/astro/icons/square-arrow-right-exit';
+import Strikethrough from '@lucide/astro/icons/strikethrough';
 import Sun from '@lucide/astro/icons/sun';
 import Tag from '@lucide/astro/icons/tag';
 
@@ -35,6 +38,8 @@ type UiIconName =
   | 'italic'
   | 'link'
   | 'list'
+  | 'list-ordered'
+  | 'list-todo'
   | 'map-pin'
   | 'moon'
   | 'monitor-dot'
@@ -44,6 +49,7 @@ type UiIconName =
   | 'reader-exit'
   | 'rss'
   | 'search'
+  | 'strikethrough'
   | 'sun'
   | 'tag'
   | 'user-circle';
@@ -75,6 +81,8 @@ const uiIconComponents = {
   italic: Italic,
   link: Link,
   list: List,
+  'list-ordered': ListOrdered,
+  'list-todo': ListTodo,
   'map-pin': MapPin,
   moon: Moon,
   'monitor-dot': MonitorDot,
@@ -84,6 +92,7 @@ const uiIconComponents = {
   'reader-exit': SquareArrowRightExit,
   rss: Rss,
   search: Search,
+  strikethrough: Strikethrough,
   sun: Sun,
   tag: Tag,
   'user-circle': CircleUserRound
