@@ -1,4 +1,5 @@
-const rawSiteUrl = (process.env.SITE_URL ?? '').trim();
+const defaultSiteUrl = 'https://blog.wzvico.com';
+const rawSiteUrl = (process.env.SITE_URL ?? defaultSiteUrl).trim();
 const siteUrl = rawSiteUrl ? rawSiteUrl.replace(/\/+$/, '') : '';
 const hasSiteUrl = siteUrl.length > 0;
 const fallbackSiteUrl = 'https://example.invalid';

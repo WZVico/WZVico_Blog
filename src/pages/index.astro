@@ -486,6 +486,14 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
   white-space: nowrap;
 }
 
+.meta-line__item--tags.is-line-start {
+  flex-basis: 100%;
+}
+
+.meta-line__item--tags.is-line-start.is-after-avatar-line {
+  margin-top: 4px;
+}
+
 .meta-line__item--people {
   gap: 8px;
 }
@@ -494,6 +502,11 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
   content: "·";
   margin: 0 0.45em;
   color: var(--faint);
+}
+
+.meta-line__item--tags.is-line-start::before {
+  content: none;
+  margin: 0;
 }
 
 .list-item .meta-line {
