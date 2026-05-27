@@ -9,11 +9,16 @@ import {
   ADMIN_AUTHOR_LIBRARY_RELATIVE_PATH,
   readAdminAuthorProfiles
 } from '../../../lib/admin-console/authors';
-import { getAdminContentOverviewData } from '../../../lib/admin-console/content';
 import { getAboutContent } from '../../../lib/about-content';
 import { readAdminPicksIntro, readAdminPicksStats } from '../../../lib/admin-console/picks';
 import { getMaterials } from '../../../lib/materials';
 import { createWithBase } from '../../../utils/format';
+import {
+  isAdminCategoryEntryCollection,
+  listAdminCategoryEntries,
+  readAdminCategoryEntryPayload,
+  type AdminCategoryEntryCollection
+} from '../../../lib/admin-console/category-entry';
 
 type AdminCategoryTabId = 'longform' | 'bits' | 'picks' | 'materials' | 'about' | 'author';
 
@@ -86,8 +91,30 @@ const selectedTabId: AdminCategoryTabId = isAdminCategoryTabId(selectedTabParam)
   ? selectedTabParam
   : 'longform';
 const selectedTab = tabs.find((tab) => tab.id === selectedTabId) ?? tabs[0];
-const contentOverview = isDev ? await getAdminContentOverviewData() : null;
-const contentSummary = contentOverview?.summaries.find((summary) => summary.key === selectedTabId);
+const categoryEntryCollection: AdminCategoryEntryCollection | null = isAdminCategoryEntryCollection(selectedTabId)
+  ? selectedTabId
+  : null;
+const categoryEntryQuery = Astro.url.searchParams.get('q')?.trim() ?? '';
+const selectedEntryId = Astro.url.searchParams.get('entry')?.trim() ?? '';
+const categoryEntryAllItems = isDev && categoryEntryCollection
+  ? await listAdminCategoryEntries(categoryEntryCollection)
+  : [];
+const categoryEntryItems = categoryEntryQuery && categoryEntryCollection
+  ? await listAdminCategoryEntries(categoryEntryCollection, categoryEntryQuery)
+  : categoryEntryAllItems;
+const selectedEntry = selectedEntryId
+  ? categoryEntryAllItems.find((item) => item.entryId === selectedEntryId) ?? null
+  : null;
+const selectedEntryPayload = isDev && categoryEntryCollection && selectedEntry
+  ? await readAdminCategoryEntryPayload(categoryEntryCollection, selectedEntry.entryId)
+  : null;
+const contentSummary = categoryEntryCollection
+  ? {
+      totalCount: categoryEntryAllItems.length,
+      draftCount: categoryEntryAllItems.filter((item) => item.draft).length,
+      latestDateLabel: categoryEntryAllItems.find((item) => item.date)?.date ?? '未设置日期'
+    }
+  : null;
 const picksStats = selectedTabId === 'picks' ? await readAdminPicksStats() : null;
 const picksIntro = selectedTabId === 'picks' ? await readAdminPicksIntro() : [];
 const materialItems = selectedTabId === 'materials' ? await getMaterials() : [];
@@ -108,6 +135,7 @@ const picksCreateEndpoint = withBase('/api/admin/category/picks/');
 const materialsCreateEndpoint = withBase('/api/admin/category/materials/');
 const aboutContentEndpoint = withBase('/api/admin/category/about/');
 const authorLibraryEndpoint = withBase('/api/admin/category/authors/');
+const categoryEntryEndpoint = withBase('/api/admin/category/entry/');
 const bitsDraftStylesHref = shouldShowBitsDraftConsole
   ? (await import('../../../styles/components/bits.css?url')).default
   : null;
@@ -121,6 +149,43 @@ const buildCategoryHref = (tabId: AdminCategoryTabId): string =>
   tabId === 'longform'
     ? withBase('/admin/category/')
     : withBase(`/admin/category/?tab=${tabId}`);
+
+const buildCategoryEntryHref = (entryId: string): string => {
+  const params = new URLSearchParams();
+  if (selectedTabId !== 'longform') params.set('tab', selectedTabId);
+  if (categoryEntryQuery) params.set('q', categoryEntryQuery);
+  params.set('entry', entryId);
+  const suffix = params.toString();
+  return withBase(`/admin/category/${suffix ? `?${suffix}` : ''}`);
+};
+
+const buildCategorySearchAction = (): string =>
+  selectedTabId === 'longform'
+    ? withBase('/admin/category/')
+    : withBase('/admin/category/');
+
+const buildCategoryBaseHref = (): string => {
+  const params = new URLSearchParams();
+  if (selectedTabId !== 'longform') params.set('tab', selectedTabId);
+  const suffix = params.toString();
+  return withBase(`/admin/category/${suffix ? `?${suffix}` : ''}`);
+};
+
+const buildClearEntryHref = (): string => {
+  const params = new URLSearchParams();
+  if (selectedTabId !== 'longform') params.set('tab', selectedTabId);
+  if (categoryEntryQuery) params.set('q', categoryEntryQuery);
+  const suffix = params.toString();
+  return withBase(`/admin/category/${suffix ? `?${suffix}` : ''}`);
+};
+
+const getEditorText = (key: string): string => {
+  const value = selectedEntryPayload?.values[key];
+  return typeof value === 'string' ? value : '';
+};
+
+const getEditorChecked = (key: string): boolean =>
+  selectedEntryPayload?.values[key] === true;
 
 const selectedStats = shouldShowAuthorConsole
   ? [
@@ -213,9 +278,316 @@ const selectedStats = shouldShowAuthorConsole
               ) : (
                 <div class="admin-overview-card__actions">
                   <a class="admin-btn admin-btn--secondary" href={withBase(selectedTab.publicHref)}>查看公开页</a>
-                  <a class="admin-btn admin-btn--ghost" href={withBase('/admin/content/')}>打开 Content Console</a>
+                  <a class="admin-btn admin-btn--ghost" href={withBase('/admin/images/')}>管理图片资源</a>
                 </div>
               )
+            }
+
+            {
+              categoryEntryCollection ? (
+                <section class="admin-category-entry" aria-labelledby="admin-category-entry-title">
+                  <div class="admin-category-entry__head">
+                    <div>
+                      <p class="admin-overview-card__eyebrow">Existing Content</p>
+                      <h3 id="admin-category-entry-title" class="admin-category-entry__title">
+                        已有内容
+                      </h3>
+                    </div>
+                    {selectedEntryPayload ? (
+                      <a class="admin-btn admin-btn--ghost admin-btn--compact" href={buildClearEntryHref()}>退出编辑</a>
+                    ) : null}
+                  </div>
+
+                  <form class="admin-category-entry__search" action={buildCategorySearchAction()} method="get">
+                    {selectedTabId !== 'longform' ? <input type="hidden" name="tab" value={selectedTabId} /> : null}
+                    <label class="admin-category-entry__search-field">
+                      <span>搜索 title / slug / path / tags</span>
+                      <input
+                        class="admin-field__control"
+                        name="q"
+                        type="search"
+                        value={categoryEntryQuery}
+                        autocomplete="off"
+                        placeholder={`搜索${selectedTab.label}`}
+                      />
+                    </label>
+                    <button class="admin-btn admin-btn--secondary" type="submit">搜索</button>
+                    {categoryEntryQuery ? <a class="admin-btn admin-btn--ghost" href={buildCategoryBaseHref()}>清空</a> : null}
+                  </form>
+
+                  <div class="admin-category-entry__list" aria-label={`${selectedTab.label} 已有内容列表`}>
+                    {
+                      categoryEntryItems.length > 0 ? (
+                        categoryEntryItems.slice(0, 7).map((item) => {
+                          const isActive = selectedEntryPayload?.entryId === item.entryId;
+                          return (
+                            <article class:list={['admin-category-entry__item', isActive && 'is-active']}>
+                              <div class="admin-category-entry__item-main">
+                                <div class="admin-category-entry__item-title-row">
+                                  <h4 class="admin-category-entry__item-title">{item.title}</h4>
+                                  <span class:list={['admin-badge', item.draft && 'admin-badge--warning']}>
+                                    {item.draft ? 'draft' : 'published'}
+                                  </span>
+                                </div>
+                                <dl class="admin-category-entry__meta">
+                                  <div>
+                                    <dt>date</dt>
+                                    <dd>{item.date || '未设置'}</dd>
+                                  </div>
+                                  <div>
+                                    <dt>path</dt>
+                                    <dd><code>{item.relativePath}</code></dd>
+                                  </div>
+                                  {item.slug ? (
+                                    <div>
+                                      <dt>slug</dt>
+                                      <dd><code>{item.slug}</code></dd>
+                                    </div>
+                                  ) : null}
+                                </dl>
+                                {item.tags.length > 0 ? (
+                                  <p class="admin-category-entry__tags">
+                                    {item.tags.slice(0, 8).map((tag) => <span>{tag}</span>)}
+                                  </p>
+                                ) : null}
+                              </div>
+                              <div class="admin-category-entry__item-actions">
+                                {item.publicHref ? <a class="admin-btn admin-btn--ghost admin-btn--compact" href={withBase(item.publicHref)}>打开</a> : null}
+                                <a class="admin-btn admin-btn--secondary admin-btn--compact" href={buildCategoryEntryHref(item.entryId)}>
+                                  {isActive ? '正在编辑' : '编辑'}
+                                </a>
+                              </div>
+                            </article>
+                          );
+                        })
+                      ) : (
+                        <p class="admin-category-entry__empty">
+                          {categoryEntryQuery ? '没有匹配的内容。' : `当前还没有${selectedTab.label}内容。`}
+                        </p>
+                      )
+                    }
+                  </div>
+                </section>
+              ) : null
+            }
+
+            {
+              selectedEntryPayload ? (
+                <section
+                  class="admin-category-entry-editor"
+                  aria-labelledby="admin-category-entry-editor-title"
+                  data-category-entry-editor-root
+                  data-category-entry-endpoint={categoryEntryEndpoint}
+                  data-category-entry-collection={selectedEntryPayload.collection}
+                  data-category-entry-id={selectedEntryPayload.entryId}
+                  data-category-entry-revision={selectedEntryPayload.revision}
+                >
+                  <div class="admin-category-entry-editor__head">
+                    <div>
+                      <p class="admin-overview-card__eyebrow">Edit Mode</p>
+                      <h3 id="admin-category-entry-editor-title" class="admin-category-entry-editor__title">
+                        编辑：{selectedEntryPayload.relativePath}
+                      </h3>
+                    </div>
+                    <code class="admin-category-entry-editor__revision" data-category-entry-revision>
+                      {selectedEntryPayload.revision}
+                    </code>
+                  </div>
+
+                  <form class="admin-category-entry-editor__form" data-category-entry-editor-form>
+                    {
+                      selectedEntryPayload.collection === 'longform' ? (
+                        <>
+                          <div class="admin-category-entry-editor__grid">
+                            <label class="admin-category-entry-editor__field admin-category-entry-editor__field--title">
+                              <span>标题 *</span>
+                              <input class="admin-field__control" data-category-entry-field="title" type="text" value={getEditorText('title')} />
+                            </label>
+                            <label class="admin-category-entry-editor__field">
+                              <span>date *</span>
+                              <input class="admin-field__control" data-category-entry-field="date" type="text" value={getEditorText('date')} />
+                            </label>
+                            <label class="admin-category-entry-editor__field">
+                              <span>publishedAt</span>
+                              <input class="admin-field__control" data-category-entry-field="publishedAt" type="text" value={getEditorText('publishedAt')} />
+                            </label>
+                            <label class="admin-category-entry-editor__field">
+                              <span>slug</span>
+                              <input class="admin-field__control" data-category-entry-field="slug" type="text" value={getEditorText('slug')} />
+                            </label>
+                            <label class="admin-category-entry-editor__field">
+                              <span>badge</span>
+                              <input class="admin-field__control" data-category-entry-field="badge" type="text" value={getEditorText('badge')} />
+                            </label>
+                            <label class="admin-category-entry-editor__field admin-category-entry-editor__field--full">
+                              <span>描述</span>
+                              <textarea class="admin-field__control" data-category-entry-field="description" rows="3">{getEditorText('description')}</textarea>
+                            </label>
+                            <label class="admin-category-entry-editor__field admin-category-entry-editor__field--full">
+                              <span>标签</span>
+                              <input class="admin-field__control" data-category-entry-field="tagsText" type="text" value={getEditorText('tagsText')} />
+                            </label>
+                            <label class="admin-category-entry-editor__field admin-category-entry-editor__field--full">
+                              <span>cover</span>
+                              <input class="admin-field__control" data-category-entry-field="cover" type="text" value={getEditorText('cover')} />
+                            </label>
+                          </div>
+                          <div class="admin-category-entry-editor__grid">
+                            <label class="admin-category-entry-editor__field admin-category-entry-editor__field--full">
+                              <span>作者（每行一位）</span>
+                              <textarea class="admin-field__control" data-category-entry-field="authorsText" rows="3">{getEditorText('authorsText')}</textarea>
+                            </label>
+                            <label class="admin-category-entry-editor__field">
+                              <span>作者头像</span>
+                              <input class="admin-field__control" data-category-entry-field="authorAvatar" type="text" value={getEditorText('authorAvatar')} />
+                            </label>
+                            <label class="admin-category-entry-editor__check">
+                              <input data-category-entry-field="authorShowAvatar" type="checkbox" checked={getEditorChecked('authorShowAvatar')} />
+                              <span>显示作者头像</span>
+                            </label>
+                            <label class="admin-category-entry-editor__field">
+                              <span>译者</span>
+                              <input class="admin-field__control" data-category-entry-field="translationTranslator" type="text" value={getEditorText('translationTranslator')} />
+                            </label>
+                            <label class="admin-category-entry-editor__field">
+                              <span>译者头像</span>
+                              <input class="admin-field__control" data-category-entry-field="translationAvatar" type="text" value={getEditorText('translationAvatar')} />
+                            </label>
+                            <label class="admin-category-entry-editor__field">
+                              <span>原文标题 / 来源</span>
+                              <input class="admin-field__control" data-category-entry-field="translationSource" type="text" value={getEditorText('translationSource')} />
+                            </label>
+                            <label class="admin-category-entry-editor__field">
+                              <span>原文链接</span>
+                              <input class="admin-field__control" data-category-entry-field="translationSourceUrl" type="url" value={getEditorText('translationSourceUrl')} />
+                            </label>
+                            <label class="admin-category-entry-editor__check">
+                              <input data-category-entry-field="translationShowAvatar" type="checkbox" checked={getEditorChecked('translationShowAvatar')} />
+                              <span>显示译者头像</span>
+                            </label>
+                          </div>
+                        </>
+                      ) : selectedEntryPayload.collection === 'bits' ? (
+                        <div class="admin-category-entry-editor__grid">
+                          <label class="admin-category-entry-editor__field admin-category-entry-editor__field--title">
+                            <span>标题</span>
+                            <input class="admin-field__control" data-category-entry-field="title" type="text" value={getEditorText('title')} />
+                          </label>
+                          <label class="admin-category-entry-editor__field">
+                            <span>date *</span>
+                            <input class="admin-field__control" data-category-entry-field="date" type="text" value={getEditorText('date')} />
+                          </label>
+                          <label class="admin-category-entry-editor__field">
+                            <span>slug</span>
+                            <input class="admin-field__control" data-category-entry-field="slug" type="text" value={getEditorText('slug')} />
+                          </label>
+                          <label class="admin-category-entry-editor__field admin-category-entry-editor__field--full">
+                            <span>描述</span>
+                            <textarea class="admin-field__control" data-category-entry-field="description" rows="3">{getEditorText('description')}</textarea>
+                          </label>
+                          <label class="admin-category-entry-editor__field admin-category-entry-editor__field--full">
+                            <span>标签</span>
+                            <input class="admin-field__control" data-category-entry-field="tagsText" type="text" value={getEditorText('tagsText')} />
+                          </label>
+                          <label class="admin-category-entry-editor__field">
+                            <span>作者名</span>
+                            <input class="admin-field__control" data-category-entry-field="authorName" type="text" value={getEditorText('authorName')} />
+                          </label>
+                          <label class="admin-category-entry-editor__field">
+                            <span>作者头像</span>
+                            <input class="admin-field__control" data-category-entry-field="authorAvatar" type="text" value={getEditorText('authorAvatar')} />
+                          </label>
+                          <label class="admin-category-entry-editor__field admin-category-entry-editor__field--full">
+                            <span>images JSON</span>
+                            <textarea class="admin-field__control" data-category-entry-field="imagesText" rows="7">{getEditorText('imagesText')}</textarea>
+                          </label>
+                        </div>
+                      ) : selectedEntryPayload.collection === 'picks' ? (
+                        <div class="admin-category-entry-editor__grid">
+                          <label class="admin-category-entry-editor__field admin-category-entry-editor__field--title">
+                            <span>标题 *</span>
+                            <input class="admin-field__control" data-category-entry-field="title" type="text" value={getEditorText('title')} />
+                          </label>
+                          <label class="admin-category-entry-editor__field">
+                            <span>date</span>
+                            <input class="admin-field__control" data-category-entry-field="date" type="text" value={getEditorText('date')} />
+                          </label>
+                          <label class="admin-category-entry-editor__field">
+                            <span>year</span>
+                            <input class="admin-field__control" data-category-entry-field="year" type="text" value={getEditorText('year')} />
+                          </label>
+                          <label class="admin-category-entry-editor__field">
+                            <span>slug</span>
+                            <input class="admin-field__control" data-category-entry-field="slug" type="text" value={getEditorText('slug')} />
+                          </label>
+                          <label class="admin-category-entry-editor__field admin-category-entry-editor__field--full">
+                            <span>作者（每行一位）</span>
+                            <textarea class="admin-field__control" data-category-entry-field="authorsText" rows="3">{getEditorText('authorsText')}</textarea>
+                          </label>
+                          <label class="admin-category-entry-editor__field admin-category-entry-editor__field--full">
+                            <span>标签</span>
+                            <input class="admin-field__control" data-category-entry-field="tagsText" type="text" value={getEditorText('tagsText')} />
+                          </label>
+                        </div>
+                      ) : (
+                        <div class="admin-category-entry-editor__grid">
+                          <label class="admin-category-entry-editor__field admin-category-entry-editor__field--title">
+                            <span>标题 *</span>
+                            <input class="admin-field__control" data-category-entry-field="title" type="text" value={getEditorText('title')} />
+                          </label>
+                          <label class="admin-category-entry-editor__field admin-category-entry-editor__field--full">
+                            <span>链接 *</span>
+                            <input class="admin-field__control" data-category-entry-field="href" type="text" value={getEditorText('href')} />
+                          </label>
+                          <label class="admin-category-entry-editor__field">
+                            <span>date *</span>
+                            <input class="admin-field__control" data-category-entry-field="date" type="text" value={getEditorText('date')} />
+                          </label>
+                          <label class="admin-category-entry-editor__field">
+                            <span>类型</span>
+                            <input class="admin-field__control" data-category-entry-field="label" type="text" value={getEditorText('label')} />
+                          </label>
+                          <label class="admin-category-entry-editor__field admin-category-entry-editor__field--full">
+                            <span>描述</span>
+                            <textarea class="admin-field__control" data-category-entry-field="description" rows="4">{getEditorText('description')}</textarea>
+                          </label>
+                        </div>
+                      )
+                    }
+
+                    {selectedEntryPayload.collection !== 'materials' ? (
+                      <label class="admin-category-entry-editor__field admin-category-entry-editor__field--body">
+                        <span>正文 Markdown</span>
+                        <textarea class="admin-field__control" data-category-entry-field="body" rows="18">{getEditorText('body')}</textarea>
+                      </label>
+                    ) : null}
+
+                    <div class="admin-category-entry-editor__footer">
+                      <div class="admin-category-entry-editor__toggles">
+                        {selectedEntryPayload.collection !== 'materials' ? (
+                          <label class="admin-category-entry-editor__check">
+                            <input data-category-entry-field="draft" type="checkbox" checked={getEditorChecked('draft')} />
+                            <span>保存为草稿</span>
+                          </label>
+                        ) : null}
+                        {selectedEntryPayload.collection === 'longform' ? (
+                          <label class="admin-category-entry-editor__check">
+                            <input data-category-entry-field="archive" type="checkbox" checked={getEditorChecked('archive')} />
+                            <span>进入归档</span>
+                          </label>
+                        ) : null}
+                      </div>
+                      <div class="admin-category-entry-editor__actions">
+                        <a class="admin-btn admin-btn--ghost" href={buildClearEntryHref()}>放弃编辑</a>
+                        <button class="admin-btn admin-btn--primary" type="submit" data-category-entry-submit>保存修改</button>
+                      </div>
+                    </div>
+                    <p class="admin-category-entry-editor__status" data-category-entry-status role="status" aria-live="polite"></p>
+                  </form>
+                </section>
+              ) : selectedEntryId && categoryEntryCollection ? (
+                <p class="admin-category-entry__empty">没有找到当前选择的内容，请清空搜索或重新选择。</p>
+              ) : null
             }
 
             {
@@ -543,6 +915,16 @@ const selectedStats = shouldShowAuthorConsole
         import { initLongformDraft } from '../../../scripts/longform-draft';
 
         initLongformDraft();
+      </script>
+    ) : null
+  }
+
+  {
+    selectedEntryPayload ? (
+      <script>
+        import { initCategoryEntryEditor } from '../../../scripts/category-entry-editor';
+
+        initCategoryEntryEditor();
       </script>
     ) : null
   }
