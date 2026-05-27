@@ -2049,7 +2049,11 @@
   gap: 8px;
 }
 
-.bits-draft-actions button {
+.bits-draft-actions button,
+.bits-draft-actions a {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   height: 34px;
   padding: 0 14px;
   border-radius: 8px;
@@ -2057,6 +2061,7 @@
   background: var(--panel);
   color: var(--text);
   font-size: 13px;
+  text-decoration: none;
   cursor: pointer;
 }
 
@@ -2082,6 +2087,7 @@
 .bits-identity-fields input:focus-visible,
 .bits-draft-manual-textarea:focus-visible,
 .bits-draft-actions button:focus-visible,
+.bits-draft-actions a:focus-visible,
 .bits-draft-manual .bits-draft-secondary:focus-visible,
 .bits-draft-image-add:focus-visible,
 .bits-draft-image-clear:focus-visible,

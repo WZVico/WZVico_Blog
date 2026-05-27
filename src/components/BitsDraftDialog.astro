@@ -1,13 +1,47 @@
 ---
 import UiIcon from './UiIcon.astro';
 import { getThemeSettings } from '../lib/theme-settings';
+import type { AdminCategoryEntryPayload } from '../lib/admin-console/category-entry';
 
 const { settings } = getThemeSettings();
-const { createEndpoint = '', inline = false } = Astro.props as {
+const {
+  createEndpoint = '',
+  inline = false,
+  editPayload = null,
+  editEndpoint = '',
+  clearEditHref = ''
+} = Astro.props as {
   createEndpoint?: string;
   inline?: boolean;
+  editPayload?: AdminCategoryEntryPayload | null;
+  editEndpoint?: string;
+  clearEditHref?: string;
 };
 const RootTag = inline ? 'section' : 'dialog';
+const isEditMode = editPayload?.collection === 'bits';
+const getEditText = (key: string): string => {
+  const value = editPayload?.values[key];
+  return typeof value === 'string' ? value : '';
+};
+const getEditChecked = (key: string): boolean => editPayload?.values[key] === true;
+const parseEditImages = (value: string): { src: string; width: string; height: string }[] => {
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((item): item is Record<string, unknown> => typeof item === 'object' && item !== null && !Array.isArray(item))
+      .map((item) => ({
+        src: typeof item.src === 'string' ? item.src : '',
+        width: typeof item.width === 'number' || typeof item.width === 'string' ? String(item.width) : '',
+        height: typeof item.height === 'number' || typeof item.height === 'string' ? String(item.height) : ''
+      }))
+      .filter((item) => item.src || item.width || item.height);
+  } catch {
+    return [];
+  }
+};
+const editImages = isEditMode ? parseEditImages(getEditText('imagesText')) : [];
+const imageRows = editImages.length > 0 ? editImages : [{ src: '', width: '', height: '' }];
 ---
 <RootTag
   class:list={['bits-draft-dialog', inline && 'bits-draft-dialog--inline']}
@@ -15,6 +49,10 @@ const RootTag = inline ? 'section' : 'dialog';
   aria-labelledby="bits-draft-title"
   data-bits-draft-inline={inline ? 'true' : undefined}
   data-bits-draft-create-endpoint={createEndpoint || undefined}
+  data-bits-edit-endpoint={isEditMode ? editEndpoint : undefined}
+  data-bits-edit-collection={isEditMode ? editPayload.collection : undefined}
+  data-bits-edit-id={isEditMode ? editPayload.entryId : undefined}
+  data-bits-edit-revision={isEditMode ? editPayload.revision : undefined}
   data-default-author-name={settings.page.bits.defaultAuthor.name ?? ''}
   data-default-author-avatar={settings.page.bits.defaultAuthor.avatar ?? ''}
 >
@@ -24,10 +62,31 @@ const RootTag = inline ? 'section' : 'dialog';
         <span class="bits-draft-title-icon" aria-hidden="true">
           <UiIcon name="pen" />
         </span>
-        碎碎念
+        {isEditMode ? `编辑絮语：${editPayload.relativePath}` : '碎碎念'}
       </h2>
       {!inline ? <button class="bits-draft-close" type="button" data-bits-draft-close aria-label="关闭">×</button> : null}
     </div>
+
+    {isEditMode ? (
+      <div class="bits-draft-row">
+        <div class="bits-draft-field bits-draft-half">
+          <label for="bits-draft-title" class="bits-draft-label">标题</label>
+          <input id="bits-draft-title" data-bits-edit-field="title" type="text" inputmode="text" value={getEditText('title')} />
+        </div>
+        <div class="bits-draft-field bits-draft-half">
+          <label for="bits-draft-date" class="bits-draft-label">date *</label>
+          <input id="bits-draft-date" data-bits-edit-field="date" type="text" inputmode="text" value={getEditText('date')} />
+        </div>
+        <div class="bits-draft-field bits-draft-half">
+          <label for="bits-draft-slug" class="bits-draft-label">slug</label>
+          <input id="bits-draft-slug" data-bits-edit-field="slug" type="text" inputmode="text" value={getEditText('slug')} />
+        </div>
+        <div class="bits-draft-field bits-draft-half">
+          <label for="bits-draft-description" class="bits-draft-label">描述</label>
+          <input id="bits-draft-description" data-bits-edit-field="description" type="text" inputmode="text" value={getEditText('description')} />
+        </div>
+      </div>
+    ) : null}
 
     <div class="bits-draft-field">
       <div class="bits-draft-field-head">
@@ -62,7 +121,7 @@ const RootTag = inline ? 'section' : 'dialog';
         rows="6"
         required
         placeholder="写点什么…"
-      ></textarea>
+      >{getEditText('body')}</textarea>
     </div>
 
     <div class="bits-draft-row">
@@ -71,7 +130,7 @@ const RootTag = inline ? 'section' : 'dialog';
           <span class="bits-draft-label-icon" aria-hidden="true">#</span>
           标签
         </label>
-        <input id="bits-draft-tags" name="tags" type="text" inputmode="text" placeholder="agent, Vibe coding" />
+        <input id="bits-draft-tags" name="tags" type="text" inputmode="text" placeholder="agent, Vibe coding" value={getEditText('tagsText')} />
         <div class="bits-draft-help">例：生活 阅读 / agent, Vibe coding</div>
       </div>
       <div class="bits-draft-field bits-draft-half">
@@ -96,6 +155,7 @@ const RootTag = inline ? 'section' : 'dialog';
           <div class="bits-draft-help">自动读取图片尺寸</div>
         </div>
         <div class="bits-draft-images" data-bits-images>
+          {imageRows.map((image) => (
           <div class="bits-draft-image-row" data-bits-image-row>
             <div class="bits-draft-image-src-wrap">
               <input
@@ -104,6 +164,7 @@ const RootTag = inline ? 'section' : 'dialog';
                 type="text"
                 inputmode="url"
                 placeholder="bits/xxx.jpg 或 https://..."
+                value={image.src}
               />
               <button class="bits-draft-image-clear" type="button" data-bits-image-remove aria-label="移除图片">x</button>
             </div>
@@ -115,6 +176,7 @@ const RootTag = inline ? 'section' : 'dialog';
               step="1"
               inputmode="numeric"
               placeholder="宽度"
+              value={image.width}
             />
             <input
               class="bits-draft-image-dim"
@@ -124,8 +186,10 @@ const RootTag = inline ? 'section' : 'dialog';
               step="1"
               inputmode="numeric"
               placeholder="高度"
+              value={image.height}
             />
           </div>
+          ))}
         </div>
         <template data-bits-image-template>
           <div class="bits-draft-image-row" data-bits-image-row>
@@ -226,7 +290,7 @@ const RootTag = inline ? 'section' : 'dialog';
         <div class="bits-identity-fields">
           <label class="bits-identity-label">
             <span class="bits-identity-label-title">作者名</span>
-            <input type="text" name="authorName" inputmode="text" data-author-name />
+            <input type="text" name="authorName" inputmode="text" data-author-name value={getEditText('authorName')} />
             <span class="bits-identity-label-hint">多作者用顿号、逗号或分号分隔</span>
           </label>
           <label class="bits-identity-label">
@@ -234,7 +298,7 @@ const RootTag = inline ? 'section' : 'dialog';
               <span class="bits-identity-label-title">头像路径（URL）</span>
               <span class="bits-identity-label-hint">留空用默认头像；加载失败则显示首字符</span>
             </span>
-            <input type="text" name="authorAvatar" inputmode="url" data-author-avatar />
+            <input type="text" name="authorAvatar" inputmode="url" data-author-avatar value={getEditText('authorAvatar')} />
           </label>
         </div>
         <div class="bits-identity-meta">
@@ -248,12 +312,14 @@ const RootTag = inline ? 'section' : 'dialog';
 
     <div class="bits-draft-footer">
       <div class="bits-draft-check">
-        <input id="bits-draft-draft" name="draft" type="checkbox" />
+        <input id="bits-draft-draft" name="draft" type="checkbox" checked={getEditChecked('draft')} />
         <label for="bits-draft-draft">标记为草稿</label>
         <span class="bits-draft-check-help">草稿:线上/预览默认不显示</span>
       </div>
       <div class="bits-draft-actions">
         <button class="bits-draft-primary" type="button" data-bits-draft-generate>生成</button>
+        {isEditMode ? <button class="bits-draft-primary" type="button" data-bits-edit-submit>保存修改</button> : null}
+        {isEditMode ? <a class="bits-draft-secondary" href={clearEditHref}>放弃编辑</a> : null}
       </div>
     </div>
   </form>

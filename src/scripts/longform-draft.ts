@@ -6,6 +6,8 @@ type TextFieldName =
   | 'title'
   | 'slug'
   | 'description'
+  | 'date'
+  | 'publishedAt'
   | 'badge'
   | 'tags'
   | 'authorAvatar'
@@ -25,6 +27,7 @@ type LongformDraftPayload = {
   slug: string;
   description: string;
   date: string;
+  publishedAt: string;
   badge: string;
   tags: string;
   authors: DraftPerson[];
@@ -128,6 +131,31 @@ const parseAuthorLibrary = (value: string | undefined): AuthorLibraryItem[] => {
   }
 };
 
+const parseInitialPersonList = (value: string | undefined): DraftPerson[] => {
+  if (!value) return [];
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (!Array.isArray(parsed)) return [];
+
+    return parsed
+      .filter((item): item is Record<string, unknown> =>
+        typeof item === 'object' && item !== null && !Array.isArray(item)
+      )
+      .map((item) => ({
+        name: typeof item.name === 'string' ? item.name.trim() : '',
+        avatar: typeof item.avatar === 'string' ? item.avatar.trim() : '',
+        showAvatar: item.showAvatar !== false
+      }))
+      .filter((item) => item.name.length > 0);
+  } catch {
+    return [];
+  }
+};
+
+const parseInitialPerson = (value: string | undefined): DraftPerson | null =>
+  parseInitialPersonList(value).at(0) ?? null;
+
 const getAuthorKey = (name: string): string =>
   name.trim().toLocaleLowerCase();
 
@@ -216,6 +244,7 @@ const buildMarkdown = (payload: LongformDraftPayload): string => {
 
   if (payload.description) lines.push(`description: ${quoteYaml(payload.description)}`);
   lines.push(`date: ${payload.date}`);
+  if (payload.publishedAt) lines.push(`publishedAt: ${payload.publishedAt}`);
   lines.push(`slug: ${payload.slug}`);
   if (payload.badge) lines.push(`badge: ${quoteYaml(payload.badge)}`);
   if (tags.length > 0) {
@@ -276,14 +305,27 @@ const parseResponseJson = async (response: Response): Promise<unknown> => {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
 
-const getErrors = (value: unknown): string[] =>
-  isRecord(value) && Array.isArray(value.errors)
+const getErrors = (value: unknown): string[] => {
+  const errors = isRecord(value) && Array.isArray(value.errors)
     ? value.errors.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
     : [];
+  if (errors.length > 0) return errors;
+
+  return isRecord(value) && Array.isArray(value.issues)
+    ? value.issues
+        .map((item) => isRecord(item) && typeof item.message === 'string' ? item.message : '')
+        .filter(Boolean)
+    : [];
+};
 
 const getResultString = (value: unknown, key: string): string =>
   isRecord(value) && isRecord(value.result) && typeof value.result[key] === 'string'
     ? value.result[key].trim()
+    : '';
+
+const getPayloadString = (value: unknown, key: string): string =>
+  isRecord(value) && isRecord(value.payload) && typeof value.payload[key] === 'string'
+    ? value.payload[key].trim()
     : '';
 
 const wrapSelection = (textarea: HTMLTextAreaElement, before: string, after: string, placeholder: string) => {
@@ -554,10 +596,14 @@ export const initLongformDraft = (): void => {
   root.dataset.initialized = 'true';
 
   const endpoint = root.dataset.longformCreateEndpoint?.trim() ?? '';
+  const editEndpoint = root.dataset.longformEditEndpoint?.trim() ?? '';
+  const editCollection = root.dataset.longformEditCollection?.trim() ?? '';
+  const editEntryId = root.dataset.longformEditId?.trim() ?? '';
   const form = query<HTMLFormElement>(root, '[data-longform-create-form]');
   const statusEl = query<HTMLElement>(root, '[data-longform-status]');
   const previewBtn = query<HTMLButtonElement>(root, '[data-longform-preview]');
   const submitBtn = query<HTMLButtonElement>(root, '[data-longform-submit]');
+  const editSubmitBtn = query<HTMLButtonElement>(root, '[data-longform-edit-submit]');
   const resultWrap = query<HTMLElement>(root, '[data-longform-result]');
   const markdownEl = query<HTMLTextAreaElement>(root, '[data-longform-markdown]');
   const copyBtn = query<HTMLButtonElement>(root, '[data-longform-copy]');
@@ -579,15 +625,15 @@ export const initLongformDraft = (): void => {
 
   if (!form || !bodyEl) return;
 
-  let slugTouched = false;
+  let slugTouched = Boolean(slugEl?.value.trim());
   let lastMarkdown = '';
   let authorAvatarTouched = false;
   let translatorAvatarTouched = false;
   let personSelectionError = false;
   const authorLibrary = parseAuthorLibrary(root.dataset.authorLibrary);
   const authorByName = new Map(authorLibrary.map((author) => [getAuthorKey(author.name), author]));
-  const selectedAuthors: DraftPerson[] = [];
-  let selectedTranslator: DraftPerson | null = null;
+  const selectedAuthors: DraftPerson[] = parseInitialPersonList(root.dataset.longformInitialAuthors);
+  let selectedTranslator: DraftPerson | null = parseInitialPerson(root.dataset.longformInitialTranslator);
 
   const getText = (name: TextFieldName): string =>
     query<HTMLInputElement | HTMLTextAreaElement>(root, `[data-longform-field="${name}"]`)?.value.trim() ?? '';
@@ -836,11 +882,23 @@ export const initLongformDraft = (): void => {
     commitAuthorInput();
     commitTranslatorInput();
     normalizeSlugField();
+    if (selectedAuthors.length > 0) {
+      const [firstAuthor] = selectedAuthors;
+      if (firstAuthor) {
+        firstAuthor.avatar = getText('authorAvatar');
+        firstAuthor.showAvatar = getChecked('authorShowAvatar');
+      }
+    }
+    if (selectedTranslator) {
+      selectedTranslator.avatar = getText('translationAvatar');
+      selectedTranslator.showAvatar = getChecked('translationShowAvatar');
+    }
     return {
       title: getText('title'),
       slug: getText('slug'),
       description: getText('description'),
-      date: formatLocalDate(),
+      date: getText('date') || formatLocalDate(),
+      publishedAt: getText('publishedAt'),
       badge: getText('badge'),
       tags: getText('tags'),
       authors: selectedAuthors.map((author) => ({ ...author })),
@@ -883,6 +941,85 @@ export const initLongformDraft = (): void => {
     const markdown = buildMarkdown(payload);
     lastMarkdown = markdown;
     return markdown;
+  };
+
+  const readEditFields = (payload: LongformDraftPayload): Record<string, string | boolean> => ({
+    title: payload.title,
+    date: payload.date,
+    publishedAt: payload.publishedAt,
+    slug: payload.slug,
+    badge: payload.badge,
+    description: payload.description,
+    tagsText: payload.tags,
+    authorsText: payload.authors.map((author) => author.name).join('\n'),
+    authorAvatar: payload.authors[0]?.avatar ?? '',
+    authorShowAvatar: payload.authors[0]?.showAvatar ?? true,
+    translationTranslator: payload.translationTranslator,
+    translationAvatar: payload.translationAvatar,
+    translationShowAvatar: payload.translationShowAvatar,
+    translationSource: payload.translationSource,
+    translationSourceUrl: payload.translationSourceUrl,
+    body: payload.body,
+    draft: payload.draft,
+    archive: payload.archive
+  });
+
+  const saveEdit = async () => {
+    clearStatus(statusEl);
+    const payload = readPayload();
+    if (!validatePayload(payload)) return;
+    if (!editEndpoint || !editCollection || !editEntryId) {
+      setStatus(statusEl, '当前页面缺少编辑接口。', 'error');
+      return;
+    }
+
+    const revision = root.dataset.longformEditRevision?.trim() ?? '';
+    if (!revision) {
+      setStatus(statusEl, '缺少 revision，请重新打开当前条目。', 'error');
+      return;
+    }
+
+    if (editSubmitBtn) {
+      editSubmitBtn.disabled = true;
+      editSubmitBtn.setAttribute('aria-busy', 'true');
+    }
+    setStatus(statusEl, '正在保存修改...');
+
+    try {
+      const response = await fetch(editEndpoint, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          collection: editCollection,
+          entryId: editEntryId,
+          revision,
+          fields: readEditFields(payload)
+        })
+      });
+      const result = await parseResponseJson(response);
+
+      if (!response.ok || !isRecord(result) || result.ok !== true) {
+        const errors = getErrors(result);
+        throw new Error(errors[0] ?? '保存长文失败');
+      }
+
+      const latestRevision = getPayloadString(result, 'revision');
+      if (latestRevision) root.dataset.longformEditRevision = latestRevision;
+
+      const relativePath = getResultString(result, 'relativePath');
+      setStatus(statusEl, relativePath ? `已保存：${relativePath}` : '已保存长文修改。', 'success');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '保存长文失败';
+      setStatus(statusEl, message, 'error');
+    } finally {
+      if (editSubmitBtn) {
+        editSubmitBtn.disabled = false;
+        editSubmitBtn.setAttribute('aria-busy', 'false');
+      }
+    }
   };
 
   form.addEventListener('input', () => {
@@ -1110,6 +1247,10 @@ export const initLongformDraft = (): void => {
     if (!markdown) return;
     showResult({ resultWrap, markdownEl, publicLink, markdown });
     setStatus(statusEl, '已生成 Markdown 预览。', 'success');
+  });
+
+  editSubmitBtn?.addEventListener('click', () => {
+    void saveEdit();
   });
 
   copyBtn?.addEventListener('click', async () => {

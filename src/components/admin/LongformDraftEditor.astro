@@ -1,9 +1,18 @@
 ---
 import UiIcon from '../UiIcon.astro';
 import { readAdminAuthorProfiles } from '../../lib/admin-console/authors';
+import type { AdminCategoryEntryPayload } from '../../lib/admin-console/category-entry';
 
-const { createEndpoint = '' } = Astro.props as {
+const {
+  createEndpoint = '',
+  editPayload = null,
+  editEndpoint = '',
+  clearEditHref = ''
+} = Astro.props as {
   createEndpoint?: string;
+  editPayload?: AdminCategoryEntryPayload | null;
+  editEndpoint?: string;
+  clearEditHref?: string;
 };
 
 type AuthorLibraryItem = {
@@ -58,6 +67,32 @@ managedAuthors.forEach((author) => {
 const authorLibrary = Array.from(authorsByName.values()).sort((left, right) =>
   left.name.localeCompare(right.name, 'zh-Hans-CN')
 );
+
+const isEditMode = editPayload?.collection === 'longform';
+const getEditText = (key: string): string => {
+  const value = editPayload?.values[key];
+  return typeof value === 'string' ? value : '';
+};
+const getEditChecked = (key: string, fallback = false): boolean => {
+  const value = editPayload?.values[key];
+  return typeof value === 'boolean' ? value : fallback;
+};
+const initialAuthors = getEditText('authorsText')
+  .split(/\r?\n/)
+  .map((name) => name.trim())
+  .filter(Boolean)
+  .map((name, index) => ({
+    name,
+    avatar: index === 0 ? getEditText('authorAvatar') : '',
+    showAvatar: getEditChecked('authorShowAvatar', true)
+  }));
+const initialTranslator = getEditText('translationTranslator')
+  ? {
+      name: getEditText('translationTranslator'),
+      avatar: getEditText('translationAvatar'),
+      showAvatar: getEditChecked('translationShowAvatar', true)
+    }
+  : null;
 ---
 
 <section
@@ -65,13 +100,19 @@ const authorLibrary = Array.from(authorsByName.values()).sort((left, right) =>
   aria-labelledby="admin-category-longform-create-title"
   data-longform-create-root
   data-longform-create-endpoint={createEndpoint || undefined}
+  data-longform-edit-endpoint={isEditMode ? editEndpoint : undefined}
+  data-longform-edit-collection={isEditMode ? editPayload.collection : undefined}
+  data-longform-edit-id={isEditMode ? editPayload.entryId : undefined}
+  data-longform-edit-revision={isEditMode ? editPayload.revision : undefined}
+  data-longform-initial-authors={isEditMode ? JSON.stringify(initialAuthors) : undefined}
+  data-longform-initial-translator={isEditMode && initialTranslator ? JSON.stringify(initialTranslator) : undefined}
   data-author-library={JSON.stringify(authorLibrary)}
 >
   <div class="admin-category-longform-create__head">
     <div>
       <p class="admin-overview-card__eyebrow">Longform</p>
       <h3 id="admin-category-longform-create-title" class="admin-category-longform-create__title">
-        新增长文
+        {isEditMode ? `编辑长文：${editPayload.relativePath}` : '新增长文'}
       </h3>
     </div>
   </div>
@@ -80,29 +121,41 @@ const authorLibrary = Array.from(authorsByName.values()).sort((left, right) =>
     <div class="admin-category-longform-create__grid">
       <label class="admin-category-longform-create__field admin-category-longform-create__field--title">
         <span>标题 *</span>
-        <input class="admin-field__control" data-longform-field="title" type="text" autocomplete="off" placeholder="写作标题" />
+        <input class="admin-field__control" data-longform-field="title" type="text" autocomplete="off" placeholder="写作标题" value={getEditText('title')} />
       </label>
 
       <label class="admin-category-longform-create__field admin-category-longform-create__field--slug">
         <span>slug *</span>
-        <input class="admin-field__control" data-longform-field="slug" type="text" autocomplete="off" spellcheck="false" placeholder="my-longform-note" />
+        <input class="admin-field__control" data-longform-field="slug" type="text" autocomplete="off" spellcheck="false" placeholder="my-longform-note" value={getEditText('slug')} />
       </label>
 
       <label class="admin-category-longform-create__field admin-category-longform-create__field--badge">
         <span>徽标</span>
-        <input class="admin-field__control" data-longform-field="badge" type="text" autocomplete="off" placeholder="指南 / 翻译" />
+        <input class="admin-field__control" data-longform-field="badge" type="text" autocomplete="off" placeholder="指南 / 翻译" value={getEditText('badge')} />
       </label>
 
       <label class="admin-category-longform-create__field admin-category-longform-create__field--description">
         <span>描述</span>
-        <textarea class="admin-field__control" data-longform-field="description" rows="3" placeholder="列表、SEO 与分享摘要"></textarea>
+        <textarea class="admin-field__control" data-longform-field="description" rows="3" placeholder="列表、SEO 与分享摘要">{getEditText('description')}</textarea>
       </label>
 
       <label class="admin-category-longform-create__field admin-category-longform-create__field--tags">
         <span>标签</span>
-        <input class="admin-field__control" data-longform-field="tags" type="text" autocomplete="off" placeholder="agent, Vibe coding" />
+        <input class="admin-field__control" data-longform-field="tags" type="text" autocomplete="off" placeholder="agent, Vibe coding" value={getEditText('tagsText')} />
         <small class="admin-category-longform-create__help">带空格的标签用逗号隔开，例如 agent, Vibe coding。</small>
       </label>
+
+      <label class="admin-category-longform-create__field admin-category-longform-create__field--date">
+        <span>date</span>
+        <input class="admin-field__control" data-longform-field="date" type="text" autocomplete="off" placeholder="留空则使用今天" value={getEditText('date')} />
+      </label>
+
+      {isEditMode ? (
+        <label class="admin-category-longform-create__field admin-category-longform-create__field--published">
+          <span>publishedAt</span>
+          <input class="admin-field__control" data-longform-field="publishedAt" type="text" autocomplete="off" placeholder="可选 ISO 时间" value={getEditText('publishedAt')} />
+        </label>
+      ) : null}
     </div>
 
     <div class="admin-category-longform-create__split">
@@ -136,10 +189,10 @@ const authorLibrary = Array.from(authorsByName.values()).sort((left, right) =>
         <ul class="admin-category-longform-create__authors" data-longform-author-list hidden></ul>
         <label class="admin-category-longform-create__field">
           <span>头像（可选）</span>
-          <input class="admin-field__control" data-longform-field="authorAvatar" type="text" inputmode="url" autocomplete="off" placeholder="author/avatar.webp" />
+          <input class="admin-field__control" data-longform-field="authorAvatar" type="text" inputmode="url" autocomplete="off" placeholder="author/avatar.webp" value={getEditText('authorAvatar')} />
         </label>
         <label class="admin-category-longform-create__check">
-          <input data-longform-field="authorShowAvatar" type="checkbox" checked />
+          <input data-longform-field="authorShowAvatar" type="checkbox" checked={getEditChecked('authorShowAvatar', true)} />
           <span>显示头像</span>
         </label>
       </fieldset>
@@ -171,23 +224,23 @@ const authorLibrary = Array.from(authorsByName.values()).sort((left, right) =>
           </label>
           <button class="admin-btn admin-btn--secondary admin-btn--compact" type="button" data-longform-set-translator>添加译者</button>
         </div>
-        <input data-longform-field="translationTranslator" type="hidden" />
+        <input data-longform-field="translationTranslator" type="hidden" value={getEditText('translationTranslator')} />
         <ul class="admin-category-longform-create__authors" data-longform-translator-list hidden></ul>
         <label class="admin-category-longform-create__field">
           <span>原文标题 / 来源</span>
-          <input class="admin-field__control" data-longform-field="translationSource" type="text" autocomplete="off" placeholder="Original Essay" />
+          <input class="admin-field__control" data-longform-field="translationSource" type="text" autocomplete="off" placeholder="Original Essay" value={getEditText('translationSource')} />
         </label>
         <label class="admin-category-longform-create__field">
           <span>原文链接</span>
-          <input class="admin-field__control" data-longform-field="translationSourceUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://example.com/original" />
+          <input class="admin-field__control" data-longform-field="translationSourceUrl" type="url" inputmode="url" autocomplete="off" placeholder="https://example.com/original" value={getEditText('translationSourceUrl')} />
         </label>
         <div class="admin-category-longform-create__inline">
           <label class="admin-category-longform-create__field">
             <span>译者头像（可选）</span>
-            <input class="admin-field__control" data-longform-field="translationAvatar" type="text" inputmode="url" autocomplete="off" placeholder="author/avatar.webp" />
+            <input class="admin-field__control" data-longform-field="translationAvatar" type="text" inputmode="url" autocomplete="off" placeholder="author/avatar.webp" value={getEditText('translationAvatar')} />
           </label>
           <label class="admin-category-longform-create__check">
-            <input data-longform-field="translationShowAvatar" type="checkbox" checked />
+            <input data-longform-field="translationShowAvatar" type="checkbox" checked={getEditChecked('translationShowAvatar', true)} />
             <span>显示头像</span>
           </label>
         </div>
@@ -255,23 +308,25 @@ const authorLibrary = Array.from(authorsByName.values()).sort((left, right) =>
         data-longform-field="body"
         rows="18"
         placeholder="从这里开始写正文..."
-      ></textarea>
+      >{getEditText('body')}</textarea>
     </div>
 
     <div class="admin-category-longform-create__footer">
       <div class="admin-category-longform-create__toggles">
         <label class="admin-category-longform-create__check">
-          <input data-longform-field="draft" type="checkbox" />
+          <input data-longform-field="draft" type="checkbox" checked={getEditChecked('draft')} />
           <span>保存为草稿</span>
         </label>
         <label class="admin-category-longform-create__check">
-          <input data-longform-field="archive" type="checkbox" checked />
+          <input data-longform-field="archive" type="checkbox" checked={getEditChecked('archive', true)} />
           <span>进入归档</span>
         </label>
       </div>
       <div class="admin-category-longform-create__actions">
         <button class="admin-btn admin-btn--secondary" type="button" data-longform-preview>预览 Markdown</button>
         <button class="admin-btn admin-btn--primary" type="submit" data-longform-submit>创建长文</button>
+        {isEditMode ? <button class="admin-btn admin-btn--secondary" type="button" data-longform-edit-submit>保存修改</button> : null}
+        {isEditMode ? <a class="admin-btn admin-btn--ghost" href={clearEditHref}>放弃编辑</a> : null}
       </div>
     </div>
 

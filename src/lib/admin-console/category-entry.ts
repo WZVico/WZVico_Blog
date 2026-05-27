@@ -98,6 +98,9 @@ const getStringArray = (value: unknown): string[] =>
 
 const toBoolean = (value: unknown): boolean => value === true || value === 'true';
 
+const hasOwnField = (input: Record<string, unknown>, key: string): boolean =>
+  Object.prototype.hasOwnProperty.call(input, key);
+
 const createIssue = (pathName: string, message: string): AdminCategoryEntryValidationIssue => ({
   path: pathName,
   message
@@ -417,7 +420,6 @@ const buildLongform = async (
   const dateResult = parseLongformDateInput(dateRaw);
   const publishedAtResult = publishedAtRaw ? parseLongformPublishedAtInput(publishedAtRaw) : null;
   const slug = getInputString(input, 'slug');
-  const cover = getInputString(input, 'cover');
   const badge = getInputString(input, 'badge');
   const authors = splitLines(getInputString(input, 'authorsText'));
   const authorAvatarRaw = getInputString(input, 'authorAvatar');
@@ -457,7 +459,10 @@ const buildLongform = async (
   frontmatter.draft = getInputBoolean(input, 'draft');
   frontmatter.archive = getInputBoolean(input, 'archive');
   setOptional(frontmatter, 'slug', slug, Boolean(slug));
-  setOptional(frontmatter, 'cover', cover, Boolean(cover));
+  if (hasOwnField(input, 'cover')) {
+    const cover = getInputString(input, 'cover');
+    setOptional(frontmatter, 'cover', cover, Boolean(cover));
+  }
   setOptional(frontmatter, 'badge', badge, Boolean(badge));
 
   delete frontmatter.author;

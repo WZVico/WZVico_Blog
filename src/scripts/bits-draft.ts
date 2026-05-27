@@ -74,6 +74,42 @@ const quoteYaml = (value: string) =>
 
 const toSafeDocumentHttpUrl = (value: string) => toSafeHttpUrl(value, window.location.href);
 
+const parseResponseJson = async (response: Response): Promise<unknown> => {
+  const text = await response.text();
+  if (!text.trim()) return null;
+  try {
+    return JSON.parse(text) as unknown;
+  } catch {
+    return null;
+  }
+};
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === 'object' && value !== null && !Array.isArray(value);
+
+const getErrors = (value: unknown): string[] => {
+  const errors = isRecord(value) && Array.isArray(value.errors)
+    ? value.errors.filter((item): item is string => typeof item === 'string' && item.trim().length > 0)
+    : [];
+  if (errors.length > 0) return errors;
+
+  return isRecord(value) && Array.isArray(value.issues)
+    ? value.issues
+        .map((item) => isRecord(item) && typeof item.message === 'string' ? item.message : '')
+        .filter(Boolean)
+    : [];
+};
+
+const getResultString = (value: unknown, key: string): string =>
+  isRecord(value) && isRecord(value.result) && typeof value.result[key] === 'string'
+    ? value.result[key].trim()
+    : '';
+
+const getPayloadString = (value: unknown, key: string): string =>
+  isRecord(value) && isRecord(value.payload) && typeof value.payload[key] === 'string'
+    ? value.payload[key].trim()
+    : '';
+
 const normalizeImageSrc = (value: string) => {
   const trimmed = value.trim();
   if (!trimmed) return '';
@@ -119,10 +155,14 @@ export const initBitsDraft = (): BitsDraftController | null => {
   const defaultAuthorName = (dialog.dataset.defaultAuthorName ?? '').trim();
   const defaultAuthorAvatar = (dialog.dataset.defaultAuthorAvatar ?? '').trim();
   const createEndpoint = (dialog.dataset.bitsDraftCreateEndpoint ?? '').trim();
+  const editEndpoint = (dialog.dataset.bitsEditEndpoint ?? '').trim();
+  const editCollection = (dialog.dataset.bitsEditCollection ?? '').trim();
+  const editEntryId = (dialog.dataset.bitsEditId ?? '').trim();
 
   const form = query<HTMLFormElement>(dialog, '[data-bits-draft-form]');
   const closeBtns = queryAll<HTMLElement>(dialog, '[data-bits-draft-close]');
   const generateBtn = query<HTMLButtonElement>(dialog, '[data-bits-draft-generate]');
+  const editSubmitBtn = query<HTMLButtonElement>(dialog, '[data-bits-edit-submit]');
   const statusEl = query<HTMLElement>(dialog, '[data-bits-draft-status]');
   const manualOpenBtn = query<HTMLButtonElement>(dialog, '[data-bits-manual-open]');
   const manualBox = query<HTMLElement>(dialog, '[data-bits-manual]');
@@ -733,6 +773,103 @@ export const initBitsDraft = (): BitsDraftController | null => {
     return lines.join('\n');
   };
 
+  const getEditField = (name: string): HTMLInputElement | HTMLTextAreaElement | null =>
+    query<HTMLInputElement | HTMLTextAreaElement>(dialog, `[data-bits-edit-field="${name}"]`);
+
+  const readEditFields = (): Record<string, string | boolean> | null => {
+    if (!contentEl) return null;
+    const content = contentEl.value.trim();
+    if (!content) {
+      setStatus('请先填写内容。', 'error');
+      contentEl.focus();
+      return null;
+    }
+
+    const images = collectImages();
+    if (!images) return null;
+
+    const authorAvatar = normalizeBitsAvatarPath(authorAvatarEl?.value ?? '');
+    if (authorAvatar === undefined) {
+      setStatus('作者头像只允许相对图片路径（例如 author/avatar.webp），不要带 public/、不要以 / 开头，也不要使用 URL、..、?、#。', 'error');
+      authorAvatarEl?.focus();
+      return null;
+    }
+
+    return {
+      title: getEditField('title')?.value.trim() ?? '',
+      date: getEditField('date')?.value.trim() ?? '',
+      slug: getEditField('slug')?.value.trim() ?? '',
+      description: getEditField('description')?.value.trim() ?? '',
+      tagsText: tagsEl?.value.trim() ?? '',
+      authorName: authorNameEl?.value.trim() ?? '',
+      authorAvatar,
+      imagesText: images.length > 0 ? JSON.stringify(images, null, 2) : '',
+      body: contentEl.value,
+      draft: draftEl?.checked === true
+    };
+  };
+
+  const saveEdit = async () => {
+    clearStatus();
+    hideManualCopy();
+
+    if (!editEndpoint || !editCollection || !editEntryId) {
+      setStatus('当前页面缺少编辑接口。', 'error');
+      return;
+    }
+
+    const fields = readEditFields();
+    if (!fields) return;
+
+    const revision = dialog.dataset.bitsEditRevision?.trim() ?? '';
+    if (!revision) {
+      setStatus('缺少 revision，请重新打开当前条目。', 'error');
+      return;
+    }
+
+    if (editSubmitBtn) {
+      editSubmitBtn.disabled = true;
+      editSubmitBtn.setAttribute('aria-busy', 'true');
+    }
+    setStatus('正在保存修改...');
+
+    try {
+      const response = await fetch(editEndpoint, {
+        method: 'POST',
+        headers: {
+          accept: 'application/json',
+          'content-type': 'application/json'
+        },
+        body: JSON.stringify({
+          collection: editCollection,
+          entryId: editEntryId,
+          revision,
+          fields
+        })
+      });
+      const result = await parseResponseJson(response);
+
+      if (!response.ok || !isRecord(result) || result.ok !== true) {
+        const errors = getErrors(result);
+        throw new Error(errors[0] ?? '保存絮语失败');
+      }
+
+      const latestRevision = getPayloadString(result, 'revision');
+      if (latestRevision) dialog.dataset.bitsEditRevision = latestRevision;
+
+      const relativePath = getResultString(result, 'relativePath');
+      setStatus(relativePath ? `已保存：${relativePath}` : '已保存絮语修改。', 'success');
+    } catch (error) {
+      const message = error instanceof Error ? error.message : '保存絮语失败';
+      setStatus(message, 'error');
+    } finally {
+      if (editSubmitBtn) {
+        editSubmitBtn.disabled = false;
+        editSubmitBtn.setAttribute('aria-busy', 'false');
+      }
+    }
+  };
+
   const restoreFocus = () => {
     const target = lastOpenTrigger;
     lastOpenTrigger = null;
@@ -1009,6 +1146,10 @@ export const initBitsDraft = (): BitsDraftController | null => {
     const copied = await tryClipboardCopy(markdown);
     if (copied) setStatus('已复制草稿。', 'success');
     else showManualCopy(markdown, '已生成草稿。');
+  });
+
+  editSubmitBtn?.addEventListener('click', () => {
+    void saveEdit();
   });
 
   cachedController = {

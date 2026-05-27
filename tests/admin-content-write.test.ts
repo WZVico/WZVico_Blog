@@ -756,6 +756,54 @@ describe('admin content write api', () => {
     expect(after.endsWith('后续正文。\n')).toBe(true);
   });
 
+  it('preserves existing longform cover when category edits omit the cover field', async () => {
+    const sourcePath = path.join(tempRoot, 'src', 'content', 'longform', 'demo.md');
+    await writeFile(
+      sourcePath,
+      [
+        '---',
+        'title: Demo Longform',
+        'date: 2026-03-18',
+        'cover: /images/archive/existing-cover.webp',
+        'draft: false',
+        '---',
+        '',
+        '# Longform',
+        '',
+        '正文保持不变。',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+
+    const { readAdminCategoryEntryPayload } = await import('../src/lib/admin-console/category-entry');
+    const { POST } = await import('../src/pages/api/admin/category/entry');
+    const current = await readAdminCategoryEntryPayload('longform', 'demo');
+    const fieldsWithoutCover = { ...current.values };
+    delete fieldsWithoutCover.cover;
+
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/entry', {
+        collection: 'longform',
+        entryId: 'demo',
+        revision: current.revision,
+        fields: {
+          ...fieldsWithoutCover,
+          title: 'Edited Without Cover Field'
+        }
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/category/entry')
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+
+    const after = await readFile(sourcePath, 'utf8');
+    expect(after).toContain('title: Edited Without Cover Field');
+    expect(after).toContain('cover: /images/archive/existing-cover.webp');
+  });
+
   it('saves the managed author library for longform author and translator options', async () => {
     const { POST } = await import('../src/pages/api/admin/category/authors');
     const response = await POST({
