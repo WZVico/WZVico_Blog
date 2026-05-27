@@ -44,8 +44,8 @@ Rnj 1.5 的诞生离不开以下这群杰出的伙伴（按字母顺序排列）
 作为 Rnj 1.0 [^2] 的长上下文升级版，它将上下文窗口从 32k 飙升至 160k，并在 128k 上下文窗口的 RULER 基准测试中斩获 79% 的高分。此次发布还在更广泛的测试框架中展现出更强悍的编程能力。详情请参阅我们的[模型卡片](https://huggingface.co/EssentialAI/rnj-1.5-instruct)。
 
 本文结构分为七个部分：
-1. [Transformer 前向传播](https://www.aleksagordic.com/blog/transformer#cpt1)：token 运转的高层视角
-2. [RMSNorm](https://www.aleksagordic.com/blog/transformer#cpt2)：归一化层
+1. [Transformer 前向传播](#transformer-mpo41beq-ygrf1)：token 运转的高层视角
+2. [RMSNorm](#rmsnorm-mpo42q2o-b5dn2)：归一化层
 3. [GeGLU MLP](https://www.aleksagordic.com/blog/transformer#cpt3)：GELU 门控前馈模块
 4. [MHA](https://www.aleksagordic.com/blog/transformer#cpt4)：多头自注意力机制
 5. [YaRN](https://www.aleksagordic.com/blog/transformer#cpt5)：处理长上下文的位置嵌入
@@ -53,7 +53,7 @@ Rnj 1.5 的诞生离不开以下这群杰出的伙伴（按字母顺序排列）
 7. [Transformer 数学原理](https://www.aleksagordic.com/blog/transformer#cpt7)：FLOPs/token、集群规模配置等
 
 在后续文章中，我还将深挖条件计算（conditional computation），重点探讨稀疏 Transformer（即混合专家模型，MoE）。
-
+<span id="transformer-mpo41beq-ygrf1" class="page-anchor"></span>
 ## Transformer 前向传播
 
 举个例子，假设我们从数据集中抽取 2 篇“文档”，参数如下：
@@ -146,7 +146,7 @@ Rnj 1.5 的诞生离不开以下这群杰出的伙伴（按字母顺序排列）
 1. RMSNorm（均方根层归一化）
 2. GeGLU MLP（多层感知机）
 3. 注意力（缩放点积注意力）
-
+<span id="rmsnorm-mpo42q2o-b5dn2" class="page-anchor"></span>
 ## RMSNorm（均方根层归一化）
 
 RMSNorm [[5\]](#fn-5) 是一项归一化绝技，专为稳住深度神经网络的训练阵脚而生。

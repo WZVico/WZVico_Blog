@@ -52,10 +52,15 @@ type TextareaSelection = {
   end: number;
   selected: string;
 };
+type EditorActionResult = {
+  anchorSnippet?: string;
+  anchorId?: string;
+};
 
 const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
 const LONGFORM_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const SANITIZED_ANCHOR_PREFIX = 'user-content-';
 
 const query = <T extends Element>(root: ParentNode | null, selector: string): T | null =>
   root?.querySelector<T>(selector) ?? null;
@@ -450,6 +455,9 @@ const cleanSelectedBlock = (value: string, fallback: string): string =>
 const escapeMarkdownTableCell = (value: string): string =>
   value.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').trim();
 
+const escapeMarkdownLinkText = (value: string): string =>
+  value.replace(/\\/g, '\\\\').replace(/\[/g, '\\[').replace(/\]/g, '\\]');
+
 const escapeHtmlText = (value: string): string =>
   value
     .replace(/&/g, '&amp;')
@@ -524,7 +532,31 @@ const insertCallout = (
   );
 };
 
-const applyEditorAction = (textarea: HTMLTextAreaElement, action: string) => {
+const createUniquePageAnchorId = (selected: string): string => {
+  const readablePrefix = slugifyAscii(selected).slice(0, 36).replace(/-+$/g, '') || 'anchor';
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).slice(2, 7);
+  return `${readablePrefix}-${timestamp}-${random}`;
+};
+
+const insertPageAnchorLink = (textarea: HTMLTextAreaElement): EditorActionResult => {
+  textarea.focus();
+  const { start, end, selected } = getTextareaSelection(textarea);
+  const label = selected.replace(/\s+/g, ' ').trim() || '可点击的词';
+  const anchorId = createUniquePageAnchorId(label);
+  const linkText = `[${escapeMarkdownLinkText(label)}](#${SANITIZED_ANCHOR_PREFIX}${anchorId})`;
+
+  textarea.setRangeText(linkText, start, end, 'select');
+  textarea.setSelectionRange(start, start + linkText.length);
+  textarea.focus();
+
+  return {
+    anchorId,
+    anchorSnippet: `<span id="${anchorId}" class="page-anchor"></span>`
+  };
+};
+
+const applyEditorAction = (textarea: HTMLTextAreaElement, action: string): EditorActionResult | null => {
   const selected = getTextareaSelection(textarea).selected;
 
   switch (action) {
@@ -556,6 +588,8 @@ const applyEditorAction = (textarea: HTMLTextAreaElement, action: string) => {
     case 'link':
       wrapSelection(textarea, '[', '](https://example.com)', '链接文字');
       break;
+    case 'page-anchor':
+      return insertPageAnchorLink(textarea);
     case 'h2':
       prefixLines(textarea, '## ');
       break;
@@ -606,6 +640,8 @@ const applyEditorAction = (textarea: HTMLTextAreaElement, action: string) => {
       break;
     }
   }
+
+  return null;
 };
 
 export const initLongformDraft = (): void => {
@@ -1245,6 +1281,18 @@ export const initLongformDraft = (): void => {
   syncAuthorList();
   syncTranslator();
 
+  const copyPageAnchorSnippet = async (result: EditorActionResult) => {
+    const snippet = result.anchorSnippet?.trim() ?? '';
+    if (!snippet) return;
+
+    try {
+      await navigator.clipboard.writeText(snippet);
+      setStatus(statusEl, `已生成页内跳转链接，并复制目标锚点：${snippet}`, 'success');
+    } catch {
+      setStatus(statusEl, `已生成页内跳转链接。请手动复制目标锚点：${snippet}`, 'error');
+    }
+  };
+
   queryAll<HTMLButtonElement>(root, '[data-longform-action]').forEach((button) => {
     button.addEventListener('mousedown', (event) => {
       event.preventDefault();
@@ -1253,8 +1301,9 @@ export const initLongformDraft = (): void => {
     button.addEventListener('click', () => {
       const action = button.dataset.longformAction?.trim() ?? '';
       if (!action) return;
-      applyEditorAction(bodyEl, action);
-      clearStatus(statusEl);
+      const result = applyEditorAction(bodyEl, action);
+      if (result?.anchorSnippet) void copyPageAnchorSnippet(result);
+      else clearStatus(statusEl);
       hideResult({ resultWrap, markdownEl, publicLink });
     });
   });
