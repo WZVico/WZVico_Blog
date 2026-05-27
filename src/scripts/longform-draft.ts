@@ -43,6 +43,12 @@ type AuthorLibraryItem = {
   showAvatar: boolean;
   source: string;
 };
+type TextareaSelection = {
+  value: string;
+  start: number;
+  end: number;
+  selected: string;
+};
 
 const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
@@ -309,23 +315,34 @@ const prefixLines = (textarea: HTMLTextAreaElement, prefix: string) => {
   textarea.focus();
 };
 
-const insertText = (textarea: HTMLTextAreaElement, text: string) => {
+const getTextareaSelection = (textarea: HTMLTextAreaElement): TextareaSelection => {
+  const value = textarea.value;
+  const start = textarea.selectionStart ?? value.length;
+  const end = textarea.selectionEnd ?? start;
+  return {
+    value,
+    start,
+    end,
+    selected: start === end ? '' : value.slice(start, end)
+  };
+};
+
+const replaceSelectionWithBlock = (textarea: HTMLTextAreaElement, block: string) => {
   textarea.focus();
-  const start = textarea.selectionStart ?? 0;
-  const end = textarea.selectionEnd ?? 0;
-  textarea.setRangeText(text, start, end, 'end');
+  const { value, start, end } = getTextareaSelection(textarea);
+  const needsLeadingBreak = start > 0 && !value.slice(0, start).endsWith('\n\n');
+  const needsTrailingBreak = !value.slice(end).startsWith('\n');
+  const next = `${needsLeadingBreak ? '\n\n' : ''}${block}${needsTrailingBreak ? '\n' : ''}`;
+  textarea.setRangeText(next, start, end, 'select');
+  textarea.setSelectionRange(start + (needsLeadingBreak ? 2 : 0), start + (needsLeadingBreak ? 2 : 0) + block.length);
   textarea.focus();
 };
 
 const insertBlock = (textarea: HTMLTextAreaElement, block: string) => {
-  const value = textarea.value;
-  const start = textarea.selectionStart ?? value.length;
-  const needsLeadingBreak = start > 0 && !value.slice(0, start).endsWith('\n\n');
-  const needsTrailingBreak = !value.slice(start).startsWith('\n');
-  insertText(textarea, `${needsLeadingBreak ? '\n\n' : ''}${block}${needsTrailingBreak ? '\n' : ''}`);
+  replaceSelectionWithBlock(textarea, block);
 };
 
-const blockSnippets: Record<string, string> = {
+const blockSnippets = {
   h2: '## 小标题\n\n',
   h3: '### 小标题\n\n',
   more: '<!-- more -->\n\n',
@@ -336,9 +353,82 @@ const blockSnippets: Record<string, string> = {
   gallery: '<ul class="gallery">\n  <li>\n    <figure>\n      <img src="/images/archive/example-01.webp" alt="图片说明 1" />\n      <figcaption>第一张图注</figcaption>\n    </figure>\n  </li>\n  <li>\n    <figure>\n      <img src="/images/archive/example-02.webp" alt="图片说明 2" />\n      <figcaption>第二张图注</figcaption>\n    </figure>\n  </li>\n</ul>\n\n',
   pullquote: '<blockquote class="pullquote">\n  这里写需要被突出展示的句子。\n  <cite>— 来源</cite>\n</blockquote>\n\n',
   hr: '---\n\n'
+} satisfies Record<string, string>;
+
+const getBlockSnippet = (action: string): string | null =>
+  Object.prototype.hasOwnProperty.call(blockSnippets, action)
+    ? blockSnippets[action as keyof typeof blockSnippets]
+    : null;
+
+const cleanSelectedBlock = (value: string, fallback: string): string =>
+  value.replace(/^\n+|\n+$/g, '') || fallback;
+
+const escapeMarkdownTableCell = (value: string): string =>
+  value.replace(/\\/g, '\\\\').replace(/\|/g, '\\|').trim();
+
+const escapeHtmlText = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+const escapeHtmlAttribute = (value: string): string =>
+  escapeHtmlText(value).replace(/"/g, '&quot;');
+
+const buildSelectedTable = (selected: string): string => {
+  const rows = selected
+    .split('\n')
+    .map((line) => escapeMarkdownTableCell(line))
+    .filter(Boolean);
+
+  if (rows.length === 0) return blockSnippets.table;
+
+  return [
+    '| 项目 | 说明 |',
+    '| :--- | :--- |',
+    ...rows.map((row) => `| ${row} |  |`),
+    ''
+  ].join('\n');
+};
+
+const buildSelectedGallery = (selected: string): string => {
+  const captions = selected
+    .split('\n')
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (captions.length === 0) return blockSnippets.gallery;
+
+  const items = captions
+    .map((caption, index) => {
+      const safeCaption = escapeHtmlText(caption);
+      const safeAlt = escapeHtmlAttribute(caption);
+      return [
+        '  <li>',
+        '    <figure>',
+        `      <img src="/images/archive/example-${String(index + 1).padStart(2, '0')}.webp" alt="${safeAlt}" />`,
+        `      <figcaption>${safeCaption}</figcaption>`,
+        '    </figure>',
+        '  </li>'
+      ].join('\n');
+    })
+    .join('\n');
+
+  return `<ul class="gallery">\n${items}\n</ul>\n\n`;
+};
+
+const insertSelectedBlock = (
+  textarea: HTMLTextAreaElement,
+  selected: string,
+  fallbackAction: keyof typeof blockSnippets,
+  createBlock: (selected: string) => string
+) => {
+  replaceSelectionWithBlock(textarea, selected ? createBlock(selected) : blockSnippets[fallbackAction]);
 };
 
 const applyEditorAction = (textarea: HTMLTextAreaElement, action: string) => {
+  const selected = getTextareaSelection(textarea).selected;
+
   switch (action) {
     case 'bold':
       wrapSelection(textarea, '**', '**', '文字');
@@ -358,8 +448,40 @@ const applyEditorAction = (textarea: HTMLTextAreaElement, action: string) => {
     case 'link':
       wrapSelection(textarea, '[', '](https://example.com)', '链接文字');
       break;
+    case 'h2':
+      prefixLines(textarea, '## ');
+      break;
+    case 'h3':
+      prefixLines(textarea, '### ');
+      break;
+    case 'callout':
+      insertSelectedBlock(textarea, selected, 'callout', (value) => `:::note[标题]\n${cleanSelectedBlock(value, '这里写提示内容。')}\n:::\n\n`);
+      break;
+    case 'codeblock':
+      insertSelectedBlock(textarea, selected, 'codeblock', (value) => `\`\`\`\n${cleanSelectedBlock(value, 'code')}\n\`\`\`\n\n`);
+      break;
+    case 'table':
+      insertSelectedBlock(textarea, selected, 'table', buildSelectedTable);
+      break;
+    case 'figure':
+      insertSelectedBlock(textarea, selected, 'figure', (value) => {
+        const caption = cleanSelectedBlock(value, '图注文字。');
+        const safeCaption = escapeHtmlText(caption);
+        const safeAlt = escapeHtmlAttribute(caption);
+        return `<figure class="figure">\n  <img src="/images/archive/example.webp" alt="${safeAlt}" />\n  <figcaption class="figure-caption">${safeCaption}</figcaption>\n</figure>\n\n`;
+      });
+      break;
+    case 'gallery':
+      insertSelectedBlock(textarea, selected, 'gallery', buildSelectedGallery);
+      break;
+    case 'pullquote':
+      insertSelectedBlock(textarea, selected, 'pullquote', (value) => `<blockquote class="pullquote">\n  ${cleanSelectedBlock(value, '这里写需要被突出展示的句子。')}\n  <cite>— 来源</cite>\n</blockquote>\n\n`);
+      break;
+    case 'hr':
+      insertSelectedBlock(textarea, selected, 'hr', (value) => `${cleanSelectedBlock(value, '')}\n\n---\n\n`);
+      break;
     default: {
-      const snippet = blockSnippets[action];
+      const snippet = getBlockSnippet(action);
       if (snippet) insertBlock(textarea, snippet);
       break;
     }
@@ -909,6 +1031,10 @@ export const initLongformDraft = (): void => {
   syncTranslator();
 
   queryAll<HTMLButtonElement>(root, '[data-longform-action]').forEach((button) => {
+    button.addEventListener('mousedown', (event) => {
+      event.preventDefault();
+    });
+
     button.addEventListener('click', () => {
       const action = button.dataset.longformAction?.trim() ?? '';
       if (!action) return;
