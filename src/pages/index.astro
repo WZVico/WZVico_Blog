@@ -495,7 +495,8 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
 }
 
 .meta-line__item--people {
-  gap: 8px;
+  --article-byline-label-gap: 10px;
+  gap: var(--article-byline-label-gap);
 }
 
 .meta-line__item + .meta-line__item::before {
@@ -528,8 +529,12 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
   gap: 6px;
 }
 
+.article-translator {
+  gap: var(--article-byline-label-gap, 10px);
+}
+
 .article-author-list {
-  gap: 8px;
+  gap: 10px;
 }
 
 .article-author + .article-author::before,

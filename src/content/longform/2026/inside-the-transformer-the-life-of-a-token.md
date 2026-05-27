@@ -11,27 +11,28 @@ tags:
   - 位置编码
 draft: false
 archive: true
-author:
-  name: Aleksa Gordić
-  avatar: author/Aleksa Gordić.webp
 translation:
   translator: gemini-3.1-pro-preview
   avatar: author/Gemini.png
   source: "Inside the Transformer: The Life of a Token"
   sourceUrl: https://www.aleksagordic.com/blog/transformer
+author:
+  name: Aleksa Gordić
+  avatar: author/Aleksa Gordić.webp
 ---
+
 本文将带大家深入剖析现代稠密 Transformer 的内部机制 [^1]。我们将完全聚焦单 GPU 上的前向传播过程，就如同刚要迈出训练的第一步，暂且撇开反向传播和分布式系统的诸多细节（实际上，无论训练还是推理，大型 Transformer 都会跨多台设备进行分片）。
 
 为了方便贯穿全篇进行说明，我将直接拿 [Rnj 1.5](https://huggingface.co/EssentialAI/rnj-1.5-instruct) 的架构作为示例。这是我在 Ashish Vaswani 的人工智能实验室（Essential AI Labs）与团队共同研发的模型。
 
-:::tip[Rnj-1.5 幕后团队：]
+:::info[Rnj-1.5 幕后团队：]
 Rnj 1.5 的诞生离不开以下这群杰出的伙伴（按字母顺序排列）：
 
-**代码组 (Code pod):** Adarsh Chaluvaraju, Devaansh Gupta, Yash Jain, Somanshu Singla, Saurabh Srivastava (tech lead), Anil Thomas
+**代码组 (Code pod):** Adarsh Chaluvaraju, Devaansh Gupta, Yash Jain, Somanshu Singla, Saurabh Srivastava (技术负责人), Anil Thomas
 
-**STEM 组 (STEM pod):** Aleksa Gordić (tech lead), Michael Pust, Tim Romanski, Ali Shehper, Kurt Smith (tech lead), Ameya Velingker
+**STEM 组 (STEM pod):** Aleksa Gordić (技术负责人), Michael Pust, Tim Romanski, Ali Shehper, Kurt Smith (技术负责人), Ameya Velingker
 
-**基建组 (Infra pod):** Mike Callahan, Philip Monk (tech lead), Khoi Nguyen (tech lead), Alok Tripathy, Yash Vanjani
+**基建组 (Infra pod):** Mike Callahan, Philip Monk (技术负责人), Khoi Nguyen (技术负责人), Alok Tripathy, Yash Vanjani
 
 **组织管理 (Org):** Divya Mansingka, Mohit Parmar, Peter Rushton
 
@@ -71,7 +72,9 @@ Rnj 1.5 的诞生离不开以下这群杰出的伙伴（按字母顺序排列）
 
 我们先将文档进行分词，化作一串整数序列，再将两篇文档拼装成一个单一序列。
 
+:::tip[]
 在本文的讨论范围内，不妨将分词器（tokenizer）视作一个黑盒组件。它吞入文本，吐出一串 token 序列，每个 token 都由一个整数 ID 代表。实操中，分词器多采用 BPE 等算法在独立的语料库上“训练”而成，靠不断合并高频字符或字节序列来学习词表。出色的分词器设计往往具备几项优良特性，比方说，将数字单独拆分成独立的 token 就极大地助力了数值推理。
+:::
 
 与这些 token 并行的，我们还构建了两个辅助结构：
 
@@ -80,9 +83,9 @@ Rnj 1.5 的诞生离不开以下这群杰出的伙伴（按字母顺序排列）
 
 以上便是预处理阶段。
 
-📝 补充说明：
-
+:::note[补充说明：]
 出于效率考量，正式训练打响前，数据就已提前切块完毕。数据加载器（data loader）将这些预处理好的结构直接喂进训练循环。到了这一步，我们再也不用和原始字符串打交道了。（Spark）数据流水线和数据加载器里面的门道，完全够再写好几篇长文了。
+:::
 
 接下来，我们利用输入 token 去查找嵌入表（embedding table）。
 
@@ -94,8 +97,7 @@ Rnj 1.5 的诞生离不开以下这群杰出的伙伴（按字母顺序排列）
 
 图 2：嵌入阶段
 
-📝 补充说明：
-
+:::note[补充说明：]
 特殊 token 并非分词过程的自然产物——没有任何文本会映射到大于等于 128,000 的 token ID。它们是在训练时被人为注入的（并在后续推理中派上用场），目的是拔高模型性能（例如 FIM、代码库打包等），或是强制模型执行特定行为（例如生成结束、轮次结束、工具调用等）。
 
 我们来深挖一下 FIM [[1\]](#fn-1)（Fill-In-the-Middle，中间填充）这类特殊 token。
@@ -105,14 +107,17 @@ Rnj 1.5 的诞生离不开以下这群杰出的伙伴（按字母顺序排列）
 打个比方，假设你在最称手的 IDE 里用 Rnj 1.5 玩代码自动补全。光标往那儿一闪，自然就把代码劈成了前缀和后缀，中间留白。只要插入 FIM token 并以 `<FIM_MID>` 收尾，模型心领神会，立刻填补空白。这些 token 就是向模型传达意图的绝佳信使。
 
 分词器的学问浩如烟海，单独开篇绰绰有余，这里就点到即止了。
+:::
 
 万事俱备，准备杀入第一个 Transformer 层。
 
 须知道，所有 Transformer 层的结构（几乎）如出一辙，因此我只挑一个细讲。实战中，数据要连闯 32 层关卡——不妨把它当成一个 for 循环，只不过在 Rnj 1.5 里，每一层都揣着自己独立的可学习权重。
 
+:::tip[]
 说“几乎”，是因为 Rnj-1.5 混搭了局部块注意力层和全局注意力层——唯一的区别藏在掩码里。但在更高维度的抽象层面上，前面那句话依旧站得住脚。这部分玄机，咱们留到注意力环节细说。
 
 还要提一嘴，有些 Transformer 实现在层与层之间玩起了权重共享或部分共享（花样繁多），但咱们这儿只关注 Rnj 1.5。
+:::
 
 来，走一遍 Transformer 块的前向传播。请细品下图：
 
@@ -124,11 +129,11 @@ Rnj 1.5 的诞生离不开以下这群杰出的伙伴（按字母顺序排列）
 
 划重点：除注意力模块外，所有子模块都是针对单个向量各自为战的。
 
-💡 背景知识补充：
-
+:::tip[背景知识补充：]
 实践中，Transformer 块的变体数不胜数。设计上的分岔路口包括：归一化层的位置、种类与数量；MLP 的具体构造（带不带门控、门控函数怎么选等）；残差连接的形态（恒等映射、注意力残差 [[2\]](#fn-2) 等）；当然，最要紧的还是注意力模块。
 
 宽泛地讲，注意力机制按序列长度计算，要么是二次复杂度（如 MLA [[3\]](#fn-3)、缩放点积注意力等），要么是线性复杂度（如 Kimi Linear [[4\]](#fn-4)）。它们在建模功力（尤其是死磕长上下文时）与运行效率之间各有取舍，暗自博弈。
+:::
 
 向量一旦闯过最后一个 Transformer 块，便会被一场矩阵乘法投射到 128,256 维的广阔空间中。这便孕育出了 `logits`，紧接着经由 softmax 蜕变为概率分布。推理时，我们从中抽样；训练时，它则化身交叉熵损失的一部分。
 
@@ -303,14 +308,16 @@ YaRN的正向传播过程到此告一段落。
 
 ## 参考文献
 
-1. "Efficient Training of Language Models to Fill in the Middle", https://arxiv.org/abs/2207.14255[↩︎](#fnref-1)
-2. "Attention Residual Learning", https://arxiv.org/abs/2603.15031[↩︎](#fnref-2)
-3. "DeepSeek-V2: A Strong, Economical, and Efficient Mixture-of-Experts Language Model", https://arxiv.org/abs/2405.04434[↩︎](#fnref-3)
-4. "Kimi Linear: An Expressive, Efficient Attention Architecture", https://arxiv.org/abs/2510.26692[↩︎](#fnref-4)
-5. "Root Mean Square Layer Normalization", https://arxiv.org/abs/1910.07467[↩︎](#fnref-5)
-6. "GLU Variants Improve Transformer", https://arxiv.org/abs/2002.05202[↩︎](#fnref-6)
-7. "YaRN: Efficient Context Window Extension of Large Language Models", https://arxiv.org/abs/2309.00071[↩︎](#fnref-7)
-8. "RoFormer: Enhanced Transformer with Rotary Position Embedding", https://arxiv.org/abs/2104.09864[↩︎](#fnref-8)
-9. "Eli5 Flash Attention", https://gordicaleksa.medium.com/eli5-flash-attention-5c44017022ad[↩︎](#fnref-9)
-10. Muon, https://kellerjordan.github.io/posts/muon/[↩︎](#fnref-10)
-11. "Dissecting Sparsity in Large Language Models: Intrinsic Data-Aware Sparse Attention", https://arxiv.org/abs/2512.02556[↩︎](#fnref-11)
+1. 《注意力机制是你所需的一切》，https://arxiv.org/abs/1706.03762
+2. RNJ 1.0，https://essential.ai/research/rnj-1
+3. 《高效训练语言模型实现中间填充》，https://arxiv.org/abs/2207.14255
+4. 《注意力残差学习》，https://arxiv.org/abs/2603.15031
+5. 《DeepSeek-V2：强大、经济且高效的混合专家语言模型》，https://arxiv.org/abs/2405.04434
+6. 《Kimi Linear：表现力强且高效的注意力架构》，https://arxiv.org/abs/2510.26692
+7. 《均方根层归一化》，https://arxiv.org/abs/1910.07467
+8. 《GLU变体提升Transformer性能》，https://arxiv.org/abs/2002.05202
+9. 《YaRN：大语言模型上下文窗口的高效扩展》，https://arxiv.org/abs/2309.00071
+10. 《RoFormer：融合旋转位置嵌入的增强版Transformer》，https://arxiv.org/abs/2104.09864
+11. 《深入浅出Flash Attention》，https://gordicaleksa.medium.com/eli5-flash-attention-5c44017022ad
+12. Muon，https://kellerjordan.github.io/posts/muon/
+13. 《剖析大语言模型中的稀疏性：内在的数据感知稀疏注意力》，https://arxiv.org/abs/2512.02556

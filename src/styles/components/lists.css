@@ -627,7 +627,8 @@
 }
 
 .meta-line__item--people {
-  gap: 8px;
+  --article-byline-label-gap: 10px;
+  gap: var(--article-byline-label-gap);
 }
 
 .meta-line__item + .meta-line__item::before {
@@ -652,10 +653,11 @@
 }
 
 .article-byline {
+  --article-byline-label-gap: 10px;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 8px 10px;
+  gap: 8px var(--article-byline-label-gap);
   margin-top: 14px;
   margin-bottom: 4px;
   color: var(--muted);
@@ -673,8 +675,12 @@
   gap: 6px;
 }
 
+.article-translator {
+  gap: var(--article-byline-label-gap, 10px);
+}
+
 .article-author-list {
-  gap: 8px;
+  gap: 10px;
 }
 
 .article-author + .article-author::before,

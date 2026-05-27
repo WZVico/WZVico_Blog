@@ -153,8 +153,26 @@ const parseInitialPersonList = (value: string | undefined): DraftPerson[] => {
   }
 };
 
-const parseInitialPerson = (value: string | undefined): DraftPerson | null =>
-  parseInitialPersonList(value).at(0) ?? null;
+export const parseInitialPerson = (value: string | undefined): DraftPerson | null => {
+  if (!value) return null;
+
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    if (Array.isArray(parsed)) return parseInitialPersonList(value).at(0) ?? null;
+    if (typeof parsed !== 'object' || parsed === null) return null;
+
+    const item = parsed as Record<string, unknown>;
+    const person = {
+      name: typeof item.name === 'string' ? item.name.trim() : '',
+      avatar: typeof item.avatar === 'string' ? item.avatar.trim() : '',
+      showAvatar: item.showAvatar !== false
+    };
+
+    return person.name ? person : null;
+  } catch {
+    return null;
+  }
+};
 
 const getAuthorKey = (name: string): string =>
   name.trim().toLocaleLowerCase();
