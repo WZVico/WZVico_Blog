@@ -572,6 +572,12 @@ const applyEditorAction = (textarea: HTMLTextAreaElement, action: string): Edito
     case 'code':
       wrapSelection(textarea, '`', '`', 'code');
       break;
+    case 'sup':
+      wrapSelection(textarea, '<sup>', '</sup>', 'text');
+      break;
+    case 'sub':
+      wrapSelection(textarea, '<sub>', '</sub>', 'text');
+      break;
     case 'quote':
       prefixLines(textarea, '> ');
       break;

@@ -25,7 +25,9 @@ import Rss from '@lucide/astro/icons/rss';
 import Search from '@lucide/astro/icons/search';
 import SquareArrowRightExit from '@lucide/astro/icons/square-arrow-right-exit';
 import Strikethrough from '@lucide/astro/icons/strikethrough';
+import Subscript from '@lucide/astro/icons/subscript';
 import Sun from '@lucide/astro/icons/sun';
+import Superscript from '@lucide/astro/icons/superscript';
 import Tag from '@lucide/astro/icons/tag';
 
 type UiIconName =
@@ -52,7 +54,9 @@ type UiIconName =
   | 'rss'
   | 'search'
   | 'strikethrough'
+  | 'subscript'
   | 'sun'
+  | 'superscript'
   | 'tag'
   | 'user-circle';
 
@@ -96,7 +100,9 @@ const uiIconComponents = {
   rss: Rss,
   search: Search,
   strikethrough: Strikethrough,
+  subscript: Subscript,
   sun: Sun,
+  superscript: Superscript,
   tag: Tag,
   'user-circle': CircleUserRound
 } as const satisfies Record<UiIconName, AstroComponent>;
