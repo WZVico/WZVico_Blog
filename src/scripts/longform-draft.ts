@@ -428,25 +428,46 @@ const insertBlock = (textarea: HTMLTextAreaElement, block: string) => {
   replaceSelectionWithBlock(textarea, block);
 };
 
+const LONGFORM_IMAGE_MONTH_FALLBACK = '000000';
+
+const getCurrentLongformImageMonth = (): string => {
+  try {
+    const now = new Date();
+    const year = now.getFullYear();
+    const month = now.getMonth() + 1;
+
+    if (!Number.isInteger(year) || !Number.isInteger(month) || month < 1 || month > 12) {
+      return LONGFORM_IMAGE_MONTH_FALLBACK;
+    }
+
+    return `${String(year).padStart(4, '0')}${String(month).padStart(2, '0')}`;
+  } catch {
+    return LONGFORM_IMAGE_MONTH_FALLBACK;
+  }
+};
+
+const createLongformImageSrc = (filename: string): string =>
+  `/images/longform/${getCurrentLongformImageMonth()}/${filename}`;
+
 const blockSnippets = {
-  h2: '## 小标题\n\n',
-  h3: '### 小标题\n\n',
-  more: '<!-- more -->\n\n',
-  'callout-note': ':::note[标题]\n这里写提示内容。\n:::\n\n',
-  'callout-tip': ':::tip[标题]\n这里写提示内容。\n:::\n\n',
-  'callout-info': ':::info[标题]\n这里写提示内容。\n:::\n\n',
-  'callout-warning': ':::warning[标题]\n这里写提示内容。\n:::\n\n',
-  codeblock: '```ts\nconst hello = "world";\n```\n\n',
-  table: '| 项目 | 说明 |\n| :--- | :--- |\n| 示例 | 内容 |\n\n',
-  figure: '<figure class="figure">\n  <img src="/images/archive/example.webp" alt="图片说明" />\n  <figcaption class="figure-caption">图注文字。</figcaption>\n</figure>\n\n',
-  gallery: '<ul class="gallery">\n  <li>\n    <figure>\n      <img src="/images/archive/example-01.webp" alt="图片说明 1" />\n      <figcaption>第一张图注</figcaption>\n    </figure>\n  </li>\n  <li>\n    <figure>\n      <img src="/images/archive/example-02.webp" alt="图片说明 2" />\n      <figcaption>第二张图注</figcaption>\n    </figure>\n  </li>\n</ul>\n\n',
-  pullquote: '<blockquote class="pullquote">\n  这里写需要被突出展示的句子。\n  <cite>— 来源</cite>\n</blockquote>\n\n',
-  hr: '---\n\n'
-} satisfies Record<string, string>;
+  h2: () => '## 小标题\n\n',
+  h3: () => '### 小标题\n\n',
+  more: () => '<!-- more -->\n\n',
+  'callout-note': () => ':::note[标题]\n这里写提示内容。\n:::\n\n',
+  'callout-tip': () => ':::tip[标题]\n这里写提示内容。\n:::\n\n',
+  'callout-info': () => ':::info[标题]\n这里写提示内容。\n:::\n\n',
+  'callout-warning': () => ':::warning[标题]\n这里写提示内容。\n:::\n\n',
+  codeblock: () => '```ts\nconst hello = "world";\n```\n\n',
+  table: () => '| 项目 | 说明 |\n| :--- | :--- |\n| 示例 | 内容 |\n\n',
+  figure: () => `<figure class="figure">\n  <img src="${createLongformImageSrc('example.png')}" alt="图片说明" />\n  <figcaption class="figure-caption">图注文字。</figcaption>\n</figure>\n\n`,
+  gallery: () => `<ul class="gallery">\n  <li>\n    <figure>\n      <img src="${createLongformImageSrc('example-01.png')}" alt="图片说明 1" />\n      <figcaption>第一张图注</figcaption>\n    </figure>\n  </li>\n  <li>\n    <figure>\n      <img src="${createLongformImageSrc('example-02.png')}" alt="图片说明 2" />\n      <figcaption>第二张图注</figcaption>\n    </figure>\n  </li>\n</ul>\n\n`,
+  pullquote: () => '<blockquote class="pullquote">\n  这里写需要被突出展示的句子。\n  <cite>— 来源</cite>\n</blockquote>\n\n',
+  hr: () => '---\n\n'
+} satisfies Record<string, () => string>;
 
 const getBlockSnippet = (action: string): string | null =>
   Object.prototype.hasOwnProperty.call(blockSnippets, action)
-    ? blockSnippets[action as keyof typeof blockSnippets]
+    ? blockSnippets[action as keyof typeof blockSnippets]()
     : null;
 
 const cleanSelectedBlock = (value: string, fallback: string): string =>
@@ -473,7 +494,7 @@ const buildSelectedTable = (selected: string): string => {
     .map((line) => escapeMarkdownTableCell(line))
     .filter(Boolean);
 
-  if (rows.length === 0) return blockSnippets.table;
+  if (rows.length === 0) return blockSnippets.table();
 
   return [
     '| 项目 | 说明 |',
@@ -489,7 +510,7 @@ const buildSelectedGallery = (selected: string): string => {
     .map((line) => line.trim())
     .filter(Boolean);
 
-  if (captions.length === 0) return blockSnippets.gallery;
+  if (captions.length === 0) return blockSnippets.gallery();
 
   const items = captions
     .map((caption, index) => {
@@ -498,7 +519,7 @@ const buildSelectedGallery = (selected: string): string => {
       return [
         '  <li>',
         '    <figure>',
-        `      <img src="/images/archive/example-${String(index + 1).padStart(2, '0')}.webp" alt="${safeAlt}" />`,
+        `      <img src="${createLongformImageSrc(`example-${String(index + 1).padStart(2, '0')}.png`)}" alt="${safeAlt}" />`,
         `      <figcaption>${safeCaption}</figcaption>`,
         '    </figure>',
         '  </li>'
@@ -515,7 +536,7 @@ const insertSelectedBlock = (
   fallbackAction: keyof typeof blockSnippets,
   createBlock: (selected: string) => string
 ) => {
-  replaceSelectionWithBlock(textarea, selected ? createBlock(selected) : blockSnippets[fallbackAction]);
+  replaceSelectionWithBlock(textarea, selected ? createBlock(selected) : blockSnippets[fallbackAction]());
 };
 
 const insertCallout = (
@@ -628,7 +649,7 @@ const applyEditorAction = (textarea: HTMLTextAreaElement, action: string): Edito
         const caption = cleanSelectedBlock(value, '图注文字。');
         const safeCaption = escapeHtmlText(caption);
         const safeAlt = escapeHtmlAttribute(caption);
-        return `<figure class="figure">\n  <img src="/images/archive/example.webp" alt="${safeAlt}" />\n  <figcaption class="figure-caption">${safeCaption}</figcaption>\n</figure>\n\n`;
+        return `<figure class="figure">\n  <img src="${createLongformImageSrc('example.png')}" alt="${safeAlt}" />\n  <figcaption class="figure-caption">${safeCaption}</figcaption>\n</figure>\n\n`;
       });
       break;
     case 'gallery':
