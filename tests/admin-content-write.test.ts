@@ -560,7 +560,10 @@ describe('admin content write api', () => {
     );
   });
 
-  it('creates picks entries as yearly single-entry markdown files', async () => {
+  it('creates picks entries as monthly single-entry markdown files', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 4, 17, 28, 50));
+
     const picksPath = path.join(tempRoot, 'src', 'content', 'picks', 'index.md');
     await writeFile(
       picksPath,
@@ -599,7 +602,7 @@ describe('admin content write api', () => {
     expect(response.status).toBe(200);
     const payload = JSON.parse(await response.text());
     expect(payload.ok).toBe(true);
-    expect(payload.result.relativePath).toMatch(/^src\/content\/picks\/\d{4}\/\d{4}-\d{2}-\d{2}-\d{6}\.md$/);
+    expect(payload.result.relativePath).toBe('src/content/picks/202606/2026-06-04-172850.md');
 
     const createdPath = path.join(tempRoot, payload.result.relativePath);
     const after = await readFile(createdPath, 'utf8');
@@ -649,7 +652,52 @@ describe('admin content write api', () => {
     expect(payload.errors[0]).toContain('已存在');
   });
 
-  it('creates materials entries inside the current year folder', async () => {
+  it('rejects duplicate picks entries stored in a monthly folder from the same year', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 4, 17, 28, 50));
+
+    const monthlyDir = path.join(tempRoot, 'src', 'content', 'picks', '202606');
+    await mkdir(monthlyDir, { recursive: true });
+    await writeFile(
+      path.join(monthlyDir, '2026-06-01-120000.md'),
+      [
+        '---',
+        'title: 《新书》',
+        'date: 2026-06-01T12:00:00+08:00',
+        'year: 2026',
+        'authors:',
+        '  - 新作者',
+        '---',
+        '',
+        '已有推荐。',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+
+    const { POST } = await import('../src/pages/api/admin/category/picks');
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/picks', {
+        item: {
+          title: '《新书》',
+          authors: '新作者',
+          reason: '重复推荐。',
+          tags: '阅读'
+        }
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/category/picks')
+    } as never);
+
+    expect(response.status).toBe(409);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(false);
+    expect(payload.errors[0]).toContain('已存在');
+  });
+
+  it('creates materials entries inside the current month folder', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 4, 17, 28, 50));
+
     const { POST } = await import('../src/pages/api/admin/category/materials');
     const response = await POST({
       request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/materials', {
@@ -666,7 +714,7 @@ describe('admin content write api', () => {
     expect(response.status).toBe(200);
     const payload = JSON.parse(await response.text());
     expect(payload.ok).toBe(true);
-    expect(payload.result.relativePath).toMatch(/^src\/content\/materials\/\d{4}\/年度资料-\d{4}-\d{2}-\d{2}-\d{6}\.md$/);
+    expect(payload.result.relativePath).toBe('src/content/materials/202606/年度资料-2026-06-04-172850.md');
 
     const after = await readFile(path.join(tempRoot, payload.result.relativePath), 'utf8');
     expect(after).toContain('title: 年度资料');
@@ -674,7 +722,10 @@ describe('admin content write api', () => {
     expect(after).toContain('label: PDF');
   });
 
-  it('creates bits entries inside the current year folder', async () => {
+  it('creates bits entries inside the current month folder', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 4, 17, 28, 50));
+
     const markdown = ['---', 'date: 2026-05-20T12:00:00+08:00', '---', '', '新的絮语', ''].join('\n');
     const { POST } = await import('../src/pages/api/admin/category/bits');
     const response = await POST({
@@ -687,7 +738,7 @@ describe('admin content write api', () => {
     expect(response.status).toBe(200);
     const payload = JSON.parse(await response.text());
     expect(payload.ok).toBe(true);
-    expect(payload.result.relativePath).toMatch(/^src\/content\/bits\/\d{4}\/bits-\d{4}-\d{2}-\d{2}-\d{4}\.md$/);
+    expect(payload.result.relativePath).toBe('src/content/bits/202606/bits-2026-06-04-1728.md');
 
     const after = await readFile(path.join(tempRoot, payload.result.relativePath), 'utf8');
     expect(after).toBe(markdown);
@@ -695,7 +746,7 @@ describe('admin content write api', () => {
 
   it('creates longform entries from the server creation date with draft off by default', async () => {
     vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 4, 21, 9, 12, 13));
+    vi.setSystemTime(new Date(2026, 5, 4, 9, 12, 13));
 
     const { POST } = await import('../src/pages/api/admin/category/longform');
     const response = await POST({
@@ -736,13 +787,13 @@ describe('admin content write api', () => {
     expect(response.status).toBe(200);
     const payload = JSON.parse(await response.text());
     expect(payload.ok).toBe(true);
-    expect(payload.result.relativePath).toBe('src/content/longform/2026/my-longform-draft.md');
+    expect(payload.result.relativePath).toBe('src/content/longform/202606/my-longform-draft.md');
     expect(payload.result.publicHref).toBe('/archive/my-longform-draft/');
 
     const after = await readFile(path.join(tempRoot, payload.result.relativePath), 'utf8');
     expect(after).toContain('title: 我的长文草稿');
     expect(after).toContain('description: 用于测试长文创建。');
-    expect(after).toContain('date: 2026-05-21');
+    expect(after).toContain('date: 2026-06-04');
     expect(after).not.toContain('publishedAt:');
     expect(after).not.toContain('cover:');
     expect(after).toContain('slug: my-longform-draft');

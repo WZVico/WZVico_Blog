@@ -216,11 +216,11 @@ Theme Console 主要面向**站点级**和**页面级**配置，支持内容：
 ### 内容与路由
 
 内容集合（Content Collections）：
-- 长文：位于 `src/content/longform` 目录
-- 絮语：位于 `src/content/bits` 目录
-- 拾选：条目位于 `src/content/picks/YYYY/YYYY-MM-DD-HHMMSS.md`，`src/content/picks/index.md` 仅保留页面标题、介绍等元数据
+- 长文：位于 `src/content/longform` 目录；后台新建条目会写入 `src/content/longform/YYYYMM/`
+- 絮语：位于 `src/content/bits` 目录；后台与 `npm run new:bit` 新建条目会写入 `src/content/bits/YYYYMM/`
+- 拾选：条目位于 `src/content/picks/YYYYMM/YYYY-MM-DD-HHMMSS.md`，`src/content/picks/index.md` 仅保留页面标题、介绍等元数据
 - 归档：由长文集合按 `archive` 字段生成目录视图
-- 资料：位于 `src/content/materials`，用于维护视频或文件链接
+- 资料：位于 `src/content/materials`，后台新建条目会写入 `src/content/materials/YYYYMM/`，用于维护视频或文件链接
 
 主要路由：
 - 列表页：`/archive/`、`/longform/`、`/bits/`、`/picks/`、`/Materials/`、`/about/`

@@ -148,8 +148,8 @@ const quoteYaml = (value: string): string =>
     ? `"${escapeYamlDoubleQuoted(value)}"`
     : value;
 
-const getDateYear = (dateText: string): number =>
-  Number.parseInt(dateText.slice(0, 4), 10);
+const getDateMonthDir = (dateText: string): string =>
+  `${dateText.slice(0, 4)}${dateText.slice(5, 7)}`;
 
 const normalizeOptionalAvatar = (
   value: string,
@@ -466,11 +466,11 @@ const readExistingPublicSlugs = async (): Promise<Map<string, string>> => {
 const getLongformCreatePath = (
   item: Pick<LongformCreateItem, 'date' | 'slug'>
 ): { filePath: string; relativePath: string } => {
-  const year = getDateYear(item.date);
-  const relativePath = `src/content/longform/${year}/${item.slug}.md`;
+  const monthDir = getDateMonthDir(item.date);
+  const relativePath = `src/content/longform/${monthDir}/${item.slug}.md`;
   return {
     relativePath,
-    filePath: join(getLongformContentDir(), String(year), `${item.slug}.md`)
+    filePath: join(getLongformContentDir(), monthDir, `${item.slug}.md`)
   };
 };
 

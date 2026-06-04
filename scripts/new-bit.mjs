@@ -32,7 +32,7 @@ const hh = pad2(now.getHours());
 const mm = pad2(now.getMinutes());
 
 const filename = `${yyyy}-${MM}-${dd}-${hh}${mm}.md`;
-const dir = path.join(process.cwd(), 'src', 'content', 'bits');
+const dir = path.join(process.cwd(), 'src', 'content', 'bits', `${yyyy}${MM}`);
 const filepath = path.join(dir, filename);
 
 if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });

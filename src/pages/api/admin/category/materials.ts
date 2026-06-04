@@ -55,7 +55,7 @@ const getProjectRoot = (): string =>
 const getMaterialsContentDir = (): string =>
   join(getProjectRoot(), 'src', 'content', 'materials');
 
-const createLocalTimestamp = (): { date: string; fileStamp: string; year: number } => {
+const createLocalTimestamp = (): { date: string; fileStamp: string; monthDir: string } => {
   const now = new Date();
   const tzMinutes = -now.getTimezoneOffset();
   const sign = tzMinutes >= 0 ? '+' : '-';
@@ -63,14 +63,15 @@ const createLocalTimestamp = (): { date: string; fileStamp: string; year: number
   const tzHours = pad2(Math.floor(abs / 60));
   const tzRemainder = pad2(abs % 60);
   const year = now.getFullYear();
-  const datePart = `${year}-${pad2(now.getMonth() + 1)}-${pad2(now.getDate())}`;
+  const month = pad2(now.getMonth() + 1);
+  const datePart = `${year}-${month}-${pad2(now.getDate())}`;
   const timePart = `${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`;
   const fileStamp = `${datePart}-${pad2(now.getHours())}${pad2(now.getMinutes())}${pad2(now.getSeconds())}`;
 
   return {
     date: `${datePart}T${timePart}${sign}${tzHours}:${tzRemainder}`,
     fileStamp,
-    year
+    monthDir: `${year}${month}`
   };
 };
 
@@ -95,15 +96,14 @@ const getAvailableMaterialPath = async (
   title: string,
   timestamp: ReturnType<typeof createLocalTimestamp>
 ): Promise<{ filePath: string; relativePath: string }> => {
-  const { fileStamp, year } = timestamp;
+  const { fileStamp, monthDir } = timestamp;
   const filenameBase = `${normalizeFilenamePart(title)}-${fileStamp}`;
-  const yearDir = String(year);
 
   for (let index = 0; index < 1000; index += 1) {
     const suffix = index === 0 ? '' : `-${index + 1}`;
     const filename = `${filenameBase}${suffix}.md`;
-    const relativePath = `src/content/materials/${yearDir}/${filename}`;
-    const filePath = join(getMaterialsContentDir(), yearDir, filename);
+    const relativePath = `src/content/materials/${monthDir}/${filename}`;
+    const filePath = join(getMaterialsContentDir(), monthDir, filename);
     if (!(await fileExists(filePath))) {
       return { filePath, relativePath };
     }
@@ -264,7 +264,7 @@ export const POST: APIRoute = async ({ request, url }) => {
         }
       ], {
         beforeWrite: async () => {
-          await mkdir(join(getMaterialsContentDir(), String(timestamp.year)), { recursive: true });
+          await mkdir(join(getMaterialsContentDir(), timestamp.monthDir), { recursive: true });
         }
       });
 

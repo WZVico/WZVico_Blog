@@ -37,17 +37,18 @@ const getBitsContentDir = (): string =>
 
 const pad2 = (value: number): string => String(value).padStart(2, '0');
 
-const createFileStamp = (): { stamp: string; year: number } => {
+const createFileStamp = (): { stamp: string; monthDir: string } => {
   const now = new Date();
   const year = now.getFullYear();
+  const month = pad2(now.getMonth() + 1);
   const stamp = [
-    now.getFullYear(),
-    pad2(now.getMonth() + 1),
+    year,
+    month,
     pad2(now.getDate())
   ].join('-')
     + `-${pad2(now.getHours())}${pad2(now.getMinutes())}`;
 
-  return { stamp, year };
+  return { stamp, monthDir: `${year}${month}` };
 };
 
 const fileExists = async (filePath: string): Promise<boolean> => {
@@ -99,13 +100,13 @@ const createJsonErrorResponse = (status: number, errors: readonly string[]): Res
   });
 
 const getAvailableBitsDraftPath = async (): Promise<{ filePath: string; relativePath: string }> => {
-  const { stamp, year } = createFileStamp();
+  const { stamp, monthDir } = createFileStamp();
 
   for (let index = 0; index < 1000; index += 1) {
     const suffix = index === 0 ? '' : `-${index + 1}`;
     const filename = `bits-${stamp}${suffix}.md`;
-    const relativePath = `src/content/bits/${year}/${filename}`;
-    const filePath = join(getBitsContentDir(), String(year), filename);
+    const relativePath = `src/content/bits/${monthDir}/${filename}`;
+    const filePath = join(getBitsContentDir(), monthDir, filename);
     if (!(await fileExists(filePath))) {
       return { filePath, relativePath };
     }

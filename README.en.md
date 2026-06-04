@@ -216,13 +216,14 @@ For more details, see the [Theme Console configuration guide](https://astro.whon
 ### Collections and Routes
 
 Content Collections:
-- Longform: `src/content/longform`
-- Bits: `src/content/bits`
-- picks: entries live in `src/content/picks/YYYY/YYYY-MM-DD-HHMMSS.md`; `src/content/picks/index.md` only keeps page metadata such as title and intro copy
+- Longform: `src/content/longform`; new Admin entries are written to `src/content/longform/YYYYMM/`
+- Bits: `src/content/bits`; new Admin entries and `npm run new:bit` drafts are written to `src/content/bits/YYYYMM/`
+- picks: entries live in `src/content/picks/YYYYMM/YYYY-MM-DD-HHMMSS.md`; `src/content/picks/index.md` only keeps page metadata such as title and intro copy
 - Archive: generated from longform entries via the `archive` field
+- Materials: `src/content/materials`; new Admin entries are written to `src/content/materials/YYYYMM/`, for maintaining video or file links
 
 Main routes:
-- List pages: `/archive/`, `/longform/`, `/bits/`, `/picks/`, `/about/`
+- List pages: `/archive/`, `/longform/`, `/bits/`, `/picks/`, `/Materials/`, `/about/`
 - Canonical detail route: `/archive/[slug]` (`/longform/[slug]` remains as a compatibility redirect)
 
 ### Image Assets

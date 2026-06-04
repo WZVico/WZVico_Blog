@@ -57,7 +57,7 @@ export const getPicksIndexPath = (): string =>
 
 export const getPicksIndexRelativePath = (): string => 'src/content/picks/index.md';
 
-export const getPicksStoragePathLabel = (): string => 'src/content/picks/YYYY';
+export const getPicksStoragePathLabel = (): string => 'src/content/picks/YYYYMM';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -292,20 +292,25 @@ const fileExists = async (filePath: string): Promise<boolean> => {
   }
 };
 
+const getPickMonthDir = (item: Pick<AdminPickCreateItem, 'date' | 'year'>): string => {
+  const match = /^(\d{4})-(\d{2})/.exec(item.date);
+  return match ? `${match[1]}${match[2]}` : String(item.year);
+};
+
 export const getAvailablePickPath = async (
   item: AdminPickCreateItem
 ): Promise<{ filePath: string; relativePath: string }> => {
   const filenameBase = item.date
     .replace(/^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2}).*$/, '$1-$2$3$4')
     .replace(/[^0-9-]/g, '') || createPickLocalTimestamp().fileStamp;
-  const year = String(item.year);
-  const yearDir = path.join(getPicksContentDir(), year);
+  const monthDir = getPickMonthDir(item);
+  const storageDir = path.join(getPicksContentDir(), monthDir);
 
   for (let index = 0; index < 1000; index += 1) {
     const suffix = index === 0 ? '' : `-${index + 1}`;
     const filename = `${filenameBase}${suffix}.md`;
-    const filePath = path.join(yearDir, filename);
-    const relativePath = `src/content/picks/${year}/${filename}`;
+    const filePath = path.join(storageDir, filename);
+    const relativePath = `src/content/picks/${monthDir}/${filename}`;
     if (!(await fileExists(filePath))) {
       return { filePath, relativePath };
     }
@@ -364,27 +369,34 @@ const getStringArray = (value: unknown): string[] => {
   return value.filter((item): item is string => typeof item === 'string').map((item) => item.trim()).filter(Boolean);
 };
 
+const getPickStorageFoldersForYear = async (year: number): Promise<string[]> => {
+  const yearText = String(year);
+  const entries = await readdir(getPicksContentDir(), { withFileTypes: true }).catch(() => []);
+  return entries
+    .filter((entry) =>
+      entry.isDirectory()
+      && (entry.name === yearText || (/^\d{6}$/.test(entry.name) && entry.name.startsWith(yearText)))
+    )
+    .map((entry) => path.join(getPicksContentDir(), entry.name));
+};
+
 const hasDuplicatePickFile = async (item: AdminPickCreateItem): Promise<boolean> => {
-  const yearDir = path.join(getPicksContentDir(), String(item.year));
-  let entries;
-  try {
-    entries = await readdir(yearDir, { withFileTypes: true });
-  } catch {
-    return false;
-  }
-
   const targetHeading = normalizeHeadingText(buildHeading(item));
+  const folders = await getPickStorageFoldersForYear(item.year);
 
-  for (const entry of entries) {
-    if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.md')) continue;
-    const sourceText = await readFile(path.join(yearDir, entry.name), 'utf8').catch(() => '');
-    if (!sourceText) continue;
-    const frontmatter = getFrontmatterRecord(sourceText);
-    const title = normalizeOneLine(asTrimmedString(frontmatter.title));
-    const authors = getStringArray(frontmatter.authors);
-    const heading = normalizeHeadingText(buildHeading({ title, authors }));
-    if (heading && heading === targetHeading) {
-      return true;
+  for (const folder of folders) {
+    const entries = await readdir(folder, { withFileTypes: true }).catch(() => []);
+    for (const entry of entries) {
+      if (!entry.isFile() || !entry.name.toLowerCase().endsWith('.md')) continue;
+      const sourceText = await readFile(path.join(folder, entry.name), 'utf8').catch(() => '');
+      if (!sourceText) continue;
+      const frontmatter = getFrontmatterRecord(sourceText);
+      const title = normalizeOneLine(asTrimmedString(frontmatter.title));
+      const authors = getStringArray(frontmatter.authors);
+      const heading = normalizeHeadingText(buildHeading({ title, authors }));
+      if (heading && heading === targetHeading) {
+        return true;
+      }
     }
   }
 
@@ -464,9 +476,9 @@ export const parsePicksMarkdownStats = (sourceText: string): AdminPicksStats => 
 
 const readPicksFileStats = async (): Promise<{ itemCount: number; latestDate: Date | null }> => {
   const contentDir = getPicksContentDir();
-  let yearDirs;
+  let storageDirs;
   try {
-    yearDirs = await readdir(contentDir, { withFileTypes: true });
+    storageDirs = await readdir(contentDir, { withFileTypes: true });
   } catch {
     return { itemCount: 0, latestDate: null };
   }
@@ -474,9 +486,9 @@ const readPicksFileStats = async (): Promise<{ itemCount: number; latestDate: Da
   let itemCount = 0;
   let latestDate: Date | null = null;
 
-  for (const yearDir of yearDirs) {
-    if (!yearDir.isDirectory() || !/^\d{4}$/.test(yearDir.name)) continue;
-    const folder = path.join(contentDir, yearDir.name);
+  for (const storageDir of storageDirs) {
+    if (!storageDir.isDirectory() || !/^\d{4}(?:\d{2})?$/.test(storageDir.name)) continue;
+    const folder = path.join(contentDir, storageDir.name);
     const files = await readdir(folder, { withFileTypes: true }).catch(() => []);
     for (const file of files) {
       if (!file.isFile() || !file.name.toLowerCase().endsWith('.md')) continue;
