@@ -3,9 +3,9 @@ import { mkdtemp, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
-const createJsonRequest = (url: string, payload: unknown) =>
+const createJsonRequest = (url: string, payload: unknown, method = 'POST') =>
   new Request(url, {
-    method: 'POST',
+    method,
     headers: {
       origin: new URL(url).origin,
       'content-type': 'application/json; charset=utf-8'
@@ -853,6 +853,58 @@ describe('admin content write api', () => {
     const after = await readFile(sourcePath, 'utf8');
     expect(after).toContain('title: Edited Without Cover Field');
     expect(after).toContain('cover: /images/archive/existing-cover.webp');
+  });
+
+  it('deletes category content files only when the revision matches', async () => {
+    const sourcePath = path.join(tempRoot, 'src', 'content', 'longform', 'demo.md');
+    const { readAdminCategoryEntryPayload } = await import('../src/lib/admin-console/category-entry');
+    const { DELETE } = await import('../src/pages/api/admin/category/entry');
+    const current = await readAdminCategoryEntryPayload('longform', 'demo');
+
+    const response = await DELETE({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/entry', {
+        collection: 'longform',
+        entryId: 'demo',
+        revision: current.revision
+      }, 'DELETE'),
+      url: new URL('http://127.0.0.1:4321/api/admin/category/entry')
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+    expect(payload.result.deleted).toBe(true);
+    expect(payload.result.relativePath).toBe('src/content/longform/demo.md');
+    await expect(readFile(sourcePath, 'utf8')).rejects.toThrow();
+  });
+
+  it('rejects stale revisions before deleting category content files', async () => {
+    const sourcePath = path.join(tempRoot, 'src', 'content', 'longform', 'demo.md');
+    const { readAdminCategoryEntryPayload } = await import('../src/lib/admin-console/category-entry');
+    const { DELETE } = await import('../src/pages/api/admin/category/entry');
+    const current = await readAdminCategoryEntryPayload('longform', 'demo');
+
+    await writeFile(
+      sourcePath,
+      ['---', 'title: External Delete Guard', 'date: 2026-03-18', '---', '', 'changed body', ''].join('\n'),
+      'utf8'
+    );
+
+    const response = await DELETE({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/entry', {
+        collection: 'longform',
+        entryId: 'demo',
+        revision: current.revision
+      }, 'DELETE'),
+      url: new URL('http://127.0.0.1:4321/api/admin/category/entry')
+    } as never);
+
+    expect(response.status).toBe(409);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(false);
+    expect(payload.errors[0]).toContain('外部更新');
+    expect(payload.payload.values.title).toBe('External Delete Guard');
+    expect(await readFile(sourcePath, 'utf8')).toContain('External Delete Guard');
   });
 
   it('saves the managed author library for longform author and translator options', async () => {

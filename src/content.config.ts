@@ -140,6 +140,7 @@ const picks = defineCollection({
     year: z.number().int().optional(),
     authors: z.array(z.string()).default([]),
     tags: z.array(z.string()).default([]),
+    status: z.enum(['shared', 'planned']).default('shared'),
     draft: z.boolean().default(false),
     slug: z.string().optional()
   })

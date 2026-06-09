@@ -1,8 +1,8 @@
 type Tone = 'info' | 'success' | 'error';
-type PickFieldName = 'title' | 'authors' | 'reason' | 'tags' | 'date' | 'year' | 'slug' | 'draft';
+type PickFieldName = 'title' | 'authors' | 'reason' | 'tags' | 'status' | 'date' | 'year' | 'slug' | 'draft';
 type PickCreateItem = Record<PickFieldName, string>;
 
-const FIELD_NAMES = ['title', 'authors', 'reason', 'tags'] as const satisfies readonly PickFieldName[];
+const RESET_FIELD_NAMES = ['title', 'authors', 'reason', 'tags'] as const satisfies readonly PickFieldName[];
 
 const query = <T extends Element>(root: ParentNode | null, selector: string): T | null =>
   root?.querySelector<T>(selector) ?? null;
@@ -51,11 +51,28 @@ const getField = (
 ): HTMLInputElement | HTMLTextAreaElement | null =>
   query<HTMLInputElement | HTMLTextAreaElement>(root, `[data-pick-field="${name}"]`);
 
+const getSelectedStatus = (root: ParentNode): 'shared' | 'planned' => {
+  const checked = query<HTMLInputElement>(root, '[data-pick-field="status"]:checked');
+  return checked?.value === 'planned' ? 'planned' : 'shared';
+};
+
+const syncStatusMode = (form: HTMLFormElement) => {
+  const isPlanned = getSelectedStatus(form) === 'planned';
+  form.dataset.picksMode = isPlanned ? 'planned' : 'shared';
+
+  const reasonField = getField(form, 'reason');
+  if (reasonField) {
+    reasonField.disabled = isPlanned;
+    reasonField.required = !isPlanned;
+  }
+};
+
 const readItem = (form: HTMLFormElement): PickCreateItem => ({
   title: getField(form, 'title')?.value.trim() ?? '',
   authors: getField(form, 'authors')?.value.trim() ?? '',
   reason: getField(form, 'reason')?.value.trim() ?? '',
   tags: getField(form, 'tags')?.value.trim() ?? '',
+  status: getSelectedStatus(form),
   date: getField(form, 'date')?.value.trim() ?? '',
   year: getField(form, 'year')?.value.trim() ?? '',
   slug: getField(form, 'slug')?.value.trim() ?? '',
@@ -63,10 +80,13 @@ const readItem = (form: HTMLFormElement): PickCreateItem => ({
 });
 
 const resetFormFields = (form: HTMLFormElement) => {
-  FIELD_NAMES.forEach((name) => {
+  RESET_FIELD_NAMES.forEach((name) => {
     const field = getField(form, name);
     if (field) field.value = '';
   });
+  const sharedStatus = query<HTMLInputElement>(form, '[data-pick-field="status"][value="shared"]');
+  if (sharedStatus) sharedStatus.checked = true;
+  syncStatusMode(form);
 };
 
 const initPicksIntro = (): void => {
@@ -156,9 +176,15 @@ const initPicksEntryCreate = (): void => {
   const statusEl = query<HTMLElement>(root, '[data-picks-create-status]');
 
   if (!form || !endpoint) return;
+  syncStatusMode(form);
 
   form.addEventListener('input', () => {
     clearStatus(statusEl);
+  });
+
+  form.addEventListener('change', () => {
+    clearStatus(statusEl);
+    syncStatusMode(form);
   });
 
   form.addEventListener('submit', async (event) => {
@@ -166,12 +192,13 @@ const initPicksEntryCreate = (): void => {
     clearStatus(statusEl);
 
     const item = readItem(form);
+    const isPlanned = item.status === 'planned';
     if (!item.title) {
       setStatus(statusEl, '请填写拾选标题。', 'error');
       getField(form, 'title')?.focus();
       return;
     }
-    if (!item.reason) {
+    if (!isPlanned && !item.reason) {
       setStatus(statusEl, '请填写推荐理由。', 'error');
       getField(form, 'reason')?.focus();
       return;
@@ -181,7 +208,7 @@ const initPicksEntryCreate = (): void => {
       submitBtn.disabled = true;
       submitBtn.setAttribute('aria-busy', 'true');
     }
-    setStatus(statusEl, '正在写入拾选...');
+    setStatus(statusEl, isPlanned ? '正在加入待拾...' : '正在写入拾选...');
 
     try {
       const response = await fetch(endpoint, {
@@ -207,7 +234,11 @@ const initPicksEntryCreate = (): void => {
 
       const relativePath = getResultString(result, 'relativePath');
       resetFormFields(form);
-      setStatus(statusEl, relativePath ? `已写入：${relativePath}` : '已写入拾选。', 'success');
+      setStatus(
+        statusEl,
+        relativePath ? `已${isPlanned ? '加入待拾' : '写入'}：${relativePath}` : `已${isPlanned ? '加入待拾' : '写入拾选'}。`,
+        'success'
+      );
       getField(form, 'title')?.focus();
     } catch (error) {
       const message = error instanceof Error ? error.message : '创建拾选失败';
@@ -224,12 +255,13 @@ const initPicksEntryCreate = (): void => {
     clearStatus(statusEl);
 
     const item = readItem(form);
+    const isPlanned = item.status === 'planned';
     if (!item.title) {
       setStatus(statusEl, '请填写拾选标题。', 'error');
       getField(form, 'title')?.focus();
       return;
     }
-    if (!item.reason) {
+    if (!isPlanned && !item.reason) {
       setStatus(statusEl, '请填写推荐理由。', 'error');
       getField(form, 'reason')?.focus();
       return;
@@ -265,10 +297,11 @@ const initPicksEntryCreate = (): void => {
             date: item.date,
             year: item.year,
             slug: item.slug,
+            status: item.status,
             authorsText: item.authors,
             tagsText: item.tags,
             draft: item.draft === 'true',
-            body: item.reason
+            body: isPlanned ? '' : item.reason
           }
         })
       });

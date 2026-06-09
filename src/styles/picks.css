@@ -423,6 +423,16 @@
   padding-left: 34px;
 }
 
+.picks-content h2.picks-planned-heading {
+  margin-top: 34px;
+}
+
+.picks-content h3.picks-planned-title {
+  margin: 14px 0 8px;
+  color: var(--muted);
+  font-weight: 500;
+}
+
 .picks-content h3::before {
   content: attr(data-num);
   position: absolute;

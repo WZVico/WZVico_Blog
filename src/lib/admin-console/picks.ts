@@ -9,6 +9,7 @@ import { formatISODate } from '../../utils/format';
 import { splitTagInput } from '../../utils/tag-input';
 
 export type AdminPickCreateItem = {
+  status: AdminPickStatus;
   year: number;
   date: string;
   title: string;
@@ -16,6 +17,7 @@ export type AdminPickCreateItem = {
   reason: string;
   tags: string[];
 };
+export type AdminPickStatus = 'shared' | 'planned';
 
 export type AdminPicksStats = {
   itemCount: number;
@@ -99,6 +101,8 @@ const splitLooseList = (value: string): string[] =>
   );
 
 const splitTags = (value: string): string[] => splitTagInput(value, { stripLeadingHash: true });
+const normalizePickStatus = (value: unknown): AdminPickStatus =>
+  value === 'planned' ? 'planned' : 'shared';
 
 const normalizeTags = (value: unknown): string[] => {
   if (Array.isArray(value)) {
@@ -170,6 +174,7 @@ export const normalizePickCreateInput = (body: unknown): AdminPickCreateResult =
 
   const rawItem = isRecord(body.item) ? body.item : body;
   const timestamp = createPickLocalTimestamp();
+  const status = normalizePickStatus(rawItem.status);
   const title = normalizePickTitle(asTrimmedString(rawItem.title));
   const authors = normalizeAuthors(rawItem.authors ?? rawItem.creator);
   const reason = normalizeReason(asTrimmedString(rawItem.reason));
@@ -177,11 +182,11 @@ export const normalizePickCreateInput = (body: unknown): AdminPickCreateResult =
   const errors: string[] = [];
 
   if (!title) errors.push('请填写拾选标题');
-  if (!reason) errors.push('请填写推荐理由');
+  if (status === 'shared' && !reason) errors.push('请填写推荐理由');
 
   for (const [field, value, limit] of [
     ['标题', title, MAX_TITLE_LENGTH],
-    ['推荐理由', reason, MAX_REASON_LENGTH]
+    ...(reason ? [['推荐理由', reason, MAX_REASON_LENGTH] as const] : [])
   ] as const) {
     if (value.length > limit) errors.push(`${field}过长`);
     if (hasControlCharacters(value)) errors.push(`${field}包含不可见控制字符`);
@@ -211,11 +216,12 @@ export const normalizePickCreateInput = (body: unknown): AdminPickCreateResult =
 
   return {
     item: {
+      status,
       year: timestamp.year,
       date: timestamp.date,
       title,
       authors,
-      reason,
+      reason: status === 'planned' ? '' : reason,
       tags
     },
     errors
@@ -264,6 +270,10 @@ export const buildPickMarkdownFile = (item: AdminPickCreateItem): string => {
     `year: ${item.year}`
   ];
 
+  if (item.status === 'planned') {
+    lines.push('status: planned');
+  }
+
   if (item.authors.length > 0) {
     lines.push('authors:');
     item.authors.forEach((author) => {
@@ -278,7 +288,10 @@ export const buildPickMarkdownFile = (item: AdminPickCreateItem): string => {
     });
   }
 
-  lines.push('draft: false', '---', '', item.reason, '');
+  lines.push('draft: false', '---', '');
+  if (item.reason) {
+    lines.push(item.reason, '');
+  }
 
   return `${lines.join('\n')}\n`;
 };

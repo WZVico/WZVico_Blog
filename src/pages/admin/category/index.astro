@@ -1,5 +1,6 @@
 ---
 import AdminLayout from '../../../components/admin/AdminLayout.astro';
+import AdminIcon from '../../../components/admin/AdminIcon.astro';
 import AdminReadonlyNotice from '../../../components/admin/AdminReadonlyNotice.astro';
 import AdminShell from '../../../components/admin/AdminShell.astro';
 import AuthorLibraryManager from '../../../components/admin/AuthorLibraryManager.astro';
@@ -289,7 +290,13 @@ const selectedStats = shouldShowAuthorConsole
 
             {
               categoryEntryCollection ? (
-                <section class="admin-category-entry" aria-labelledby="admin-category-entry-title">
+                <section
+                  class="admin-category-entry"
+                  aria-labelledby="admin-category-entry-title"
+                  data-category-entry-list-root
+                  data-category-entry-endpoint={categoryEntryEndpoint}
+                  data-category-entry-clear-href={buildClearEntryHref()}
+                >
                   <div class="admin-category-entry__head">
                     <div>
                       <p class="admin-overview-card__eyebrow">Existing Content</p>
@@ -319,13 +326,19 @@ const selectedStats = shouldShowAuthorConsole
                     {categoryEntryQuery ? <a class="admin-btn admin-btn--ghost" href={buildCategoryBaseHref()}>清空</a> : null}
                   </form>
 
-                  <div class="admin-category-entry__list" aria-label={`${selectedTab.label} 已有内容列表`}>
+                  <p class="admin-category-entry__delete-status" data-category-entry-delete-status role="status" aria-live="polite"></p>
+
+                  <div class="admin-category-entry__list" data-category-entry-list aria-label={`${selectedTab.label} 已有内容列表`}>
                     {
                       categoryEntryItems.length > 0 ? (
                         categoryEntryItems.slice(0, 7).map((item) => {
                           const isActive = selectedEntryPayload?.entryId === item.entryId;
                           return (
-                            <article class:list={['admin-category-entry__item', isActive && 'is-active']}>
+                            <article
+                              class:list={['admin-category-entry__item', isActive && 'is-active']}
+                              data-category-entry-item
+                              data-category-entry-active={isActive ? 'true' : undefined}
+                            >
                               <div class="admin-category-entry__item-main">
                                 <div class="admin-category-entry__item-title-row">
                                   <h4 class="admin-category-entry__item-title">{item.title}</h4>
@@ -360,6 +373,21 @@ const selectedStats = shouldShowAuthorConsole
                                 <a class="admin-btn admin-btn--secondary admin-btn--compact" href={buildCategoryEntryHref(item.entryId)}>
                                   {isActive ? '正在编辑' : '编辑'}
                                 </a>
+                                <button
+                                  class="admin-btn admin-btn--danger admin-btn--compact admin-category-entry__delete"
+                                  type="button"
+                                  data-category-entry-delete
+                                  data-category-entry-collection={item.collection}
+                                  data-category-entry-id={item.entryId}
+                                  data-category-entry-revision={item.revision}
+                                  data-category-entry-title={item.title}
+                                  data-category-entry-path={item.relativePath}
+                                  aria-label={`删除 ${item.title}`}
+                                  title={`删除 ${item.relativePath}`}
+                                >
+                                  <AdminIcon name="trash" size={14} />
+                                  <span>删除</span>
+                                </button>
                               </div>
                             </article>
                           );
@@ -461,6 +489,31 @@ const selectedStats = shouldShowAuthorConsole
 
                     <form class="admin-category-picks-create__form" data-picks-create-form>
                       <article class="admin-category-picks-create__row">
+                        <fieldset class="admin-category-picks-create__field admin-category-picks-create__field--status">
+                          <legend>状态</legend>
+                          <span class="admin-category-picks-create__status-options">
+                            <label class="admin-category-picks-create__status-option">
+                              <input
+                                data-pick-field="status"
+                                name="pick-status"
+                                type="radio"
+                                value="shared"
+                                checked={!selectedPicksEditPayload || getEditorText('status') !== 'planned'}
+                              />
+                              <span>已分享</span>
+                            </label>
+                            <label class="admin-category-picks-create__status-option">
+                              <input
+                                data-pick-field="status"
+                                name="pick-status"
+                                type="radio"
+                                value="planned"
+                                checked={selectedPicksEditPayload ? getEditorText('status') === 'planned' : false}
+                              />
+                              <span>待拾</span>
+                            </label>
+                          </span>
+                        </fieldset>
                         <label class="admin-category-picks-create__field admin-category-picks-create__field--title">
                           <span>作品名 *</span>
                           <input class="admin-field__control" data-pick-field="title" type="text" autocomplete="off" placeholder="《置身事内》" value={selectedPicksEditPayload ? getEditorText('title') : ''} />
@@ -748,6 +801,16 @@ const selectedStats = shouldShowAuthorConsole
       )
     }
   </AdminShell>
+
+  {
+    isDev && categoryEntryCollection ? (
+      <script>
+        import { initCategoryEntryDeletion } from '../../../scripts/category-entry-editor';
+
+        initCategoryEntryDeletion();
+      </script>
+    ) : null
+  }
 
   {
     shouldShowLongformCreateConsole ? (

@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 
-import { parsePicksMarkdownStats } from '../src/lib/admin-console/picks';
+import {
+  buildPickMarkdownFile,
+  normalizePickCreateInput,
+  parsePicksMarkdownStats
+} from '../src/lib/admin-console/picks';
 
 describe('admin-console/picks', () => {
   it('does not treat picks page frontmatter as a content update when no picks exist', () => {
@@ -40,5 +44,32 @@ describe('admin-console/picks', () => {
       itemCount: 1,
       latestPickDateLabel: '2026-05-19'
     });
+  });
+
+  it('creates planned picks with title, authors, and optional tags', () => {
+    const result = normalizePickCreateInput({
+      item: {
+        status: 'planned',
+        title: '沙丘',
+        authors: 'Frank Herbert',
+        tags: '科幻',
+        reason: ''
+      }
+    });
+
+    expect(result.errors).toEqual([]);
+    expect(result.item).toMatchObject({
+      status: 'planned',
+      title: '《沙丘》',
+      authors: ['Frank Herbert'],
+      reason: '',
+      tags: ['科幻']
+    });
+
+    const markdown = buildPickMarkdownFile(result.item!);
+    expect(markdown).toContain('status: planned');
+    expect(markdown).toContain('authors:\n  - Frank Herbert');
+    expect(markdown).toContain('tags:\n  - 科幻');
+    expect(markdown.trim().endsWith('---')).toBe(true);
   });
 });

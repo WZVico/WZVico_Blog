@@ -18,6 +18,7 @@ const DEFAULT_READS_INTRO = [
   '每一本只留下最直接的理由：它解决了什么问题，带来什么视角，适合谁在什么时候翻开。',
   '书单会慢慢更新，不追求完整，只保留真正想分享的部分。'
 ];
+const PLANNED_READS_TITLE = '待拾';
 
 const entry = await getEntry('picks', 'index');
 if (!entry) {
@@ -39,18 +40,20 @@ const readsIntro = entry.data.intro?.length ? entry.data.intro : DEFAULT_READS_I
 // Build a grouped TOC from one-file-per-pick entries. The index file only stores page metadata.
 type TocItem = { text: string; slug: string };
 type TocGroup = { title: string; items: TocItem[] };
+type PickStatus = 'shared' | 'planned';
 type PickFileItem = {
   id: string;
   title: string;
   tocText: string;
   authors: string[];
   tags: string[];
+  status: PickStatus;
+  identityKey: string;
   year: number;
   dateValue: number;
   Content: AstroComponentFactory;
 };
 
-const getPickTocText = (text: string) => text.replace(/^(《[^》]+》)\s*-\s*.+$/, '$1');
 const getPickFileTitle = (item: Pick<{ title: string; authors: string[] }, 'title' | 'authors'>) =>
   item.authors.length > 0 ? `${item.title}- ${item.authors.join('、')}` : item.title;
 const getPickFileAnchorId = (id: string) =>
@@ -61,6 +64,14 @@ const getPickFileYear = (id: string, year: number | undefined, date: Date | unde
   const pathYear = Number(id.match(/\b(20\d{2}|19\d{2})\b/)?.[1]);
   return Number.isFinite(pathYear) ? pathYear : 0;
 };
+const normalizePickIdentityPart = (value: string) =>
+  value
+    .normalize('NFKC')
+    .replace(/[《》]/g, '')
+    .replace(/\s+/g, '')
+    .toLowerCase();
+const getPickIdentityKey = (title: string, authors: string[]) =>
+  `${normalizePickIdentityPart(title)}::${authors.map(normalizePickIdentityPart).join('|')}`;
 
 const pickEntries = await getCollection('picks', ({ id, data }) =>
   !isPicksIndexEntryId(id) && (!prod || data.draft !== true)
@@ -78,17 +89,24 @@ const pickFileItems = await Promise.all(
     return {
       id: getPickFileAnchorId(pickEntry.id),
       title,
-      tocText: getPickTocText(title),
+      tocText: pickEntry.data.title,
       authors,
       tags: pickEntry.data.tags ?? [],
+      status: pickEntry.data.status,
+      identityKey: getPickIdentityKey(pickEntry.data.title, authors),
       year,
       dateValue: pickEntry.data.date?.valueOf() ?? 0,
       Content: rendered.Content
     } satisfies PickFileItem;
   })
 );
+const sharedPickFileItems = pickFileItems.filter((item) => item.status !== 'planned');
+const sharedPickIdentityKeys = new Set(sharedPickFileItems.map((item) => item.identityKey));
+const plannedPickFileItems = pickFileItems
+  .filter((item) => item.status === 'planned' && !sharedPickIdentityKeys.has(item.identityKey))
+  .sort((left, right) => right.dateValue - left.dateValue || left.title.localeCompare(right.title));
 const pickFileGroups = Array.from(
-  pickFileItems
+  sharedPickFileItems
     .sort((left, right) => right.dateValue - left.dateValue || left.title.localeCompare(right.title))
     .reduce((map, item) => {
       const key = item.year || new Date(item.dateValue).getFullYear();
@@ -112,6 +130,16 @@ const groups: TocGroup[] = pickFileGroups.map((group) => ({
     slug: item.id
   }))
 }));
+if (plannedPickFileItems.length > 0) {
+  groups.unshift({
+    title: PLANNED_READS_TITLE,
+    items: plannedPickFileItems.map((item) => ({
+      text: item.tocText,
+      slug: item.id
+    }))
+  });
+}
+const hasPickList = plannedPickFileItems.length > 0 || pickFileGroups.length > 0;
 ---
 
 <BaseLayout
@@ -185,7 +213,7 @@ const groups: TocGroup[] = pickFileGroups.map((group) => ({
       ))}
     </div>
 
-    {pickFileGroups.length ? (
+    {hasPickList ? (
       <>
         <nav class="picks-toc" aria-label="目录">
           {groups.map((g) => (
@@ -224,6 +252,23 @@ const groups: TocGroup[] = pickFileGroups.map((group) => ({
               ))}
             </>
           ))}
+          {plannedPickFileItems.length ? (
+            <>
+              <h2 class="picks-planned-heading">{PLANNED_READS_TITLE}</h2>
+              {plannedPickFileItems.map((item) => (
+                <>
+                  <h3 id={item.id} class="picks-planned-title">{item.title}</h3>
+                  {item.tags.length ? (
+                    <p class="pick-tags" aria-label="标签">
+                      {item.tags.map((tag) => (
+                        <span class="pick-tag">#{tag.replace(/^#+/, '')}</span>
+                      ))}
+                    </p>
+                  ) : null}
+                </>
+              ))}
+            </>
+          ) : null}
         </div>
       </>
     ) : (

@@ -145,3 +145,96 @@ export const initCategoryEntryEditor = (): void => {
     }
   });
 };
+
+export const initCategoryEntryDeletion = (): void => {
+  const root = query<HTMLElement>(document, '[data-category-entry-list-root]');
+  if (!root || root.dataset.deleteInitialized === 'true') return;
+  root.dataset.deleteInitialized = 'true';
+
+  const endpoint = root.dataset.categoryEntryEndpoint?.trim() ?? '';
+  const clearHref = root.dataset.categoryEntryClearHref?.trim() ?? '';
+  const statusEl = query<HTMLElement>(root, '[data-category-entry-delete-status]');
+  const listEl = query<HTMLElement>(root, '[data-category-entry-list]');
+  const deleteButtons = queryAll<HTMLButtonElement>(root, '[data-category-entry-delete]');
+
+  if (!endpoint || deleteButtons.length === 0) return;
+
+  const renderEmptyState = () => {
+    if (!listEl || query<HTMLElement>(listEl, '[data-category-entry-item]')) return;
+    const emptyEl = document.createElement('p');
+    emptyEl.className = 'admin-category-entry__empty';
+    emptyEl.textContent = '当前列表已经没有内容。';
+    listEl.append(emptyEl);
+  };
+
+  deleteButtons.forEach((button) => {
+    button.addEventListener('click', async () => {
+      clearStatus(statusEl);
+
+      const collection = button.dataset.categoryEntryCollection?.trim() ?? '';
+      const entryId = button.dataset.categoryEntryId?.trim() ?? '';
+      const revision = button.dataset.categoryEntryRevision?.trim() ?? '';
+      const title = button.dataset.categoryEntryTitle?.trim() || entryId || '当前内容';
+      const relativePath = button.dataset.categoryEntryPath?.trim() ?? '';
+
+      if (!collection || !entryId || !revision) {
+        setStatus(statusEl, '删除参数不完整，请刷新页面后再试。', 'error');
+        return;
+      }
+
+      const confirmText = [
+        `确认删除「${title}」？`,
+        relativePath ? `这会从 Git 工作区移除 ${relativePath}。` : '这会从 Git 工作区移除对应内容文件。',
+        '删除后可通过 Git 找回，但当前页面不会再显示这条内容。'
+      ].join('\n\n');
+      if (!window.confirm(confirmText)) return;
+
+      button.disabled = true;
+      button.setAttribute('aria-busy', 'true');
+      setStatus(statusEl, relativePath ? `正在删除：${relativePath}` : '正在删除内容...');
+
+      try {
+        const response = await fetch(endpoint, {
+          method: 'DELETE',
+          headers: {
+            accept: 'application/json',
+            'content-type': 'application/json'
+          },
+          body: JSON.stringify({
+            collection,
+            entryId,
+            revision
+          })
+        });
+        const result = await response.json().catch(() => null) as SaveResponse | null;
+
+        if (!response.ok || !result?.ok) {
+          const errors = getErrors(result);
+          throw new Error(errors[0] ?? '删除内容失败');
+        }
+
+        const deletedPath = typeof result.result?.relativePath === 'string'
+          ? result.result.relativePath
+          : relativePath;
+        const itemEl = button.closest<HTMLElement>('[data-category-entry-item]');
+        const isActive = itemEl?.dataset.categoryEntryActive === 'true' || itemEl?.classList.contains('is-active');
+        itemEl?.remove();
+        setStatus(statusEl, deletedPath ? `已删除：${deletedPath}` : '已删除内容。', 'success');
+
+        if (isActive && clearHref) {
+          window.setTimeout(() => {
+            window.location.assign(clearHref);
+          }, 300);
+          return;
+        }
+
+        renderEmptyState();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : '删除内容失败';
+        setStatus(statusEl, message, 'error');
+        button.disabled = false;
+        button.setAttribute('aria-busy', 'false');
+      }
+    });
+  });
+};

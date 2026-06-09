@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { unlink } from 'node:fs/promises';
 import {
   ADMIN_JSON_HEADERS,
   createAdminWriteQueue,
@@ -11,6 +12,7 @@ import {
   AdminCategoryEntryError,
   buildAdminCategoryEntryContent,
   isAdminCategoryEntryCollection,
+  readAdminCategoryEntryDeleteTarget,
   readAdminCategoryEntryPayload,
   type AdminCategoryEntryCollection
 } from '../../../../lib/admin-console/category-entry';
@@ -20,7 +22,7 @@ const DEV_ONLY_NOT_FOUND_RESPONSE = new Response('Not Found', { status: 404 });
 const METHOD_NOT_ALLOWED_RESPONSE = new Response('Method Not Allowed', {
   status: 405,
   headers: {
-    allow: 'GET, POST',
+    allow: 'GET, POST, DELETE',
     'cache-control': 'no-store'
   }
 });
@@ -213,6 +215,109 @@ export const POST: APIRoute = async ({ request, url }) => {
     } catch (error) {
       console.error('[astro-whono] Failed to persist category entry:', error);
       return createJsonErrorResponse(500, ['写入内容文件失败，请检查本地文件权限或日志']);
+    }
+  });
+};
+
+export const DELETE: APIRoute = async ({ request, url }) => {
+  if (!import.meta.env.DEV && !process.env.VITEST) {
+    return DEV_ONLY_NOT_FOUND_RESPONSE.clone();
+  }
+
+  const requestError = validateAdminJsonWriteRequest(request, url, 'Category Console 内容删除');
+  if (requestError) {
+    return createJsonErrorResponse(requestError.status, [requestError.error]);
+  }
+
+  const bodyResult = await readAdminJsonRequestBody(request, {
+    emptyBodyError: '请求体为空，请确认已发送 JSON 字符串'
+  });
+  if (!bodyResult.ok) {
+    return createJsonErrorResponse(bodyResult.status, [bodyResult.error]);
+  }
+
+  if (!isRecord(bodyResult.body)) {
+    return createJsonErrorResponse(400, ['请求体必须是 JSON 对象'], [
+      { path: 'body', message: '请求体必须是 JSON 对象' }
+    ]);
+  }
+
+  const collection = resolveCollection(bodyResult.body.collection);
+  const entryId = typeof bodyResult.body.entryId === 'string' ? bodyResult.body.entryId.trim() : '';
+  const revision = typeof bodyResult.body.revision === 'string' ? bodyResult.body.revision.trim() : '';
+
+  const issues: { path: string; message: string }[] = [];
+  if (!collection) issues.push({ path: 'collection', message: '不支持或缺少 collection' });
+  if (!entryId) issues.push({ path: 'entryId', message: '缺少 entryId' });
+  if (!revision) issues.push({ path: 'revision', message: '缺少 revision' });
+  if (issues.length > 0 || !collection || !entryId || !revision) {
+    return createJsonErrorResponse(400, issues.map((issue) => issue.message), issues);
+  }
+
+  const isDryRun = isAdminDryRunRequest(url);
+
+  return withAdminCategoryEntryWriteLock(async () => {
+    let target: Awaited<ReturnType<typeof readAdminCategoryEntryDeleteTarget>>;
+    try {
+      target = await readAdminCategoryEntryDeleteTarget(collection, entryId);
+    } catch (error) {
+      const errorResponse = createEntryErrorResponse(error);
+      if (errorResponse) return errorResponse;
+      throw error;
+    }
+
+    if (target.revision !== revision) {
+      let currentPayload: Awaited<ReturnType<typeof readAdminCategoryEntryPayload>> | null = null;
+      try {
+        currentPayload = await readAdminCategoryEntryPayload(collection, entryId);
+      } catch {}
+
+      return new Response(
+        JSON.stringify(
+          {
+            ok: false,
+            errors: ['检测到内容文件已在外部更新，已拒绝删除，请刷新当前条目后再操作'],
+            ...(currentPayload ? { payload: currentPayload } : {})
+          },
+          null,
+          2
+        ),
+        { status: 409, headers: JSON_HEADERS }
+      );
+    }
+
+    const result = {
+      relativePath: target.relativePath,
+      dryRun: isDryRun,
+      deleted: false
+    };
+
+    if (isDryRun) {
+      return new Response(JSON.stringify({ ok: true, result }, null, 2), {
+        headers: JSON_HEADERS
+      });
+    }
+
+    try {
+      await unlink(target.sourcePath);
+
+      return new Response(
+        JSON.stringify(
+          {
+            ok: true,
+            result: {
+              ...result,
+              deleted: true
+            }
+          },
+          null,
+          2
+        ),
+        { headers: JSON_HEADERS }
+      );
+    } catch (error) {
+      console.error('[astro-whono] Failed to delete category entry:', error);
+      return createJsonErrorResponse(500, ['删除内容文件失败，请检查本地文件权限或日志']);
     }
   });
 };

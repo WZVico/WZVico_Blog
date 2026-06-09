@@ -18,6 +18,7 @@ export type AdminCategoryEntryListItem = {
   collection: AdminCategoryEntryCollection;
   entryId: string;
   relativePath: string;
+  revision: string;
   title: string;
   date: string;
   year: number | null;
@@ -34,6 +35,14 @@ export type AdminCategoryEntryPayload = {
   relativePath: string;
   revision: string;
   values: Record<string, string | boolean>;
+};
+
+export type AdminCategoryEntryDeleteTarget = {
+  collection: AdminCategoryEntryCollection;
+  entryId: string;
+  sourcePath: string;
+  relativePath: string;
+  revision: string;
 };
 
 export type AdminCategoryEntryValidationIssue = {
@@ -251,6 +260,7 @@ const readListItem = async (
     collection,
     entryId,
     relativePath: toRelativeProjectPath(filePath),
+    revision: hashSourceText(sourceText),
     title,
     date,
     year: getYear(date),
@@ -352,6 +362,7 @@ const toPayloadValues = (state: SourceState): Record<string, string | boolean> =
       title: normalizeOptionalText(frontmatter.title),
       date,
       year: normalizeOptionalText(frontmatter.year),
+      status: normalizeOptionalText(frontmatter.status) === 'planned' ? 'planned' : 'shared',
       authorsText: getStringArray(frontmatter.authors).join('\n'),
       tagsText,
       draft: frontmatter.draft === true,
@@ -380,6 +391,24 @@ export const readAdminCategoryEntryPayload = async (
     relativePath: state.relativePath,
     revision: state.revision,
     values: toPayloadValues(state)
+  };
+};
+
+export const readAdminCategoryEntryDeleteTarget = async (
+  collection: AdminCategoryEntryCollection,
+  entryId: string
+): Promise<AdminCategoryEntryDeleteTarget> => {
+  const state = await loadSourceState(collection, entryId);
+  if (state.collection === 'picks' && state.entryId === 'index') {
+    throw new AdminCategoryEntryError(400, 'entryId', 'picks/index.md 是页面介绍文件，不能从已有内容列表删除');
+  }
+
+  return {
+    collection: state.collection,
+    entryId: state.entryId,
+    sourcePath: state.sourcePath,
+    relativePath: state.relativePath,
+    revision: state.revision
   };
 };
 
@@ -549,8 +578,11 @@ const buildPicks = (state: SourceState, input: Record<string, unknown>): BuildRe
   const date = getInputString(input, 'date');
   const yearRaw = getInputString(input, 'year');
   const year = Number.parseInt(yearRaw || date.slice(0, 4), 10);
+  const status = getInputString(input, 'status') === 'planned' ? 'planned' : 'shared';
+  const body = status === 'planned' ? '' : getInputString(input, 'body');
 
   if (!title) issues.push(createIssue('title', '请填写拾选标题'));
+  if (status === 'shared' && !body) issues.push(createIssue('body', '请填写推荐理由'));
   if (date && Number.isNaN(Date.parse(date))) issues.push(createIssue('date', '拾选日期不合法'));
   if (yearRaw && Number.isNaN(year)) issues.push(createIssue('year', '年份必须是数字'));
   if (issues.length > 0) return { issues };
@@ -558,6 +590,7 @@ const buildPicks = (state: SourceState, input: Record<string, unknown>): BuildRe
   frontmatter.title = title;
   setOptional(frontmatter, 'date', date, Boolean(date));
   setOptional(frontmatter, 'year', year, !Number.isNaN(year));
+  setOptional(frontmatter, 'status', 'planned', status === 'planned');
   frontmatter.authors = splitLines(getInputString(input, 'authorsText'));
   frontmatter.tags = splitTags(getInputString(input, 'tagsText'));
   frontmatter.draft = getInputBoolean(input, 'draft');
@@ -565,7 +598,7 @@ const buildPicks = (state: SourceState, input: Record<string, unknown>): BuildRe
 
   return {
     issues,
-    content: stringifyMarkdown(frontmatter, getInputString(input, 'body'), state.lineEnding)
+    content: stringifyMarkdown(frontmatter, body, state.lineEnding)
   };
 };
 
