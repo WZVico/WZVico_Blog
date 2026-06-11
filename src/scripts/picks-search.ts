@@ -178,7 +178,9 @@ const buildIndex = (): PicksItem[] => {
   const commitItem = () => {
     if (!currentHeading) return;
 
-    const title = (currentHeading.textContent ?? '').trim();
+    const title =
+      currentHeading.dataset.pickTitle?.trim() ||
+      (currentHeading.textContent ?? '').replace(/\s+/g, ' ').trim();
     const tags = currentNodes
       .flatMap((node) => Array.from(node.querySelectorAll<HTMLElement>('.pick-tag')))
       .map((tag) => (tag.textContent ?? '').trim())

@@ -110,7 +110,8 @@ export const POST: APIRoute = async ({ request, url }) => {
         ], {
           beforeWrite: async () => {
             await mkdir(dirname(filePath), { recursive: true });
-          }
+          },
+          commitStrategy: 'overwrite-existing'
         });
 
         return new Response(

@@ -194,7 +194,9 @@ export const POST: APIRoute = async ({ request, url }) => {
           filePath: plan.state.sourcePath,
           content: plan.content
         }
-      ]);
+      ], {
+        commitStrategy: 'overwrite-existing'
+      });
       const latestPayload = await readAdminCategoryEntryPayload(collection, entryId);
 
       return new Response(

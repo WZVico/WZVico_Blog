@@ -240,7 +240,9 @@ export const POST: APIRoute = async ({ request, url }) => {
           filePath: plan.state.sourcePath,
           content: nextSourceText
         }
-      ]);
+      ], {
+        commitStrategy: 'overwrite-existing'
+      });
       const latestPayload = await readAdminContentEntryEditorPayload(collection, entryId);
 
       return new Response(

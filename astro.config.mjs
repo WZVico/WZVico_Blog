@@ -1,3 +1,4 @@
+import { promises as nodeFsPromises } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'astro/config';
 import sitemap from '@astrojs/sitemap';
@@ -7,6 +8,54 @@ import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
 import remarkCallout from './src/plugins/remark-callout.mjs';
 import shikiToolbar from './src/plugins/shiki-toolbar.mjs';
 import { site, hasSiteUrl } from './site.config.mjs';
+
+const ASTRO_DATA_STORE_RENAME_RETRY_KEY = Symbol.for('astro-whono.astroDataStoreRenameRetry');
+
+const normalizePathLike = (value) => String(value).replace(/\\/g, '/');
+
+const sleep = (ms) => new Promise((resolve) => {
+  setTimeout(resolve, ms);
+});
+
+const isRetryableRenameError = (error) =>
+  error
+  && typeof error === 'object'
+  && ['EPERM', 'EACCES', 'EBUSY'].includes(error.code)
+  && (!error.syscall || error.syscall === 'rename');
+
+const shouldRetryAstroDataStoreRename = (oldPath, newPath, error) =>
+  process.platform === 'win32'
+  && isRetryableRenameError(error)
+  && normalizePathLike(oldPath).endsWith('/data-store.json.tmp')
+  && normalizePathLike(newPath).endsWith('/data-store.json');
+
+const installAstroDataStoreRenameRetry = () => {
+  if (globalThis[ASTRO_DATA_STORE_RENAME_RETRY_KEY]) return;
+  globalThis[ASTRO_DATA_STORE_RENAME_RETRY_KEY] = true;
+
+  const originalRename = nodeFsPromises.rename.bind(nodeFsPromises);
+  nodeFsPromises.rename = async (oldPath, newPath) => {
+    const delays = [40, 80, 160, 320, 640, 960];
+    let lastError;
+
+    for (let attempt = 0; attempt <= delays.length; attempt += 1) {
+      try {
+        return await originalRename(oldPath, newPath);
+      } catch (error) {
+        lastError = error;
+        if (attempt >= delays.length || !shouldRetryAstroDataStoreRename(oldPath, newPath, error)) {
+          throw error;
+        }
+
+        await sleep(delays[attempt]);
+      }
+    }
+
+    throw lastError;
+  };
+};
+
+installAstroDataStoreRenameRetry();
 
 const getSchemaAttrs = (tagName) => {
   const attrs = defaultSchema.attributes?.[tagName];

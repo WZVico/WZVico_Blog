@@ -1,4 +1,4 @@
-import { access, rename, rm, writeFile } from 'node:fs/promises';
+import { access, readFile, rename, rm, writeFile } from 'node:fs/promises';
 
 export type AdminWriteRequestValidation = {
   status: number;
@@ -23,11 +23,23 @@ export type AdminFileTransactionEntry<TId extends string = string> = {
 };
 
 type AdminFileTransactionOperation<TId extends string> = AdminFileTransactionEntry<TId> & {
-  tempPath: string;
+  tempPath: string | null;
   backupPath: string;
   existed: boolean;
   committed: boolean;
   backupCreated: boolean;
+  previousContent?: string;
+};
+
+type PersistAdminFileTransactionOptions = {
+  beforeWrite?: () => Promise<void>;
+  /**
+   * Existing content files are watched by Astro during dev. Replacing them with
+   * a rename sequence emits unlink + add on Windows, which can race Astro's
+   * content-store cache writer. This strategy keeps new-file creation atomic
+   * while turning existing-file updates into a single change event.
+   */
+  commitStrategy?: 'atomic' | 'overwrite-existing';
 };
 
 export const ADMIN_JSON_HEADERS = {
@@ -151,33 +163,59 @@ export const createAdminWriteQueue = (): (<T>(task: () => Promise<T>) => Promise
 
 export const persistAdminFileTransaction = async <TId extends string>(
   entries: readonly AdminFileTransactionEntry<TId>[],
-  options: {
-    beforeWrite?: () => Promise<void>;
-  } = {}
+  options: PersistAdminFileTransactionOptions = {}
 ): Promise<TId[]> => {
   if (entries.length === 0) return [];
 
   await options.beforeWrite?.();
 
   const operations: AdminFileTransactionOperation<TId>[] = [];
+  const shouldOverwriteExisting = options.commitStrategy === 'overwrite-existing';
   try {
     for (const entry of entries) {
-      const tempPath = createTransientFilePath(entry.filePath, 'tmp');
-      await writeFile(tempPath, entry.content, 'utf8');
-      operations.push({
+      const existed = await fileExists(entry.filePath);
+      const previousContent = shouldOverwriteExisting && existed
+        ? await readFile(entry.filePath, 'utf8')
+        : undefined;
+      const tempPath = shouldOverwriteExisting && existed
+        ? null
+        : createTransientFilePath(entry.filePath, 'tmp');
+
+      if (tempPath) {
+        await writeFile(tempPath, entry.content, 'utf8');
+      }
+
+      const operation: AdminFileTransactionOperation<TId> = {
         ...entry,
         tempPath,
         backupPath: createTransientFilePath(entry.filePath, 'bak'),
-        existed: await fileExists(entry.filePath),
+        existed,
         committed: false,
         backupCreated: false
-      });
+      };
+      if (previousContent !== undefined) {
+        operation.previousContent = previousContent;
+      }
+      operations.push(operation);
     }
 
     for (const operation of operations) {
+      if (shouldOverwriteExisting && operation.existed) {
+        if (operation.previousContent === operation.content) {
+          continue;
+        }
+
+        await writeFile(operation.filePath, operation.content, 'utf8');
+        operation.committed = true;
+        continue;
+      }
+
       if (operation.existed) {
         await rename(operation.filePath, operation.backupPath);
         operation.backupCreated = true;
+      }
+      if (!operation.tempPath) {
+        throw new Error(`Missing temp path for ${operation.filePath}`);
       }
       await rename(operation.tempPath, operation.filePath);
       operation.committed = true;
@@ -194,16 +232,22 @@ export const persistAdminFileTransaction = async <TId extends string>(
     for (const operation of [...operations].reverse()) {
       try {
         if (operation.committed) {
-          await rm(operation.filePath, { force: true });
-          if (operation.backupCreated) {
-            await rename(operation.backupPath, operation.filePath);
+          if (operation.previousContent !== undefined) {
+            await writeFile(operation.filePath, operation.previousContent, 'utf8');
+          } else {
+            await rm(operation.filePath, { force: true });
+            if (operation.backupCreated) {
+              await rename(operation.backupPath, operation.filePath);
+            }
           }
         } else if (operation.backupCreated) {
           await rename(operation.backupPath, operation.filePath);
         }
       } catch {}
 
-      await rm(operation.tempPath, { force: true }).catch(() => {});
+      if (operation.tempPath) {
+        await rm(operation.tempPath, { force: true }).catch(() => {});
+      }
     }
 
     throw error;

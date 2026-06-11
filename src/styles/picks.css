@@ -423,6 +423,23 @@
   padding-left: 34px;
 }
 
+.picks-content .pick-heading__title {
+  overflow-wrap: anywhere;
+}
+
+.picks-content .pick-heading__credit {
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  vertical-align: baseline;
+}
+
+.picks-content .pick-heading--authors-stacked .pick-heading__credit {
+  display: block;
+  margin-top: 2px;
+  white-space: normal;
+}
+
 .picks-content h2.picks-planned-heading {
   margin-top: 34px;
 }
@@ -480,6 +497,11 @@
   background: #242424;
   border-color: #3a3a3a;
   color: var(--muted);
+}
+
+.picks-content h3.pick-heading--authors-stacked::before {
+  top: 0.15em;
+  transform: none;
 }
 
 body.picks-page[data-reading="immersive"] .prose {

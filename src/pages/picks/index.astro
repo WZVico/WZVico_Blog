@@ -44,6 +44,8 @@ type PickStatus = 'shared' | 'planned';
 type PickFileItem = {
   id: string;
   title: string;
+  workTitle: string;
+  authorText: string;
   tocText: string;
   authors: string[];
   tags: string[];
@@ -55,7 +57,7 @@ type PickFileItem = {
 };
 
 const getPickFileTitle = (item: Pick<{ title: string; authors: string[] }, 'title' | 'authors'>) =>
-  item.authors.length > 0 ? `${item.title}- ${item.authors.join('、')}` : item.title;
+  item.authors.length > 0 ? `${item.title} - ${item.authors.join('、')}` : item.title;
 const getPickFileAnchorId = (id: string) =>
   `pick-${id.replace(/\.md$/i, '').replace(/[^a-zA-Z0-9\u4e00-\u9fa5]+/g, '-').replace(/^-+|-+$/g, '')}`;
 const getPickFileYear = (id: string, year: number | undefined, date: Date | undefined) => {
@@ -89,6 +91,8 @@ const pickFileItems = await Promise.all(
     return {
       id: getPickFileAnchorId(pickEntry.id),
       title,
+      workTitle: pickEntry.data.title,
+      authorText: authors.join('、'),
       tocText: pickEntry.data.title,
       authors,
       tags: pickEntry.data.tags ?? [],
@@ -239,7 +243,10 @@ const hasPickList = plannedPickFileItems.length > 0 || pickFileGroups.length > 0
               <h2>{group.year}</h2>
               {group.items.map((item) => (
                 <>
-                  <h3 id={item.id}>{item.title}</h3>
+                  <h3 id={item.id} class="pick-heading" data-pick-heading data-pick-title={item.title}>
+                    <span class="pick-heading__title">{item.workTitle}</span>
+                    {item.authorText ? <span class="pick-heading__credit"> - {item.authorText}</span> : null}
+                  </h3>
                   <item.Content />
                   {item.tags.length ? (
                     <p class="pick-tags" aria-label="标签">
@@ -257,7 +264,10 @@ const hasPickList = plannedPickFileItems.length > 0 || pickFileGroups.length > 0
               <h2 class="picks-planned-heading">{PLANNED_READS_TITLE}</h2>
               {plannedPickFileItems.map((item) => (
                 <>
-                  <h3 id={item.id} class="picks-planned-title">{item.title}</h3>
+                  <h3 id={item.id} class="pick-heading picks-planned-title" data-pick-heading data-pick-title={item.title}>
+                    <span class="pick-heading__title">{item.workTitle}</span>
+                    {item.authorText ? <span class="pick-heading__credit"> - {item.authorText}</span> : null}
+                  </h3>
                   {item.tags.length ? (
                     <p class="pick-tags" aria-label="标签">
                       {item.tags.map((tag) => (
@@ -324,6 +334,36 @@ const hasPickList = plannedPickFileItems.length > 0 || pickFileGroups.length > 0
           }
         });
       }
+
+      const syncPickHeadingWrap = () => {
+        document.querySelectorAll('[data-pick-heading]').forEach((node) => {
+          if (!(node instanceof HTMLElement)) return;
+          const title = node.querySelector('.pick-heading__title');
+          const credit = node.querySelector('.pick-heading__credit');
+          if (!(title instanceof HTMLElement) || !(credit instanceof HTMLElement)) return;
+
+          node.classList.remove('pick-heading--authors-stacked');
+          const titleRect = title.getClientRects()[0];
+          const creditRect = credit.getClientRects()[0];
+          if (!titleRect || !creditRect) return;
+
+          const style = window.getComputedStyle(node);
+          const lineHeight = Number.parseFloat(style.lineHeight) || Number.parseFloat(style.fontSize) * 1.5;
+          if (creditRect.top - titleRect.top > lineHeight * 0.45) {
+            node.classList.add('pick-heading--authors-stacked');
+          }
+        });
+      };
+
+      let pickHeadingWrapFrame = 0;
+      const schedulePickHeadingWrap = () => {
+        window.cancelAnimationFrame(pickHeadingWrapFrame);
+        pickHeadingWrapFrame = window.requestAnimationFrame(syncPickHeadingWrap);
+      };
+
+      schedulePickHeadingWrap();
+      window.addEventListener('resize', schedulePickHeadingWrap, { passive: true });
+      document.fonts?.ready.then(schedulePickHeadingWrap).catch(() => {});
     })();
   </script>
 
