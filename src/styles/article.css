@@ -6,6 +6,10 @@
 @import "./components/lightbox.css";
 @import "./components/code-block.css";
 
+.article-page .article-header + .prose {
+  margin-top: 30px;
+}
+
 .article-source-line {
   margin-top: -4px;
   margin-bottom: 12px;
@@ -42,4 +46,10 @@
 
 .article-header .meta-line__item--tags .tag {
   white-space: nowrap;
+}
+
+@media (max-width: 640px) {
+  .article-page .article-header + .prose {
+    margin-top: 24px;
+  }
 }
