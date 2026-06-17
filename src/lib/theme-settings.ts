@@ -285,12 +285,6 @@ export interface ThemeSettingsSources {
   };
 }
 
-const ARTICLE_META_TAG_LIMITS: Record<ArticleMetaDisplayContext, number> = {
-  home: 1,
-  list: 3,
-  detail: 3
-};
-
 export interface ThemeSettingsResolved {
   settings: ThemeSettings;
   sources: ThemeSettingsSources;
@@ -734,14 +728,13 @@ const asSocialIconKey = (value: unknown): SiteSocialIconKey | undefined => {
 
 export const getVisibleArticleMetaTags = (
   tags: readonly string[] | null | undefined,
-  context: ArticleMetaDisplayContext
+  _context: ArticleMetaDisplayContext
 ): string[] => {
   if (!Array.isArray(tags)) return [];
 
   return tags
     .map((tag) => (typeof tag === 'string' ? tag.trim() : ''))
-    .filter((tag): tag is string => Boolean(tag))
-    .slice(0, ARTICLE_META_TAG_LIMITS[context]);
+    .filter((tag): tag is string => Boolean(tag));
 };
 
 const resolveValue = <T>(

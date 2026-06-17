@@ -26,9 +26,18 @@
   outline: none;
 }
 
-.article-header .meta-line__item--tags {
+.article-header .meta-line__item:not(.meta-line__item--tags):not(.meta-line__item--people) {
   flex: 0 0 auto;
   white-space: nowrap;
+}
+
+.article-header .meta-line__item--tags {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  max-width: 100%;
+  min-width: 0;
+  width: max-content;
+  white-space: normal;
 }
 
 .article-header .meta-line__item--tags .tag {

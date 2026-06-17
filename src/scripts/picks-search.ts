@@ -305,7 +305,6 @@ const renderResults = (matchedItems: PicksItem[]) => {
     .map((item) => {
       const snippet = getDisplaySnippet(item, queryTerms);
       const tags = item.tags
-        .slice(0, 3)
         .map((tag) => `<span class="bit-search-result__tag">${highlightText(tag, queryTerms)}</span>`)
         .join('');
       const metaTrail = item.year

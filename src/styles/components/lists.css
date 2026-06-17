@@ -385,11 +385,6 @@
   color: #666;
   font-size: 15px;
   line-height: 1.6;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  line-clamp: 3;
-  overflow: hidden;
   font-family: "LXGW WenKai Lite", "Kaiti SC", "STKaiti", serif;
 }
 
@@ -607,11 +602,19 @@
   align-items: center;
 }
 
-.meta-line__item--tags {
+.meta-line__item:not(.meta-line__item--tags):not(.meta-line__item--people) {
   flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+.meta-line__item--tags {
+  flex: 0 1 auto;
+  flex-wrap: wrap;
   gap: 0.65em;
   max-width: 100%;
-  white-space: nowrap;
+  min-width: 0;
+  width: max-content;
+  white-space: normal;
 }
 
 .meta-line__item--tags .tag {

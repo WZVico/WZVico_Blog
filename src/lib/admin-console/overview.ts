@@ -172,7 +172,6 @@ const COLLECTION_DETAILS: Record<AdminOverviewCollectionKey, string> = {
 };
 
 const RECENT_LIMIT = 6;
-const TOP_TAG_LIMIT = 6;
 const ACTIVITY_DAY_COUNT = 90;
 const SYSTEM_STATUS_ACTIVITY_DAY_COUNT = 14;
 const WORD_COUNT_COMPACT_THRESHOLD = 100_000;
@@ -513,7 +512,7 @@ export const buildAdminOverviewPublicSummary = (
       lastUpdate: getLatestUpdate(source)
     },
     collections: buildCollectionShares(source),
-    topTags: topTags.slice(0, TOP_TAG_LIMIT).map((tag) => ({
+    topTags: topTags.map((tag) => ({
       key: tag.key,
       label: tag.label,
       count: tag.count,

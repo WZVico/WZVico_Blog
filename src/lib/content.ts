@@ -176,7 +176,7 @@ const buildLongformDerivedText = (entry: LongformEntry): LongformDerivedText => 
   return {
     plainText,
     text: plainText.length > MAX_LONGFORM_INDEX_TEXT ? plainText.slice(0, MAX_LONGFORM_INDEX_TEXT) : plainText,
-    excerpt: truncateText(description || excerptText, 120)
+    excerpt: description || truncateText(excerptText, 120)
   };
 };
 

@@ -487,7 +487,6 @@ const renderResults = (matchedItems: IndexItem[]) => {
         ? `<span class="bit-search-result__tag bit-search-result__tag--place">📍 ${highlightText(placeText, queryTerms)}</span>`
         : '';
       const tags = normalTags
-        .slice(0, 3)
         .map((tag) => `<span class="bit-search-result__tag">#${highlightText(tag.trim(), queryTerms)}</span>`)
         .join('');
       const metaTrail = [

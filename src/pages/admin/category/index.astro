@@ -364,7 +364,7 @@ const selectedStats = shouldShowAuthorConsole
                                 </dl>
                                 {item.tags.length > 0 ? (
                                   <p class="admin-category-entry__tags">
-                                    {item.tags.slice(0, 8).map((tag) => <span>{tag}</span>)}
+                                    {item.tags.map((tag) => <span>{tag}</span>)}
                                   </p>
                                 ) : null}
                               </div>
