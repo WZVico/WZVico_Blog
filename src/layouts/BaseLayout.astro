@@ -3,6 +3,7 @@ import Sidebar from '../components/Sidebar.astro';
 import UiIcon from '../components/UiIcon.astro';
 import globalStylesHref from '../styles/global.css?url';
 import { hasSiteUrl } from '../../site.config.mjs';
+import { ADMIN_SIDEBAR_NAV_MODE_STORAGE_KEY } from '../lib/admin-console/ui-prefs-keys';
 import { createWithBase } from '../utils/format';
 import { getThemeSettings, type SidebarNavId } from '../lib/theme-settings';
 
@@ -38,6 +39,8 @@ const footerShowCurrentYear = settings.site.footer.showCurrentYear;
 const footerCopyright = settings.site.footer.copyright;
 const showCodeLineNumbers = settings.ui.codeBlock.showLineNumbers;
 const sidebarDividerVariant = settings.ui.layout.sidebarDivider;
+const isDev = import.meta.env.DEV;
+const showDevSidebarNav = isDev && enableShellScripts;
 const canonical = (hasSiteUrl && Astro.site)
   ? new URL(Astro.url.pathname, Astro.site).toString()
   : null;
@@ -62,6 +65,12 @@ const getFaviconType = (src: string): string | null => {
   return null;
 };
 const siteFaviconType = siteFavicon ? getFaviconType(siteFavicon) : null;
+const adminSidebarNavModeStylesHref = showDevSidebarNav
+  ? (await import('../styles/components/admin-dev-sidebar-nav.css?url')).default
+  : null;
+const adminSidebarNavModeScriptHref = showDevSidebarNav
+  ? (await import('../scripts/admin-sidebar-nav-mode.ts?url')).default
+  : null;
 ---
 
 <!doctype html>
@@ -87,6 +96,21 @@ const siteFaviconType = siteFavicon ? getFaviconType(siteFavicon) : null;
         document.documentElement.dataset.themeMode = mode;
       })();
     </script>
+    {showDevSidebarNav ? (
+      <script
+        is:inline
+        define:vars={{ sidebarNavModeKey: ADMIN_SIDEBAR_NAV_MODE_STORAGE_KEY }}
+      >
+        (() => {
+          const root = document.documentElement;
+          let storedNavMode = null;
+          try {
+            storedNavMode = sessionStorage.getItem(sidebarNavModeKey);
+          } catch (_) {}
+          root.dataset.adminNavMode = storedNavMode === 'admin' ? 'admin' : 'public';
+        })();
+      </script>
+    ) : null}
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     {
@@ -129,15 +153,17 @@ const siteFaviconType = siteFavicon ? getFaviconType(siteFavicon) : null;
         <link rel="stylesheet" href={globalStylesHref} />
       )
     }
+    {adminSidebarNavModeStylesHref ? <link rel="stylesheet" href={adminSidebarNavModeStylesHref} /> : null}
     <slot name="head" />
   </head>
   <body
     class={bodyClass}
     data-code-line-numbers={showCodeLineNumbers ? undefined : 'off'}
+    data-dev-ui={showDevSidebarNav ? 'true' : undefined}
   >
     <a class="skip-link" href="#content">跳到内容</a>
     <div class="shell" data-sidebar-divider={sidebarDividerVariant}>
-      <Sidebar siteTitle={brandTitle} activeNavId={activeNavId} />
+      <Sidebar siteTitle={brandTitle} activeNavId={activeNavId} isDev={showDevSidebarNav} />
       <div class="divider" aria-hidden="true"></div>
       <main id="content" class="content" tabindex="-1">
         <div class="content__inner">
@@ -167,5 +193,8 @@ const siteFaviconType = siteFavicon ? getFaviconType(siteFavicon) : null;
         </script>
       ) : null
     }
+    {adminSidebarNavModeScriptHref ? (
+      <script is:inline type="module" src={adminSidebarNavModeScriptHref}></script>
+    ) : null}
   </body>
 </html>

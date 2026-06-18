@@ -1,24 +1,20 @@
 ---
 import type { AdminRouteId } from '../../lib/admin-console/routes';
-import AdminNav from './AdminNav.astro';
 
 const {
   currentRoute,
   title,
-  subtitle,
-  showNav = true
+  subtitle
 } = Astro.props as {
   currentRoute: AdminRouteId;
   title: string;
   subtitle: string;
-  showNav?: boolean;
 };
 ---
 
 <section
   class="admin-console admin-console--shell"
   data-admin-route={currentRoute}
-  data-admin-nav-visible={showNav ? 'true' : 'false'}
 >
   <header class="page-header page-header--admin">
     <div class="admin-heading">
@@ -29,8 +25,6 @@ const {
     </div>
     <slot name="status" />
   </header>
-
-  {showNav ? <AdminNav currentRoute={currentRoute} /> : null}
 
   <div class="admin-shell">
     <slot />

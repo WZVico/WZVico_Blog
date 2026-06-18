@@ -1,15 +1,20 @@
 ---
 import UiIcon from './UiIcon.astro';
-import { ADMIN_NAV_ORNAMENT_DEFAULT } from '../lib/admin-console/theme-shared';
+import SidebarAdminNav from './sidebar/SidebarAdminNav.astro';
+import SidebarNavSwitcher from './sidebar/SidebarNavSwitcher.astro';
+import SidebarPublicNav from './sidebar/SidebarPublicNav.astro';
+import { ADMIN_ROUTES, isAdminRoutePathActive } from '../lib/admin-console/routes';
 import { createWithBase } from '../utils/format';
 import { getSidebarHref, getThemeSettings, type SidebarNavId } from '../lib/theme-settings';
 
 const {
   siteTitle = 'Whono',
-  activeNavId
+  activeNavId,
+  isDev = false
 } = Astro.props as {
   siteTitle?: string;
   activeNavId?: SidebarNavId;
+  isDev?: boolean;
 };
 
 const pathname = Astro.url.pathname;
@@ -21,12 +26,27 @@ const quote = settings.shell.quote;
 const nav = settings.shell.nav
   .filter((item) => item.visible)
   .sort((a, b) => a.order - b.order)
-  .map((item) => ({
-    id: item.id,
-    label: item.label,
-    ornament: item.ornament,
-    href: withBase(getSidebarHref(item.id))
-  }));
+  .map((item) => {
+    const href = withBase(getSidebarHref(item.id));
+    return {
+      id: item.id,
+      label: item.label,
+      ornament: item.ornament,
+      href,
+      isActive: activeNavId
+        ? item.id === activeNavId
+        : pathname === href || (href !== homeHref && pathname.startsWith(href))
+    };
+  });
+const adminNav = ADMIN_ROUTES.map((route) => {
+  const href = withBase(route.href);
+  return {
+    href,
+    label: route.sidebarLabel,
+    description: route.description,
+    isActive: isAdminRoutePathActive(pathname, href, route.activeMatch)
+  };
+});
 const showReaderToggle = settings.ui.readingMode.showEntry;
 const showRssLink = settings.ui.sidebarActions.showRssLink;
 const showThemeToggle = settings.ui.sidebarActions.showThemeToggle;
@@ -44,25 +64,19 @@ const showAdminEntry = settings.ui.sidebarActions.showAdminEntry && settings.sit
     ))}
   </div>
 
-  <ul class="nav">
-    {nav.map((item) => {
-      const isActive = activeNavId
-        ? item.id === activeNavId
-        : pathname === item.href || (item.href !== homeHref && pathname.startsWith(item.href));
-      return (
-        <li>
-          <a href={item.href} aria-current={isActive ? 'page' : undefined}>
-            <span>{item.label}</span>
-            {item.ornament === ADMIN_NAV_ORNAMENT_DEFAULT ? (
-              <span class="dot" aria-hidden="true"></span>
-            ) : item.ornament ? (
-              <span class="nav-ornament" aria-hidden="true">{item.ornament}</span>
-            ) : null}
-          </a>
-        </li>
-      );
-    })}
-  </ul>
+  {isDev ? (
+    <div class="sidebar-nav-panels" data-admin-sidebar-nav>
+      <div class="sidebar-nav-stage" data-admin-nav-stage>
+        <SidebarPublicNav items={nav} isAdminNavPanel />
+        <SidebarAdminNav items={adminNav} />
+      </div>
+      <div class="sidebar-nav-switcher-item">
+        <SidebarNavSwitcher />
+      </div>
+    </div>
+  ) : (
+    <SidebarPublicNav items={nav} />
+  )}
 
   <div class="sidebar-actions">
     {showReaderToggle ? (

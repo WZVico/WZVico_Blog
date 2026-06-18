@@ -357,23 +357,15 @@
   }
 }
 
-.admin-console--shell > .admin-route-nav {
-  margin-top: 24px;
-}
-
 .admin-shell {
-  margin-top: 18px;
+  margin-top: 28px;
   min-width: 0;
   display: grid;
   gap: 16px;
 }
 
-.admin-console--shell[data-admin-nav-visible='false'][data-admin-route='overview'] > .admin-shell {
+.admin-console--shell[data-admin-route='overview'] > .admin-shell {
   margin-top: 36px;
-}
-
-.admin-console--shell[data-admin-nav-visible='false']:not([data-admin-route='overview']) > .admin-shell {
-  margin-top: 28px;
 }
 
 .admin-readonly-note {
@@ -713,83 +705,6 @@
 
 .admin-toggle-row__sep {
   color: var(--faint);
-}
-
-.admin-route-nav {
-  --admin-route-nav-link-color: color-mix(in srgb, var(--muted) 84%, var(--faint) 16%);
-  --admin-route-nav-link-hover-color: color-mix(in srgb, var(--muted) 90%, var(--text) 10%);
-  --admin-route-nav-link-rule-hover-color: color-mix(in srgb, var(--muted) 68%, var(--faint) 32%);
-
-  position: relative;
-  min-width: 0;
-  padding: 0;
-}
-
-.admin-route-nav__list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 8px 22px;
-}
-
-.admin-route-nav__item {
-  position: relative;
-  min-width: fit-content;
-  max-width: 100%;
-}
-
-.admin-route-nav .admin-route-nav__link {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  min-height: 36px;
-  max-width: 100%;
-  padding: 6px 2px 8px;
-  color: var(--admin-route-nav-link-color);
-  text-decoration: none;
-  transition: color 160ms ease;
-}
-
-.admin-route-nav .admin-route-nav__link::after {
-  content: '';
-  position: absolute;
-  inset-inline: 0;
-  bottom: 4px;
-  height: 2px;
-  border-radius: 999px;
-  background: transparent;
-  transition: background-color 160ms ease;
-}
-
-.admin-route-nav__link:hover {
-  color: var(--admin-route-nav-link-hover-color);
-}
-
-.admin-route-nav__link:hover::after {
-  background: var(--admin-route-nav-link-rule-hover-color);
-}
-
-.admin-route-nav__link:focus-visible {
-  outline: 2px solid var(--accent);
-  outline-offset: 4px;
-  border-radius: 6px;
-}
-
-.admin-route-nav .admin-route-nav__link.is-active {
-  color: var(--text);
-}
-
-.admin-route-nav .admin-route-nav__link.is-active::after {
-  background: var(--accent);
-}
-
-.admin-route-nav__label {
-  font-size: 15px;
-  line-height: 1.3;
-  white-space: nowrap;
 }
 
 .admin-banner {
@@ -1247,28 +1162,6 @@
   .admin-data-meta {
     grid-template-columns: 1fr;
     gap: 2px;
-  }
-
-  .admin-route-nav {
-    overflow-x: auto;
-    scrollbar-width: thin;
-    padding-bottom: 2px;
-  }
-
-  .admin-route-nav__list {
-    flex-wrap: nowrap;
-    width: max-content;
-    min-width: 100%;
-    gap: 8px 16px;
-  }
-
-  .admin-route-nav__item {
-    min-width: fit-content;
-  }
-
-  .admin-route-nav__link {
-    min-height: 34px;
-    padding-bottom: 10px;
   }
 
 }

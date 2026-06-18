@@ -12,7 +12,6 @@ const isDev = import.meta.env.DEV;
 // Content Console 暂停对 dev 环境开放，保留实现供后续前端技术栈重构恢复。
 const isAdminContentConsoleEnabled: boolean = false;
 const shouldShowContentConsole = isDev && isAdminContentConsoleEnabled;
-const shouldShowAdminNav = isDev;
 const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
 const { default: adminShellStylesHref } = await import('../../../styles/components/admin-shell.css?url');
@@ -44,7 +43,6 @@ const contentOverviewTotals = contentOverviewDevState
     currentRoute="content"
     title="Content Console"
     subtitle="内容管理"
-    showNav={shouldShowAdminNav}
   >
     {
       shouldShowContentConsole && contentOverviewDevState ? (
