@@ -13,7 +13,7 @@ const stylesheetHrefs = Array.isArray(stylesHref)
     : [];
 ---
 
-<BaseLayout title={title} bodyClass="admin-page">
+<BaseLayout title={title} bodyClass="admin-page" enableShellScripts={import.meta.env.DEV}>
   <Fragment slot="head">
     <meta name="robots" content="noindex,nofollow" />
     {stylesheetHrefs.map((href) => <link rel="stylesheet" href={href} />)}

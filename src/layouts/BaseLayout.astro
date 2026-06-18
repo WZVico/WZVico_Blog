@@ -13,6 +13,7 @@ const {
   ogType = 'website',
   bodyClass,
   deferGlobalStyles = false,
+  enableShellScripts = true,
   activeNavId
 } = Astro.props as {
   title?: string;
@@ -21,6 +22,7 @@ const {
   ogType?: string;
   bodyClass?: string;
   deferGlobalStyles?: boolean;
+  enableShellScripts?: boolean;
   activeNavId?: SidebarNavId;
 };
 
@@ -67,12 +69,22 @@ const siteFaviconType = siteFavicon ? getFaviconType(siteFavicon) : null;
   <head>
     <script is:inline>
       (() => {
-        const key = 'theme';
-        let stored = null;
-        try { stored = localStorage.getItem(key); } catch (_) {}
+        // Keep this contract aligned with src/scripts/sidebar-theme.ts so first paint and runtime agree.
+        const themeKey = 'theme';
+        const modeKey = 'theme-mode';
+        let storedMode = null;
+        let legacyTheme = null;
+        try {
+          storedMode = localStorage.getItem(modeKey);
+          legacyTheme = localStorage.getItem(themeKey);
+        } catch (_) {}
         const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-        const theme = stored === 'dark' || stored === 'light' ? stored : (prefersDark ? 'dark' : 'light');
+        const mode = storedMode === 'system' || storedMode === 'dark' || storedMode === 'light'
+          ? storedMode
+          : (legacyTheme === 'dark' || legacyTheme === 'light' ? legacyTheme : 'system');
+        const theme = mode === 'system' ? (prefersDark ? 'dark' : 'light') : mode;
         document.documentElement.dataset.theme = theme;
+        document.documentElement.dataset.themeMode = mode;
       })();
     </script>
     <meta charset="utf-8" />
@@ -146,10 +158,14 @@ const siteFaviconType = siteFavicon ? getFaviconType(siteFavicon) : null;
         <UiIcon name="chevron-up" class="icon" />
       </button>
     </template>
-    <script>
-      import '../scripts/hash-anchor.ts';
-      import '../scripts/sidebar-theme.ts';
-      import '../scripts/meta-line.ts';
-    </script>
+    {
+      enableShellScripts ? (
+        <script>
+          import '../scripts/hash-anchor.ts';
+          import '../scripts/sidebar-theme.ts';
+          import '../scripts/meta-line.ts';
+        </script>
+      ) : null
+    }
   </body>
 </html>

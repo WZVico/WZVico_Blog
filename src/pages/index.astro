@@ -306,15 +306,25 @@ a {
   display: block;
 }
 
-.theme-toggle .icon-sun {
+.theme-toggle .icon-moon,
+.theme-toggle .icon-system {
   display: none;
 }
 
-:root[data-theme="dark"] .theme-toggle .icon-sun {
+:root[data-theme="dark"] .theme-toggle .icon-moon {
   display: block;
 }
 
-:root[data-theme="dark"] .theme-toggle .icon-moon {
+:root[data-theme="dark"] .theme-toggle .icon-sun {
+  display: none;
+}
+
+:root[data-theme-mode="system"] .theme-toggle .icon-system {
+  display: block;
+}
+
+:root[data-theme-mode="system"] .theme-toggle .icon-moon,
+:root[data-theme-mode="system"] .theme-toggle .icon-sun {
   display: none;
 }
 
