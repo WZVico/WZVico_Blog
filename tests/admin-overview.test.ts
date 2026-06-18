@@ -214,7 +214,7 @@ describe('admin-console/overview', () => {
     });
   });
 
-  it('counts CJK characters and English or numeric runs from cleaned markdown', () => {
+  it('counts CJK characters and English or numeric words from cleaned markdown', () => {
     const markdown = [
       '# 标题',
       '中文 and English 2026，标点！42',

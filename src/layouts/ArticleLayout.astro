@@ -15,6 +15,7 @@ import { getThemeSettings, type ArticleMetaSettings, type SidebarNavId } from '.
 import { getLongformArticlePeople } from '../lib/longform-people';
 import { createWithBase, formatISODateUtc } from '../utils/format';
 import { truncateText } from '../utils/excerpt';
+import { countReadableTextUnits, getEstimatedReadingMinutes } from '../utils/reading-stats';
 
 type ArticleNeighborLink = {
   href: string;
@@ -47,10 +48,10 @@ const hasMath = containsMarkdownMath(entry.body ?? '');
 const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
 const articleReadingStats = articleMetaSettings.showWordCount || articleMetaSettings.showReadingTime
   ? (() => {
-      const wordCount = derivedText.plainText.replace(/\s+/g, '').length;
+      const wordCount = countReadableTextUnits(derivedText.plainText);
       return {
         wordCount,
-        readingMinutes: Math.max(1, Math.ceil(wordCount / 320))
+        readingMinutes: getEstimatedReadingMinutes(wordCount)
       };
     })()
   : { wordCount: 0, readingMinutes: 0 };

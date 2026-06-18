@@ -21,7 +21,7 @@ import {
 import { getMaterials, type MaterialItem } from '../materials';
 import { collectTagSummary, getTagPath } from '../tags';
 import { formatDateTime, formatISODate, formatISODateUtc } from '../../utils/format';
-import { cleanMarkdownToText } from '../../utils/excerpt';
+import { countReadableMarkdownUnits, countReadableTextUnits } from '../../utils/reading-stats';
 import packageJson from '../../../package.json';
 
 export type AdminOverviewCollectionKey = 'longform' | 'bits' | 'picks' | 'materials';
@@ -176,8 +176,6 @@ const ACTIVITY_DAY_COUNT = 90;
 const SYSTEM_STATUS_ACTIVITY_DAY_COUNT = 14;
 const WORD_COUNT_COMPACT_THRESHOLD = 100_000;
 const WORD_COUNT_COMPACT_UNIT = 10_000;
-const WORD_TOKEN_REGEX =
-  /[\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}\p{Script=Hangul}]|[A-Za-z0-9]+/gu;
 const ASTRO_VERSION = String(packageJson.dependencies?.astro ?? 'unknown').replace(/^[~^]/, '');
 
 const DEPLOY_TARGET_LABELS = {
@@ -361,13 +359,8 @@ const buildCollectionShares = (source: AdminOverviewPublicSource): AdminOverview
   });
 };
 
-const countAdminOverviewTextWords = (text: string): number =>
-  text.match(WORD_TOKEN_REGEX)?.length ?? 0;
-
-export const countAdminOverviewWords = (markdown: string): number => {
-  const text = cleanMarkdownToText(markdown);
-  return countAdminOverviewTextWords(text);
-};
+export const countAdminOverviewWords = (markdown: string): number =>
+  countReadableMarkdownUnits(markdown);
 
 export const formatAdminOverviewWordMetric = (wordCount: number): { value: string; suffix: string } => {
   if (wordCount <= WORD_COUNT_COMPACT_THRESHOLD) {
@@ -385,15 +378,15 @@ export const formatAdminOverviewWordMetric = (wordCount: number): { value: strin
 
 const buildAdminOverviewWordCount = (source: AdminOverviewPublicSource): number =>
   source.longforms.reduce(
-    (total, entry) => total + countAdminOverviewTextWords(getLongformDerivedText(entry).plainText),
+    (total, entry) => total + countReadableTextUnits(getLongformDerivedText(entry).plainText),
     0
   )
   + source.bits.reduce(
-    (total, entry) => total + countAdminOverviewTextWords(getBitsDerivedText(entry).plainText),
+    (total, entry) => total + countReadableTextUnits(getBitsDerivedText(entry).plainText),
     0
   )
   + source.picks.reduce(
-    (total, entry) => total + countAdminOverviewTextWords(getReadsDerivedText(entry).plainText),
+    (total, entry) => total + countReadableTextUnits(getReadsDerivedText(entry).plainText),
     0
   );
 
