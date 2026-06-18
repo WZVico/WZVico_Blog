@@ -5,6 +5,12 @@ import Lightbox from '../components/Lightbox.astro';
 import '../styles/article.css';
 import { getArchiveAuthorHref } from '../lib/archive-links';
 import { getLongformDerivedText, type LongformEntry } from '../lib/content';
+import { containsMarkdownMath } from '../lib/markdown-math';
+import {
+  MARKDOWN_MATH_STYLESHEET_DATA_ATTR,
+  MARKDOWN_MATH_STYLESHEET_HREF,
+  MARKDOWN_MATH_STYLESHEET_ID
+} from '../lib/markdown-math-styles';
 import { getThemeSettings, type ArticleMetaSettings, type SidebarNavId } from '../lib/theme-settings';
 import { getLongformArticlePeople } from '../lib/longform-people';
 import { createWithBase, formatISODateUtc } from '../utils/format';
@@ -37,6 +43,8 @@ const derivedText = getLongformDerivedText(entry);
 const rawDescription = entry?.data?.description?.trim?.() ?? '';
 const description = rawDescription || truncateText(derivedText.excerpt, 90);
 const activeNavId: SidebarNavId = entry?.data?.archive === false ? 'longform' : 'archive';
+const hasMath = containsMarkdownMath(entry.body ?? '');
+const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
 const articleReadingStats = articleMetaSettings.showWordCount || articleMetaSettings.showReadingTime
   ? (() => {
       const wordCount = derivedText.plainText.replace(/\s+/g, '').length;
@@ -79,6 +87,14 @@ const translationSourceLabel = translationSource || (translationSourceUrl ? '原
     {entryTags.map((tag: string) => (
       <meta property="article:tag" content={tag} />
     ))}
+    {hasMath ? (
+      <link
+        id={MARKDOWN_MATH_STYLESHEET_ID}
+        rel="stylesheet"
+        href={MARKDOWN_MATH_STYLESHEET_HREF}
+        {...katexStylesheetAttrs}
+      />
+    ) : null}
   </Fragment>
   <div class="article-header reader-exit-anchor">
     <h1 class="page-title">{entry.data.title}</h1>

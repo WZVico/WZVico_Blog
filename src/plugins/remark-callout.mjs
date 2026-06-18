@@ -1,6 +1,7 @@
 import { visit } from 'unist-util-visit';
 
 const CALLOUT_TYPES = new Set(['note', 'tip', 'info', 'warning']);
+const NON_CALLOUT_DIRECTIVES = new Set(['friend', 'faq']);
 
 const getText = (node) => {
   if (!node) return '';
@@ -14,6 +15,8 @@ const getText = (node) => {
 export default function remarkCallout() {
   return (tree) => {
     visit(tree, 'containerDirective', (node) => {
+      if (NON_CALLOUT_DIRECTIVES.has(node.name)) return;
+
       const type = CALLOUT_TYPES.has(node.name) ? node.name : 'note';
 
       if (!node.data) node.data = {};

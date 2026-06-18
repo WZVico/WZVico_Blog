@@ -9,6 +9,12 @@ import { getCollection, getEntry, render } from 'astro:content';
 import type { AstroComponentFactory } from 'astro/runtime/server/index.js';
 import { getThemeSettings } from '../../lib/theme-settings';
 import { isPicksIndexEntryId } from '../../lib/content';
+import { containsMarkdownMath } from '../../lib/markdown-math';
+import {
+  MARKDOWN_MATH_STYLESHEET_DATA_ATTR,
+  MARKDOWN_MATH_STYLESHEET_HREF,
+  MARKDOWN_MATH_STYLESHEET_ID
+} from '../../lib/markdown-math-styles';
 
 const prod = import.meta.env.PROD;
 const DEFAULT_READS_TITLE = '拾选';
@@ -53,6 +59,7 @@ type PickFileItem = {
   identityKey: string;
   year: number;
   dateValue: number;
+  hasMath: boolean;
   Content: AstroComponentFactory;
 };
 
@@ -100,6 +107,7 @@ const pickFileItems = await Promise.all(
       identityKey: getPickIdentityKey(pickEntry.data.title, authors),
       year,
       dateValue: pickEntry.data.date?.valueOf() ?? 0,
+      hasMath: containsMarkdownMath(pickEntry.body ?? ''),
       Content: rendered.Content
     } satisfies PickFileItem;
   })
@@ -144,6 +152,8 @@ if (plannedPickFileItems.length > 0) {
   });
 }
 const hasPickList = plannedPickFileItems.length > 0 || pickFileGroups.length > 0;
+const hasRenderedMath = pickFileItems.some((item) => item.hasMath);
+const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
 ---
 
 <BaseLayout
@@ -151,6 +161,16 @@ const hasPickList = plannedPickFileItems.length > 0 || pickFileGroups.length > 0
   description="分享值得一读的书单和简短理由。"
   bodyClass="picks-page immersive-page"
 >
+  {hasRenderedMath ? (
+    <link
+      slot="head"
+      id={MARKDOWN_MATH_STYLESHEET_ID}
+      rel="stylesheet"
+      href={MARKDOWN_MATH_STYLESHEET_HREF}
+      {...katexStylesheetAttrs}
+    />
+  ) : null}
+
   <div class="page-header page-header--picks reader-exit-anchor">
     <div class="page-heading">
       <h1 class="page-title">{readsTitle}</h1>

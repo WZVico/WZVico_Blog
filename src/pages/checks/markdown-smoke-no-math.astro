@@ -1,6 +1,6 @@
 ---
-import Fixture from '../../test-fixtures/markdown-smoke.md';
-import fixtureSource from '../../test-fixtures/markdown-smoke.md?raw';
+import Fixture from '../../test-fixtures/markdown-smoke-no-math.md';
+import fixtureSource from '../../test-fixtures/markdown-smoke-no-math.md?raw';
 import { containsMarkdownMath } from '../../lib/markdown-math';
 import {
   MARKDOWN_MATH_STYLESHEET_DATA_ATTR,
@@ -18,7 +18,7 @@ const katexStylesheetAttrs = { [MARKDOWN_MATH_STYLESHEET_DATA_ATTR]: 'true' };
     <meta charset="utf-8" />
     <meta name="robots" content="noindex,nofollow" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Markdown Smoke Fixture</title>
+    <title>Markdown Smoke Fixture Without Math</title>
     {hasMath ? (
       <link
         id={MARKDOWN_MATH_STYLESHEET_ID}
