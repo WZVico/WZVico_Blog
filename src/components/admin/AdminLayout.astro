@@ -1,9 +1,11 @@
 ---
 import BaseLayout from '../../layouts/BaseLayout.astro';
 
-const { title, stylesHref = null } = Astro.props as {
+const { title, stylesHref = null, bodyClass = 'admin-page' } = Astro.props as {
   title: string;
   stylesHref?: string | readonly string[] | null;
+  bodyClass?: string;
+  adminSidebarScope?: string;
 };
 
 const stylesheetHrefs = Array.isArray(stylesHref)
@@ -13,7 +15,7 @@ const stylesheetHrefs = Array.isArray(stylesHref)
     : [];
 ---
 
-<BaseLayout title={title} bodyClass="admin-page" enableShellScripts={import.meta.env.DEV}>
+<BaseLayout title={title} bodyClass={bodyClass} enableShellScripts={import.meta.env.DEV}>
   <Fragment slot="head">
     <meta name="robots" content="noindex,nofollow" />
     {stylesheetHrefs.map((href) => <link rel="stylesheet" href={href} />)}

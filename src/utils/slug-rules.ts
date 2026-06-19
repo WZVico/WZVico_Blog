@@ -1,3 +1,5 @@
+import { slug as githubSlug } from 'github-slugger';
+
 /**
  * Shared slug rules for longform public URLs.
  *
@@ -26,3 +28,16 @@ export const RESERVED_LONGFORM_SLUGS: ReadonlySet<string> = new Set([
  */
 export const flattenEntryIdToSlug = (entryId: string): string =>
   entryId.replaceAll('/', '-');
+export const ESSAY_PUBLIC_SLUG_RE = LONGFORM_PUBLIC_SLUG_RE;
+export const RESERVED_ESSAY_SLUGS = RESERVED_LONGFORM_SLUGS;
+
+export const contentSourceEntryIdToPublicEntryId = (entryId: string): string => {
+  const normalized = entryId.trim().replace(/\\/g, '/').replace(/\/+$/g, '');
+  if (!normalized) return '';
+
+  return normalized
+    .split('/')
+    .map((segment) => githubSlug(segment))
+    .join('/')
+    .replace(/\/index$/i, '');
+};

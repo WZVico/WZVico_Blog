@@ -1,0 +1,10 @@
+---
+import MaterialsEditorWorkspace from './MaterialsEditorWorkspace.svelte';
+import type { MaterialsEditorIslandProps } from './materials-editor-island-props';
+
+const props = Astro.props as MaterialsEditorIslandProps;
+---
+
+<div data-admin-content-editor-island data-admin-materials-editor-island>
+  <MaterialsEditorWorkspace client:only="svelte" {...props} />
+</div>

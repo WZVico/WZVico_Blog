@@ -245,7 +245,7 @@ const assertReadonlyAdminImageShell = (label, response) => {
   expect(!response.body.includes('id="admin-images-bootstrap"'), `${label} should not emit images bootstrap payload outside dev`);
 };
 
-const assertAdminContentPlaceholderShell = (label, response, options = {}) => {
+const assertReadonlyAdminContentShell = (label, response, options = {}) => {
   const { expectNav = false } = options;
   expect(response.status === 200, `${label} returned ${response.status}`);
   expect(
@@ -254,8 +254,8 @@ const assertAdminContentPlaceholderShell = (label, response, options = {}) => {
   );
   expect(response.body.includes('Content Console'), `${label} is missing the Content Console route heading`);
   expect(
-    response.body.includes('后台文章管理与可视化写作正在开发中'),
-    `${label} is missing the Content Console development notice`
+    response.body.includes('若需查看或编辑内容索引'),
+    `${label} is missing the Content Console local-development notice`
   );
   if (expectNav) {
     assertHasAdminRouteNav(label, response.body);
@@ -263,6 +263,27 @@ const assertAdminContentPlaceholderShell = (label, response, options = {}) => {
     assertNoAdminRouteNav(label, response.body);
   }
   expect(!response.body.includes('data-admin-content-root'), `${label} should stay readonly outside dev`);
+};
+
+const assertDevAdminContentConsoleShell = (label, response, options = {}) => {
+  const { expectNav = false } = options;
+  expect(response.status === 200, `${label} returned ${response.status}`);
+  expect(
+    response.contentType.toLowerCase().includes('text/html'),
+    `${label} did not return HTML`
+  );
+  expect(response.body.includes('Content Console'), `${label} is missing the Content Console route heading`);
+  expect(response.body.includes('data-admin-content-root'), `${label} is missing the Content Console root`);
+  expect(response.body.includes('内容管理'), `${label} is missing the Content Console toolbar heading`);
+  expect(
+    !response.body.includes('若需查看或编辑内容索引'),
+    `${label} should render the editable Content Console in dev`
+  );
+  if (expectNav) {
+    assertHasAdminRouteNav(label, response.body);
+  } else {
+    assertNoAdminRouteNav(label, response.body);
+  }
 };
 
 const assertAdminThemeDevBootstrapSafe = (label, response) => {
@@ -325,7 +346,7 @@ export const runPreviewAdminBoundaryCheck = async () => {
     const adminOverviewResponse = await request(baseUrl, '/admin/');
     const adminThemeResponse = await request(baseUrl, '/admin/theme/');
     const adminContentResponse = await request(baseUrl, '/admin/content/');
-    const adminLongformContentResponse = await request(baseUrl, '/admin/content/longform/');
+    const adminLongformContentResponse = await request(baseUrl, '/admin/content/?collection=longform');
     const adminCategoryResponse = await request(baseUrl, '/admin/category/');
     const bitsResponse = await request(baseUrl, '/bits/');
     const adminImageResponse = await request(baseUrl, '/admin/images/');
@@ -334,10 +355,18 @@ export const runPreviewAdminBoundaryCheck = async () => {
     const getResponse = await request(baseUrl, '/api/admin/settings/');
     const exportResponse = await request(baseUrl, '/api/admin/data/settings/');
     const contentGetResponse = await request(baseUrl, '/api/admin/content/entry/');
+    const contentCreateGetResponse = await request(baseUrl, '/api/admin/content/create/');
+    const contentDeleteGetResponse = await request(baseUrl, '/api/admin/content/delete/');
+    const contentExportGetResponse = await request(baseUrl, '/api/admin/content/export/');
+    const contentBulkStatusGetResponse = await request(baseUrl, '/api/admin/content/bulk-status/');
+    const contentBulkDeleteGetResponse = await request(baseUrl, '/api/admin/content/bulk-delete/');
+    const contentBulkExportGetResponse = await request(baseUrl, '/api/admin/content/bulk-export/');
+    const contentPreviewGetResponse = await request(baseUrl, '/api/admin/preview/');
     const bitsCreateGetResponse = await request(baseUrl, '/api/admin/category/bits/');
     const materialsCreateGetResponse = await request(baseUrl, '/api/admin/category/materials/');
     const imageListResponse = await request(baseUrl, '/api/admin/images/list/');
     const imageMetaResponse = await request(baseUrl, '/api/admin/images/meta/');
+    const imageUploadResponse = await request(baseUrl, '/api/admin/images/upload/');
     const contentPostResponse = await request(baseUrl, '/api/admin/content/entry/', {
       method: 'POST',
       headers: {
@@ -385,8 +414,8 @@ export const runPreviewAdminBoundaryCheck = async () => {
 
     assertAdminOverviewShell('Preview GET /admin/', adminOverviewResponse);
     assertReadonlyAdminThemeShell('Preview GET /admin/theme/', adminThemeResponse);
-    assertAdminContentPlaceholderShell('Preview GET /admin/content/', adminContentResponse);
-    assertAdminContentPlaceholderShell('Preview GET /admin/content/longform/', adminLongformContentResponse);
+    assertReadonlyAdminContentShell('Preview GET /admin/content/', adminContentResponse);
+    assertReadonlyAdminContentShell('Preview GET /admin/content/?collection=longform', adminLongformContentResponse);
     assertAdminCategoryShell('Preview GET /admin/category/', adminCategoryResponse);
     assertBitsPageWithoutDraftTools('Preview GET /bits/', bitsResponse);
     assertReadonlyAdminImageShell('Preview GET /admin/images/', adminImageResponse);
@@ -395,10 +424,18 @@ export const runPreviewAdminBoundaryCheck = async () => {
     assertAdminSettingsStaticResponse('GET /api/admin/settings/', getResponse);
     assertAdminSettingsStaticResponse('GET /api/admin/data/settings/', exportResponse, '/api/admin/data/settings/');
     assertAdminContentStaticResponse('GET /api/admin/content/entry/', contentGetResponse);
+    assertAdminContentStaticResponse('GET /api/admin/content/create/', contentCreateGetResponse, '/api/admin/content/create/');
+    assertAdminContentStaticResponse('GET /api/admin/content/delete/', contentDeleteGetResponse, '/api/admin/content/delete/');
+    assertAdminContentStaticResponse('GET /api/admin/content/export/', contentExportGetResponse, '/api/admin/content/export/');
+    assertAdminContentStaticResponse('GET /api/admin/content/bulk-status/', contentBulkStatusGetResponse, '/api/admin/content/bulk-status/');
+    assertAdminContentStaticResponse('GET /api/admin/content/bulk-delete/', contentBulkDeleteGetResponse, '/api/admin/content/bulk-delete/');
+    assertAdminContentStaticResponse('GET /api/admin/content/bulk-export/', contentBulkExportGetResponse, '/api/admin/content/bulk-export/');
+    assertAdminContentStaticResponse('GET /api/admin/preview/', contentPreviewGetResponse, '/api/admin/preview/');
     assertAdminBitsCreateStaticResponse('GET /api/admin/category/bits/', bitsCreateGetResponse);
     assertAdminMaterialsCreateStaticResponse('GET /api/admin/category/materials/', materialsCreateGetResponse);
     assertAdminImageStaticResponse('GET /api/admin/images/list/', imageListResponse, '/api/admin/images/list/');
     assertAdminImageStaticResponse('GET /api/admin/images/meta/', imageMetaResponse, '/api/admin/images/meta/');
+    assertAdminImageStaticResponse('GET /api/admin/images/upload/', imageUploadResponse, '/api/admin/images/upload/');
     assertAdminContentStaticResponse('POST /api/admin/content/entry/', contentPostResponse);
     assertAdminBitsCreateStaticResponse('POST /api/admin/category/bits/', bitsCreatePostResponse);
     assertAdminMaterialsCreateStaticResponse('POST /api/admin/category/materials/', materialsCreatePostResponse);
@@ -451,13 +488,13 @@ export const runDevAdminSettingsSmokeCheck = async () => {
     expect(payload.settings && typeof payload.settings === 'object', 'Dev payload settings snapshot is missing');
 
     const contentOverviewResponse = await request(baseUrl, '/admin/content/');
-    const contentLongformResponse = await request(baseUrl, '/admin/content/longform/');
+    const contentLongformResponse = await request(baseUrl, '/admin/content/?collection=longform');
     const categoryResponse = await request(baseUrl, '/admin/category/');
     const categoryBitsResponse = await request(baseUrl, '/admin/category/?tab=bits');
     const categoryMaterialsResponse = await request(baseUrl, '/admin/category/?tab=materials');
     const bitsResponse = await request(baseUrl, '/bits/');
-    assertAdminContentPlaceholderShell('Dev GET /admin/content/', contentOverviewResponse, { expectNav: true });
-    assertAdminContentPlaceholderShell('Dev GET /admin/content/longform/', contentLongformResponse, { expectNav: true });
+    assertDevAdminContentConsoleShell('Dev GET /admin/content/', contentOverviewResponse, { expectNav: true });
+    assertDevAdminContentConsoleShell('Dev GET /admin/content/?collection=longform', contentLongformResponse, { expectNav: true });
     assertAdminCategoryShell('Dev GET /admin/category/', categoryResponse, { expectNav: true });
     assertAdminCategoryShell('Dev GET /admin/category/?tab=bits', categoryBitsResponse, {
       expectBitsDraft: true,

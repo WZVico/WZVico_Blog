@@ -169,7 +169,7 @@ Then open `http://localhost:4321/admin/` in your browser.
 | `/admin/images/` | Available | Image resource browser and path helper |
 | `/admin/checks/` | Available | Structured diagnostics and pre-release checks |
 | `/admin/data/` | Available | Settings snapshot export / dry-run import / confirmed write |
-| `/admin/content/` | In progress | Placeholder for content management and visual writing |
+| `/admin/content/` | Available in local dev | Content Console for longform / bits / picks / materials management, including create, edit, delete, and export |
 
 
 <details>
@@ -198,11 +198,11 @@ For more details, see the [Theme Console configuration guide](https://astro.whon
 
 #### Production behavior
 
-- Theme Console / Data Console provide write capabilities only in local development; Content Console is still a placeholder.
-- `/admin/content/` and `/admin/content/:collection/` currently only show the work-in-progress notice; collection overview, details, and frontmatter editing are not exposed.
+- Theme Console / Data Console / Content Console provide write capabilities only in local development; Content Console now includes content indexing, editors, create, delete, and export.
+- `/admin/content/` can manage longform / bits / picks / materials in local development. The existing `/admin/category/` entry is intentionally kept for the migration period, so both content-management systems coexist.
 - Production builds remain static output. `/admin/` can show a read-only public Overview or a hidden-state message based on Theme settings; production does not show Admin tabs, and other Admin subroutes only keep a local-development notice.
 - `/api/admin/settings/` is for local development only and should not be treated as a production API
-- `/api/admin/content/entry/` is for local development frontmatter writes only and should not be treated as a production API
+- `/api/admin/content/*` is for local development content-file management only and should not be treated as a production API
 - `/api/admin/data/settings/` is for local development settings export only and should not be treated as a production API
 
 #### Compatibility for existing forks

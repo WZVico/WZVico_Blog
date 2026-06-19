@@ -771,7 +771,7 @@ const toAdminImageListItem = async (
   item: AdminImageAssetRecord & { value: string },
   browseMeta: AdminImageAssetBrowseMeta = resolveBrowseMeta(item)
 ): Promise<AdminImageListItem> => {
-  const meta = await readLocalInspectionMeta(item.path);
+  const meta = await readAdminLocalImageInspectionMeta(item.path);
 
   return {
     path: item.path,
@@ -908,7 +908,7 @@ const readWebpSize = (buffer: Buffer): { width: number; height: number } | null 
   return null;
 };
 
-const readLocalInspectionMeta = async (assetPath: string): Promise<AdminImageInspectionMeta> => {
+export const readAdminLocalImageInspectionMeta = async (assetPath: string): Promise<AdminImageInspectionMeta> => {
   const absolutePath = toAbsoluteAssetPath(assetPath);
   if (!existsSync(absolutePath)) {
     throw new AdminImageError(`图片文件不存在：${assetPath}`, 404);
@@ -948,7 +948,7 @@ const readLocalInspectionMeta = async (assetPath: string): Promise<AdminImageIns
 };
 
 const readLocalImageMeta = async (target: LocalImageTarget): Promise<AdminImageMetaResult> => {
-  const inspectionMeta = await readLocalInspectionMeta(target.path);
+  const inspectionMeta = await readAdminLocalImageInspectionMeta(target.path);
 
   return {
     kind: 'local',

@@ -170,7 +170,7 @@ npm run dev
 | `/admin/images/` | 可用 | 图片资源浏览与路径辅助 |
 | `/admin/checks/` | 可用 | 结构化诊断与发布前自检 |
 | `/admin/data/` | 可用 | settings 快照导出 / dry-run 导入 / 确认写入 |
-| `/admin/content/` | 开发中 | 文章管理与可视化写作占位页 |
+| `/admin/content/` | 可用（本地开发） | Content Console，管理 longform / bits / picks / materials，支持创建、编辑、删除、导出 |
 
 
 <details>
@@ -198,11 +198,11 @@ Theme Console 主要面向**站点级**和**页面级**配置，支持内容：
 
 #### 生产环境说明
 
-- Theme Console / Data Console 仅在本地开发环境提供写入能力；Content Console 当前仍为占位页
-- `/admin/content/` 与 `/admin/content/:collection/` 当前仅显示开发中提示，不开放 collection 概览、详情与 frontmatter 写入界面
+- Theme Console / Data Console / Content Console 仅在本地开发环境提供写入能力；Content Console 已接入内容索引、编辑器、创建、删除与导出
+- `/admin/content/` 本地开发态可管理 longform / bits / picks / materials；旧 `/admin/category/` 暂时保留，两套内容管理入口并行
 - 生产构建保持静态站点输出；`/admin/` 可按 Theme 设置显示只读公开 Overview 或关闭态文案，生产态不展示后台 tabs，其他后台子路由仅保留本地开发提示
 - `/api/admin/settings/` 仅供本地开发使用，生产环境不要依赖该接口
-- `/api/admin/content/entry/` 仅供本地开发写入内容 frontmatter，生产环境不要依赖该接口
+- `/api/admin/content/*` 仅供本地开发管理内容文件，生产环境不要依赖这些接口
 - `/api/admin/data/settings/` 仅供本地开发导出 settings 快照，生产环境不要依赖该接口
 
 #### 兼容迁移（已 fork 用户）

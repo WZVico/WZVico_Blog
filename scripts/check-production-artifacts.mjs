@@ -41,9 +41,6 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/admin/index.html',
     'dist/admin/category/index.html',
     'dist/admin/content/index.html',
-    'dist/admin/content/longform/index.html',
-    'dist/admin/content/bits/index.html',
-    'dist/admin/content/picks/index.html',
     'dist/admin/images/index.html',
     'dist/admin/checks/index.html',
     'dist/bits/index.html',
@@ -54,8 +51,16 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/api/admin/settings',
     'dist/api/admin/data/settings',
     'dist/api/admin/content/entry',
+    'dist/api/admin/content/create',
+    'dist/api/admin/content/delete',
+    'dist/api/admin/content/export',
+    'dist/api/admin/content/bulk-status',
+    'dist/api/admin/content/bulk-delete',
+    'dist/api/admin/content/bulk-export',
+    'dist/api/admin/preview',
     'dist/api/admin/images/list',
-    'dist/api/admin/images/meta'
+    'dist/api/admin/images/meta',
+    'dist/api/admin/images/upload'
   ];
 
   for (const artifactPath of requiredArtifacts) {
@@ -107,9 +112,6 @@ export const runProductionArtifactCheck = async (options = {}) => {
   const adminHtml = readText('dist/admin/index.html');
   const adminCategoryHtml = readText('dist/admin/category/index.html');
   const adminContentHtml = readText('dist/admin/content/index.html');
-  const adminContentLongformHtml = readText('dist/admin/content/longform/index.html');
-  const adminContentBitsHtml = readText('dist/admin/content/bits/index.html');
-  const adminContentReadsHtml = readText('dist/admin/content/picks/index.html');
   const adminImageHtml = readText('dist/admin/images/index.html');
   const adminChecksHtml = readText('dist/admin/checks/index.html');
   const adminThemeHtml = readText('dist/admin/theme/index.html');
@@ -117,9 +119,6 @@ export const runProductionArtifactCheck = async (options = {}) => {
   const readonlyAdminHtmlChecks = [
     ['dist/admin/category/index.html', adminCategoryHtml, 'Category Console'],
     ['dist/admin/content/index.html', adminContentHtml, 'Content Console'],
-    ['dist/admin/content/longform/index.html', adminContentLongformHtml, 'Content Console'],
-    ['dist/admin/content/bits/index.html', adminContentBitsHtml, 'Content Console'],
-    ['dist/admin/content/picks/index.html', adminContentReadsHtml, 'Content Console'],
     ['dist/admin/images/index.html', adminImageHtml, 'Images Console'],
     ['dist/admin/checks/index.html', adminChecksHtml, 'Checks Console'],
     ['dist/admin/theme/index.html', adminThemeHtml, 'Theme Console'],
@@ -152,6 +151,17 @@ export const runProductionArtifactCheck = async (options = {}) => {
     !existsSync('dist/bits/draft-dialog/index.html'),
     'Bits draft dialog route should no longer be generated under /bits/'
   );
+  for (const removedContentRoute of [
+    'dist/admin/content/longform/index.html',
+    'dist/admin/content/bits/index.html',
+    'dist/admin/content/picks/index.html',
+    'dist/admin/content/materials/index.html'
+  ]) {
+    expect(
+      !existsSync(removedContentRoute),
+      `${removedContentRoute} should not be generated; Content Console scopes now use /admin/content/?collection=...`
+    );
+  }
 
   for (const [filePath, html, heading] of readonlyAdminHtmlChecks) {
     expect(html.includes(heading), `${filePath} is missing the expected ${heading} route heading`);
@@ -307,12 +317,20 @@ export const runProductionArtifactCheck = async (options = {}) => {
   );
   const adminDataSettingsArtifact = readText('dist/api/admin/data/settings');
   assertAdminSettingsStaticShell('dist/api/admin/data/settings', adminDataSettingsArtifact, '/api/admin/data/settings/');
-  const adminContentEntryArtifact = readText('dist/api/admin/content/entry');
-  assertAdminContentStaticShell(
-    'dist/api/admin/content/entry',
-    adminContentEntryArtifact,
-    '/api/admin/content/entry/'
-  );
+  const contentApiArtifacts = [
+    ['dist/api/admin/content/entry', '/api/admin/content/entry/'],
+    ['dist/api/admin/content/create', '/api/admin/content/create/'],
+    ['dist/api/admin/content/delete', '/api/admin/content/delete/'],
+    ['dist/api/admin/content/export', '/api/admin/content/export/'],
+    ['dist/api/admin/content/bulk-status', '/api/admin/content/bulk-status/'],
+    ['dist/api/admin/content/bulk-delete', '/api/admin/content/bulk-delete/'],
+    ['dist/api/admin/content/bulk-export', '/api/admin/content/bulk-export/'],
+    ['dist/api/admin/preview', '/api/admin/preview/']
+  ];
+  for (const [artifactPath, expectedPath] of contentApiArtifacts) {
+    const artifact = readText(artifactPath);
+    assertAdminContentStaticShell(artifactPath, artifact, expectedPath);
+  }
   const adminImageListArtifact = readText('dist/api/admin/images/list');
   assertAdminImageStaticShell(
     'dist/api/admin/images/list',
@@ -324,6 +342,12 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/api/admin/images/meta',
     adminImageMetaArtifact,
     '/api/admin/images/meta/'
+  );
+  const adminImageUploadArtifact = readText('dist/api/admin/images/upload');
+  assertAdminImageStaticShell(
+    'dist/api/admin/images/upload',
+    adminImageUploadArtifact,
+    '/api/admin/images/upload/'
   );
 
   console.log('Production artifact verification passed.');

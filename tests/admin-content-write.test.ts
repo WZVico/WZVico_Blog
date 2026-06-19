@@ -60,6 +60,43 @@ describe('admin content write api', () => {
       ['---', 'title: picks', 'date: 2026-01-10', '---', '', 'picks body', ''].join('\n'),
       'utf8'
     );
+    await mkdir(path.join(tempRoot, 'src', 'content', 'picks', '202606'), { recursive: true });
+    await writeFile(
+      path.join(tempRoot, 'src', 'content', 'picks', '202606', 'pick.md'),
+      [
+        '---',
+        'title: 《旧书》',
+        'date: 2026-06-01T12:00:00+08:00',
+        'year: 2026',
+        'authors:',
+        '  - 旧作者',
+        'tags:',
+        '  - 旧',
+        'draft: false',
+        '---',
+        '',
+        '旧推荐。',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+    await mkdir(path.join(tempRoot, 'src', 'content', 'materials', '202606'), { recursive: true });
+    await writeFile(
+      path.join(tempRoot, 'src', 'content', 'materials', '202606', 'material.md'),
+      [
+        '---',
+        'title: 旧资料',
+        'href: "https://example.com/old"',
+        'date: 2026-06-02',
+        'label: OLD',
+        'description: 旧描述',
+        '---',
+        '',
+        'legacy body',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
   });
 
   afterEach(async () => {
@@ -107,15 +144,25 @@ describe('admin content write api', () => {
     }
   });
 
-  it('rejects picks writes while still exposing readonly schema info', async () => {
+  it('loads editable payloads for picks and materials entries', async () => {
     const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
-    const payload = await readAdminContentEntryEditorPayload('picks', 'index');
 
-    expect(payload.writable).toBe(false);
-    expect(payload.readonlyReason).toContain('Phase 2B');
-    expect(payload.collection).toBe('picks');
-    if (payload.collection === 'picks') {
-      expect(payload.values.slug).toBe('');
+    const pickPayload = await readAdminContentEntryEditorPayload('picks', '202606/pick');
+    expect(pickPayload.writable).toBe(true);
+    if (pickPayload.collection === 'picks') {
+      expect(pickPayload.values.title).toBe('《旧书》');
+      expect(pickPayload.values.year).toBe('2026');
+      expect(pickPayload.values.status).toBe('shared');
+      expect(pickPayload.values.authorsText).toBe('旧作者');
+      expect(pickPayload.bodyText).toContain('旧推荐');
+    }
+
+    const materialPayload = await readAdminContentEntryEditorPayload('materials', '202606/material');
+    expect(materialPayload.writable).toBe(true);
+    if (materialPayload.collection === 'materials') {
+      expect(materialPayload.values.title).toBe('旧资料');
+      expect(materialPayload.values.href).toBe('https://example.com/old');
+      expect(materialPayload.values.label).toBe('OLD');
     }
   });
 
@@ -130,10 +177,10 @@ describe('admin content write api', () => {
         message: '不支持的 content collection'
       },
       {
-        body: { collection: 'picks', entryId: 'index', revision: 'stale', frontmatter: {} },
+        body: { collection: 'picks', entryId: '202606/pick', revision: 'stale' },
         status: 400,
-        issuePath: 'collection',
-        message: '只读'
+        issuePath: 'frontmatter',
+        message: '请求体缺少 frontmatter 字段'
       },
       {
         body: { collection: 'longform', entryId: '../secret', revision: 'stale', frontmatter: {} },
@@ -560,6 +607,303 @@ describe('admin content write api', () => {
     );
   });
 
+  it('supports dry-run and real writes for picks frontmatter and body', async () => {
+    const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
+    const { POST } = await import('../src/pages/api/admin/content/entry');
+    const current = await readAdminContentEntryEditorPayload('picks', '202606/pick');
+    if (current.collection !== 'picks') throw new Error('Expected picks payload');
+
+    const nextValues = {
+      ...current.values,
+      title: '《新书》',
+      tagsText: '阅读\n新'
+    };
+
+    const dryRunResponse = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry?dryRun=1', {
+        collection: 'picks',
+        entryId: '202606/pick',
+        revision: current.revision,
+        frontmatter: nextValues,
+        body: '新的推荐理由。\n'
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/entry?dryRun=1')
+    } as never);
+
+    expect(dryRunResponse.status).toBe(200);
+    const dryRunPayload = JSON.parse(await dryRunResponse.text());
+    expect(dryRunPayload.ok).toBe(true);
+    expect(dryRunPayload.result.changedFields).toEqual(['title', 'tags', 'body']);
+
+    const writeResponse = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry', {
+        collection: 'picks',
+        entryId: '202606/pick',
+        revision: current.revision,
+        frontmatter: nextValues,
+        body: '新的推荐理由。\n'
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/entry')
+    } as never);
+
+    expect(writeResponse.status).toBe(200);
+    const writePayload = JSON.parse(await writeResponse.text());
+    expect(writePayload.ok).toBe(true);
+    expect(writePayload.result.written).toBe(true);
+    expect(writePayload.payload.values.title).toBe('《新书》');
+
+    const after = await readFile(path.join(tempRoot, 'src', 'content', 'picks', '202606', 'pick.md'), 'utf8');
+    expect(after).toContain('title: 《新书》');
+    expect(after).toContain('tags:\n  - 阅读\n  - 新');
+    expect(after.endsWith('新的推荐理由。\n')).toBe(true);
+  });
+
+  it('validates shared picks body and clears body for planned picks', async () => {
+    const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
+    const { POST } = await import('../src/pages/api/admin/content/entry');
+    const current = await readAdminContentEntryEditorPayload('picks', '202606/pick');
+    if (current.collection !== 'picks') throw new Error('Expected picks payload');
+
+    const invalidSharedResponse = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry?dryRun=1', {
+        collection: 'picks',
+        entryId: '202606/pick',
+        revision: current.revision,
+        frontmatter: current.values,
+        body: ''
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/entry?dryRun=1')
+    } as never);
+
+    expect(invalidSharedResponse.status).toBe(400);
+    const invalidPayload = JSON.parse(await invalidSharedResponse.text());
+    expect(invalidPayload.ok).toBe(false);
+    expect(invalidPayload.issues).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: 'body' })
+      ])
+    );
+
+    const plannedResponse = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry', {
+        collection: 'picks',
+        entryId: '202606/pick',
+        revision: current.revision,
+        frontmatter: {
+          ...current.values,
+          status: 'planned'
+        },
+        body: '不应保存。'
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/entry')
+    } as never);
+
+    expect(plannedResponse.status).toBe(200);
+    const plannedPayload = JSON.parse(await plannedResponse.text());
+    expect(plannedPayload.ok).toBe(true);
+    expect(plannedPayload.result.changedFields).toEqual(['status', 'body']);
+
+    const after = await readFile(path.join(tempRoot, 'src', 'content', 'picks', '202606', 'pick.md'), 'utf8');
+    expect(after).toContain('status: planned');
+    expect(after).not.toContain('旧推荐');
+    expect(after).not.toContain('不应保存');
+    expect(after.trim().endsWith('---')).toBe(true);
+  });
+
+  it('writes materials frontmatter through content editor and normalizes links', async () => {
+    const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
+    const { POST } = await import('../src/pages/api/admin/content/entry');
+    const current = await readAdminContentEntryEditorPayload('materials', '202606/material');
+    if (current.collection !== 'materials') throw new Error('Expected materials payload');
+
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry', {
+        collection: 'materials',
+        entryId: '202606/material',
+        revision: current.revision,
+        frontmatter: {
+          ...current.values,
+          title: '新资料',
+          href: 'example.com/new',
+          label: 'PDF',
+          description: '新描述'
+        }
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/entry')
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+    expect(payload.result.changedFields).toEqual(['title', 'href', 'label', 'description', 'body']);
+    expect(payload.payload.values.href).toBe('https://example.com/new');
+
+    const after = await readFile(path.join(tempRoot, 'src', 'content', 'materials', '202606', 'material.md'), 'utf8');
+    expect(after).toContain('title: 新资料');
+    expect(after).toContain('https://example.com/new');
+    expect(after).toContain('label: PDF');
+    expect(after).toContain('description: 新描述');
+    expect(after).not.toContain('legacy body');
+  });
+
+  it('rejects stale revisions for picks content editor writes', async () => {
+    const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
+    const { POST } = await import('../src/pages/api/admin/content/entry');
+    const sourcePath = path.join(tempRoot, 'src', 'content', 'picks', '202606', 'pick.md');
+    const current = await readAdminContentEntryEditorPayload('picks', '202606/pick');
+    if (current.collection !== 'picks') throw new Error('Expected picks payload');
+
+    await writeFile(
+      sourcePath,
+      [
+        '---',
+        'title: 《外部更新》',
+        'date: 2026-06-01T12:00:00+08:00',
+        'year: 2026',
+        'authors:',
+        '  - 旧作者',
+        '---',
+        '',
+        '外部正文。',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry', {
+        collection: 'picks',
+        entryId: '202606/pick',
+        revision: current.revision,
+        frontmatter: {
+          ...current.values,
+          title: '《本地更新》'
+        },
+        body: '本地正文。'
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/entry')
+    } as never);
+
+    expect(response.status).toBe(409);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(false);
+    expect(payload.errors[0]).toContain('外部更新');
+    expect(payload.payload.values.title).toBe('《外部更新》');
+    expect(await readFile(sourcePath, 'utf8')).toContain('外部正文');
+  });
+  it('creates longform entries through content console inside monthly folders', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 4, 9, 12, 13));
+
+    const { POST } = await import('../src/pages/api/admin/content/create');
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/create', {
+        collection: 'longform',
+        entryId: 'content-console-longform',
+        frontmatter: {
+          title: 'Content Console Longform',
+          description: 'created from content console',
+          date: '2026-06-04',
+          publishedAt: '',
+          updatedAt: '',
+          tagsText: 'admin\ncontent',
+          draft: false,
+          archive: true,
+          slug: '',
+          cover: '',
+          badge: '',
+          authorsText: '',
+          authorName: '',
+          authorAvatar: '',
+          authorShowAvatar: true,
+          translationTranslator: '',
+          translationAvatar: '',
+          translationShowAvatar: true,
+          translationSource: '',
+          translationSourceUrl: ''
+        }
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/create')
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+    expect(payload.result.relativePath).toBe('src/content/longform/202606/content-console-longform.md');
+    expect(payload.editHref).toBe('/admin/content/longform/_edit/202606/content-console-longform/');
+    expect(payload.payload.collection).toBe('longform');
+
+    const after = await readFile(path.join(tempRoot, payload.result.relativePath), 'utf8');
+    expect(after).toContain('title: Content Console Longform');
+    expect(after).toContain('draft: true');
+    expect(after).toContain('slug: content-console-longform');
+    expect(after).toContain('tags: [ admin, content ]');
+  });
+
+  it('creates picks entries through content console inside the current month folder', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 4, 17, 28, 50));
+
+    const { POST } = await import('../src/pages/api/admin/content/create');
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/create', {
+        collection: 'picks',
+        frontmatter: {
+          title: '新书',
+          status: 'shared',
+          authorsText: '新作者',
+          reason: '新的推荐理由。',
+          tagsText: '经济\n阅读'
+        }
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/create')
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+    expect(payload.result.relativePath).toBe('src/content/picks/202606/2026-06-04-172850.md');
+    expect(payload.editHref).toBe('/admin/content/picks/_edit/202606/2026-06-04-172850/');
+    expect(payload.payload.collection).toBe('picks');
+
+    const after = await readFile(path.join(tempRoot, payload.result.relativePath), 'utf8');
+    expect(after).toContain('title: 《新书》');
+    expect(after).toContain('authors:\n  - 新作者');
+    expect(after).toContain('新的推荐理由。');
+    expect(after).toContain('tags:\n  - 经济\n  - 阅读');
+  });
+
+  it('creates materials entries through content console inside the current month folder', async () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date(2026, 5, 4, 17, 28, 50));
+
+    const { POST } = await import('../src/pages/api/admin/content/create');
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/create', {
+        collection: 'materials',
+        frontmatter: {
+          title: '年度资料',
+          href: 'example.com/material',
+          label: 'PDF',
+          description: '资料描述'
+        }
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/create')
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+    expect(payload.result.relativePath).toBe('src/content/materials/202606/年度资料-2026-06-04-172850.md');
+    expect(payload.editHref).toBe('/admin/content/materials/_edit/202606/%E5%B9%B4%E5%BA%A6%E8%B5%84%E6%96%99-2026-06-04-172850/');
+    expect(payload.payload.collection).toBe('materials');
+    expect(payload.payload.values.href).toBe('https://example.com/material');
+
+    const after = await readFile(path.join(tempRoot, payload.result.relativePath), 'utf8');
+    expect(after).toContain('title: 年度资料');
+    expect(after).toContain('href: https://example.com/material');
+    expect(after).toContain('label: PDF');
+  });
   it('creates picks entries as monthly single-entry markdown files', async () => {
     vi.useFakeTimers();
     vi.setSystemTime(new Date(2026, 5, 4, 17, 28, 50));

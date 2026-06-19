@@ -105,3 +105,7 @@ export const parseLongformDateInput = (value: unknown): LongformDateParseResult 
 
   return null;
 };
+export type EssayDateParseResult = LongformDateParseResult;
+
+export const parseEssayPublishedAtInput = parseLongformPublishedAtInput;
+export const parseEssayDateInput = parseLongformDateInput;
