@@ -19,6 +19,7 @@ import type {
   AdminContentDraftFilter,
   AdminContentIndexItem,
   AdminContentScopeKey,
+  AdminContentScopeOption,
   AdminContentSortKey
 } from '../../../lib/admin-console/content';
 import type { AdminContentCreatableCollectionKey } from '../../../lib/admin-console/content-collections';
@@ -185,11 +186,12 @@ const currentSortLabel = pageData ? getSortFilterLabel(pageData.filterState.sort
 const currentYearLabel = pageData?.filterState.year !== null && pageData?.filterState.year !== undefined
   ? String(pageData.filterState.year)
   : '全部年份';
-const shouldEnableScopedFilterMenus = Boolean(
-  pageData
-  && pageData.collection !== 'all'
-  && getAdminContentCollectionCapability(pageData.collection).articleFilters
-);
+const activeCollectionCapability = pageData && pageData.collection !== 'all'
+  ? getAdminContentCollectionCapability(pageData.collection)
+  : null;
+const shouldEnableDraftFilterMenu = activeCollectionCapability?.draftStatus === true;
+const shouldEnableSortFilterMenu = activeCollectionCapability?.multiEntry === true;
+const shouldEnableYearFilterMenu = activeCollectionCapability?.multiEntry === true;
 const hiddenFilterInputs = pageData && pageData.collection !== 'all'
   ? [
       { name: 'collection', value: pageData.collection },
@@ -205,6 +207,13 @@ const hiddenFilterInputs = pageData && pageData.collection !== 'all'
     ]
   : [];
 const contentFilterMenuGroupName = 'admin-content-filter-menu';
+const isContentScopeOption = (option: AdminContentScopeOption | null): option is AdminContentScopeOption =>
+  option !== null;
+const contentScopeNavItems = pageData
+  ? ['longform', 'bits', 'picks', 'materials']
+      .map((collection) => pageData.collectionOptions.find((option) => option.value === collection) ?? null)
+      .filter(isContentScopeOption)
+  : [];
 
 const getContentEmptyMessage = (sectionLabel: string): string => {
   const query = pageData?.filterState.query.trim() ?? '';
@@ -336,31 +345,26 @@ const getContentCreateAction = (
               <div id="admin-content-filter-panel" class="admin-content-filter-panel">
                 <div class="admin-content-filter-bar">
                   <div class="admin-content-filter-menus" aria-label="内容筛选">
-                    <details class="admin-content-filter-menu admin-content-filter-menu--scope" name={contentFilterMenuGroupName}>
-                      <summary class="admin-content-filter-trigger">
-                        <span>{pageData.collectionLabel}</span>
-                        <AdminIcon name="chevron-down" size={14} />
-                      </summary>
-                      <div class="admin-content-filter-menu__panel" aria-label="内容范围">
-                        {
-                          pageData.collectionOptions.map((option) => (
-                            <a
-                              class:list={[
-                                'admin-content-filter-option',
-                                option.value === pageData.filterState.collection && 'is-active'
-                              ]}
-                              href={getContentFilterHref({ collection: option.value })}
-                            >
-                              <span>{option.label}</span>
-                              <span class="admin-content-filter-option__count">{option.count}</span>
-                            </a>
-                          ))
-                        }
-                      </div>
-                    </details>
+                    <nav class="admin-content-scope-nav" aria-label="内容范围">
+                      {
+                        contentScopeNavItems.map((option) => (
+                          <a
+                            class:list={[
+                              'admin-content-scope-link',
+                              option.value === pageData.filterState.collection && 'is-active'
+                            ]}
+                            href={getContentFilterHref({ collection: option.value })}
+                            aria-current={option.value === pageData.filterState.collection ? 'page' : undefined}
+                          >
+                            <span>{option.label}</span>
+                          </a>
+                        ))
+                      }
+                    </nav>
 
+                    <div class="admin-content-refine-menus">
                     {
-                      shouldEnableScopedFilterMenus ? (
+                      shouldEnableDraftFilterMenu ? (
                         <details class="admin-content-filter-menu" name={contentFilterMenuGroupName}>
                           <summary class="admin-content-filter-trigger">
                             <span>{currentDraftLabel}</span>
@@ -390,7 +394,7 @@ const getContentCreateAction = (
                     }
 
                     {
-                      shouldEnableScopedFilterMenus ? (
+                      shouldEnableSortFilterMenu ? (
                         <details class="admin-content-filter-menu" name={contentFilterMenuGroupName}>
                           <summary class="admin-content-filter-trigger">
                             <span>{currentSortLabel}</span>
@@ -420,7 +424,7 @@ const getContentCreateAction = (
                     }
 
                     {
-                      shouldEnableScopedFilterMenus ? (
+                      shouldEnableYearFilterMenu ? (
                         <details class="admin-content-filter-menu" name={contentFilterMenuGroupName}>
                           <summary class="admin-content-filter-trigger">
                             <span>{currentYearLabel}</span>
@@ -458,6 +462,7 @@ const getContentCreateAction = (
                         </span>
                       )
                     }
+                    </div>
                   </div>
 
                   <div class="admin-content-filter-actions">

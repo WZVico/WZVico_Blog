@@ -127,8 +127,8 @@ const COLLECTION_ORDER = new Map<AdminContentCollectionKey, number>(
 const getCollectionLabel = (collection: AdminContentCollectionKey): string =>
   getAdminContentCollectionCapability(collection).label;
 
-const shouldUseArticleFilters = (collection: AdminContentScopeKey): boolean =>
-  collection !== 'all' && getAdminContentCollectionCapability(collection).articleFilters;
+const getScopedCollectionCapability = (collection: AdminContentScopeKey) =>
+  collection === 'all' ? null : getAdminContentCollectionCapability(collection);
 
 const isAdminContentDraftFilter = (value: string): value is AdminContentDraftFilter =>
   ADMIN_CONTENT_DRAFT_OPTIONS.some((option) => option.value === value);
@@ -277,20 +277,7 @@ export const getAdminContentFilterState = (searchParams: URLSearchParams): Admin
     };
   }
 
-  if (!shouldUseArticleFilters(collection)) {
-    return {
-      collection,
-      query,
-      queryTokens: tokenizeSearchQuery(query),
-      draft: 'all',
-      tag: '',
-      year: null,
-      sort: 'recent',
-      entryId: '',
-      page: 1
-    };
-  }
-
+  const collectionCapability = getScopedCollectionCapability(collection);
   const draftValue = normalizeOptionalText(searchParams.get('draft'));
   const sortValue = normalizeOptionalText(searchParams.get('sort'));
   const year = normalizePositiveInteger(searchParams.get('year'));
@@ -298,13 +285,13 @@ export const getAdminContentFilterState = (searchParams: URLSearchParams): Admin
   return {
     collection,
     query,
-    queryTokens: tokenizeSearchQuery(query),
-    draft: isAdminContentDraftFilter(draftValue) ? draftValue : 'all',
-    tag: normalizeAdminContentTagFilter(searchParams.get('tag')),
-    year,
-    sort: isAdminContentSortKey(sortValue) ? sortValue : 'recent',
+    queryTokens,
+    draft: collectionCapability?.draftStatus === true && isAdminContentDraftFilter(draftValue) ? draftValue : 'all',
+    tag: collectionCapability?.articleFilters === true ? normalizeAdminContentTagFilter(searchParams.get('tag')) : '',
+    year: collectionCapability?.multiEntry === true ? year : null,
+    sort: collectionCapability?.multiEntry === true && isAdminContentSortKey(sortValue) ? sortValue : 'recent',
     entryId: '',
-    page
+    page: collectionCapability?.pagination === true ? page : 1
   };
 };
 
@@ -321,11 +308,11 @@ export const filterAdminContentItems = (
 
   const filteredItems = items.filter((item) => {
     if (filterState.collection !== 'all' && item.collection !== filterState.collection) return false;
-    const articleFilters = getAdminContentCollectionCapability(item.collection).articleFilters;
-    if (articleFilters && filterState.draft === 'draft' && !item.isDraft) return false;
-    if (articleFilters && filterState.draft === 'published' && item.isDraft) return false;
-    if (articleFilters && tagKey && !getTagKeys(item.tags).includes(tagKey)) return false;
-    if (articleFilters && filterState.year !== null && item.year !== filterState.year) return false;
+    const capability = getAdminContentCollectionCapability(item.collection);
+    if (capability.draftStatus && filterState.draft === 'draft' && !item.isDraft) return false;
+    if (capability.draftStatus && filterState.draft === 'published' && item.isDraft) return false;
+    if (capability.articleFilters && tagKey && !getTagKeys(item.tags).includes(tagKey)) return false;
+    if (filterState.year !== null && item.year !== filterState.year) return false;
     if (queryTokens.length > 0 && !queryTokens.every((token) => item.searchHaystack.includes(token))) return false;
     return true;
   });
@@ -357,8 +344,11 @@ export const getAdminContentFilterHref = (
     const nextYear = updates.year !== undefined ? updates.year : filterState.year;
 
     params.set('collection', nextCollection);
-    if (nextCapability.articleFilters) {
-      if (nextDraft !== 'all') params.set('draft', nextDraft);
+    if (nextCapability.draftStatus && nextDraft !== 'all') {
+      params.set('draft', nextDraft);
+    }
+
+    if (nextCapability.multiEntry) {
       if (nextSort !== 'recent') params.set('sort', nextSort);
       if (nextYear !== null && nextYear !== '') params.set('year', String(nextYear));
     }

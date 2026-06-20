@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 
 const {
   filterAdminContentItems,
+  getAdminContentFilterHref,
   getAdminContentFilterState,
   getAdminContentPublicFallbackLabel
 } = await import('../src/lib/admin-console/content');
@@ -51,6 +52,28 @@ describe('admin-console/content', () => {
     expect(state.page).toBe(3);
     expect(state.entryId).toBe('');
     expect(state.sort).toBe('title');
+  });
+
+  it('keeps materials sort, year and page filters without enabling draft-only filters', () => {
+    const state = getAdminContentFilterState(new URLSearchParams([
+      ['collection', 'materials'],
+      ['q', ' reference '],
+      ['draft', 'draft'],
+      ['tag', 'astro'],
+      ['year', '2026'],
+      ['page', '2'],
+      ['sort', 'title']
+    ]));
+
+    expect(state.collection).toBe('materials');
+    expect(state.query).toBe('reference');
+    expect(state.queryTokens).toEqual(['reference']);
+    expect(state.draft).toBe('all');
+    expect(state.tag).toBe('');
+    expect(state.year).toBe(2026);
+    expect(state.page).toBe(2);
+    expect(state.sort).toBe('title');
+    expect(getAdminContentFilterHref(state, {}, '/admin/content/')).toBe('/admin/content/?q=reference&collection=materials&sort=title&year=2026');
   });
 
   it('uses entryId as exact source-file定位 mode inside a collection scope', () => {
@@ -106,6 +129,56 @@ describe('admin-console/content', () => {
 
     expect(filtered).toHaveLength(1);
     expect(filtered[0]?.id).toBe('202606/example');
+  });
+
+  it('filters materials by year without applying draft status filters', () => {
+    const items = [
+      createItem({
+        collection: 'materials',
+        collectionLabel: '资料',
+        id: '202606/reference',
+        publicEntryId: '202606/reference',
+        title: 'Reference 2026',
+        slug: 'https://example.com/reference-2026',
+        relativePath: 'src/content/materials/202606/reference.md',
+        publicHref: 'https://example.com/reference-2026',
+        isDraft: false,
+        archive: null,
+        year: 2026,
+        tags: [],
+        searchHaystack: 'reference 2026'
+      }),
+      createItem({
+        collection: 'materials',
+        collectionLabel: '资料',
+        id: '202505/reference',
+        publicEntryId: '202505/reference',
+        title: 'Reference 2025',
+        slug: 'https://example.com/reference-2025',
+        relativePath: 'src/content/materials/202505/reference.md',
+        publicHref: 'https://example.com/reference-2025',
+        isDraft: false,
+        archive: null,
+        year: 2025,
+        tags: [],
+        searchHaystack: 'reference 2025'
+      })
+    ];
+
+    const filtered = filterAdminContentItems(items, {
+      collection: 'materials',
+      query: '',
+      queryTokens: [],
+      draft: 'draft',
+      tag: 'astro',
+      year: 2026,
+      page: 1,
+      entryId: '',
+      sort: 'recent'
+    });
+
+    expect(filtered).toHaveLength(1);
+    expect(filtered[0]?.id).toBe('202606/reference');
   });
 
   it('returns readable public fallback labels for non-public entries', () => {
