@@ -796,6 +796,10 @@
   min-width: 0;
 }
 
+.admin-content-empty--global {
+  padding-inline: var(--admin-row-table-padding-inline);
+}
+
 .admin-content-pagination {
   display: inline-flex;
   align-items: center;

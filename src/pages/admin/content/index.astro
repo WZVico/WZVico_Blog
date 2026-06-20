@@ -204,6 +204,15 @@ const getContentEmptyMessage = (sectionLabel: string): string => {
   return `${sectionLabel}中暂无内容。`;
 };
 
+const getContentSearchEmptyMessage = (): string => {
+  const query = pageData?.filterState.query.trim() ?? '';
+  return query ? `没有命中“${query}”的内容。` : '没有符合当前搜索条件的内容。';
+};
+
+const visibleContentSections = pageData?.mode === 'search'
+  ? pageData.sections.filter((section) => section.filteredCount > 0)
+  : pageData?.sections ?? [];
+
 const CONTENT_CREATE_ACTIONS = {
   longform: {
     attribute: 'data-admin-content-create-action',
@@ -465,7 +474,7 @@ const getContentCreateAction = (
 
           <div class="admin-content-modules">
             {
-              pageData.sections.map((section) => {
+              visibleContentSections.length > 0 ? visibleContentSections.map((section) => {
                 const sectionTitleId = `admin-content-${section.collection}-title`;
                 const sectionCapability = getAdminContentCollectionCapability(section.collection);
                 const createAction = sectionCapability.create
@@ -696,7 +705,11 @@ const getContentCreateAction = (
                     }
                   </section>
                 );
-              })
+              }) : (
+                <p class="admin-content-empty admin-content-empty--global" role="status">
+                  {getContentSearchEmptyMessage()}
+                </p>
+              )
             }
           </div>
 
