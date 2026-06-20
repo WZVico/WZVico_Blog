@@ -69,8 +69,8 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
 const hasOwn = (value: Record<string, unknown>, key: string): boolean =>
   Object.prototype.hasOwnProperty.call(value, key);
 
-const isFrontmatterWriteCollection = (collection: string): collection is 'longform' | 'bits' | 'picks' | 'materials' =>
-  collection === 'longform' || collection === 'bits' || collection === 'picks' || collection === 'materials';
+const isFrontmatterWriteCollection = (collection: string): collection is 'longform' | 'bits' | 'picks' | 'materials' | 'about' =>
+  collection === 'longform' || collection === 'bits' || collection === 'picks' || collection === 'materials' || collection === 'about';
 
 const extractWriteInput = (body: unknown): WriteInput => {
   if (!isRecord(body)) {
@@ -117,12 +117,6 @@ const extractWriteInput = (body: unknown): WriteInput => {
     issues.push({ path: 'revision', message });
   }
 
-  if (rawCollection === 'about' && !hasBody) {
-    const message = 'about 保存请求缺少 body 字段';
-    errors.push(message);
-    issues.push({ path: 'body', message });
-  }
-
   if (rawCollection === 'memo' && !hasBody) {
     const message = 'memo 保存请求缺少 body 字段';
     errors.push(message);
@@ -130,11 +124,11 @@ const extractWriteInput = (body: unknown): WriteInput => {
   }
 
   if (isFrontmatterWriteCollection(rawCollection) && !hasFrontmatter) {
-    const message = '请求体缺少 frontmatter 字段';
+    const message = rawCollection === 'about' ? 'about 保存请求缺少结构化内容字段' : '请求体缺少 frontmatter 字段';
     errors.push(message);
     issues.push({ path: 'frontmatter', message });
   } else if (isFrontmatterWriteCollection(rawCollection) && !isRecord(body.frontmatter)) {
-    const message = 'frontmatter 必须是对象';
+    const message = rawCollection === 'about' ? 'about 结构化内容必须是对象' : 'frontmatter 必须是对象';
     errors.push(message);
     issues.push({ path: 'frontmatter', message });
   }
@@ -309,7 +303,7 @@ export const POST: APIRoute = async ({ request, url }) => {
     }
 
     try {
-      const nextSourceText = applyAdminContentWritePlan(plan.state, plan.patches, plan.bodyText);
+      const nextSourceText = applyAdminContentWritePlan(plan.state, plan.patches, plan.bodyText, plan.sourceText);
       await persistAdminFileTransaction([
         {
           id: 'entry',

@@ -565,29 +565,37 @@ const getContentCreateAction = (
                                 const sourceErrorPanelId = item.sourceError
                                   ? `admin-content-source-error-${section.collection}-${itemIndex}`
                                   : null;
-                                const hasBulkIdentity = Boolean(item.collection && item.id && item.relativePath);
+                                const supportsBulkSelection = capability.multiEntry;
+                                const showsBulkCheckbox = supportsBulkSelection || item.collection === 'about';
+                                const hasBulkIdentity = supportsBulkSelection && Boolean(item.collection && item.id && item.relativePath);
                                 const bulkCheckboxLabel = hasBulkIdentity
                                   ? `选择${item.title}`
-                                  : '缺少源文件身份，无法批量操作';
+                                  : item.collection === 'about'
+                                    ? '关于不支持批量操作'
+                                    : '缺少源文件身份，无法批量操作';
                                 return (
                                   <li
                                     class="admin-row admin-row--plain admin-row--interactive admin-row--table admin-content-item"
                                     data-collection={item.collection}
                                     data-admin-content-item
                                   >
-                                    <label class="admin-content-bulk-select" title={bulkCheckboxLabel}>
-                                      <input
-                                        class="admin-content-bulk-checkbox"
-                                        type="checkbox"
-                                        data-admin-content-bulk-entry={hasBulkIdentity ? true : undefined}
-                                        data-collection={hasBulkIdentity ? item.collection : undefined}
-                                        data-entry-id={hasBulkIdentity ? item.id : undefined}
-                                        data-relative-path={hasBulkIdentity ? item.relativePath : undefined}
-                                        data-title={hasBulkIdentity ? item.title : undefined}
-                                        disabled={!hasBulkIdentity}
-                                        aria-label={bulkCheckboxLabel}
-                                      />
-                                    </label>
+                                    {showsBulkCheckbox ? (
+                                      <label class="admin-content-bulk-select" title={bulkCheckboxLabel}>
+                                        <input
+                                          class="admin-content-bulk-checkbox"
+                                          type="checkbox"
+                                          data-admin-content-bulk-entry={hasBulkIdentity ? true : undefined}
+                                          data-collection={hasBulkIdentity ? item.collection : undefined}
+                                          data-entry-id={hasBulkIdentity ? item.id : undefined}
+                                          data-relative-path={hasBulkIdentity ? item.relativePath : undefined}
+                                          data-title={hasBulkIdentity ? item.title : undefined}
+                                          disabled={!hasBulkIdentity}
+                                          aria-label={bulkCheckboxLabel}
+                                        />
+                                      </label>
+                                    ) : (
+                                      <span class="admin-content-bulk-select" aria-hidden="true"></span>
+                                    )}
                                     <p class="admin-content-row-meta">
                                       <span data-admin-content-row-date>{getContentRowDateLabel(item)}</span>
                                     </p>
@@ -643,7 +651,20 @@ const getContentCreateAction = (
                                   </div>
 
                                   <div class="admin-content-item__actions">
-                                    {item.collection === 'materials' ? (
+                                    {item.collection === 'about' ? (
+                                      <>
+                                        <a class="admin-btn admin-btn--secondary admin-btn--compact" href={editHref}>
+                                          编辑
+                                        </a>
+                                        <a
+                                          class="admin-btn admin-btn--ghost admin-btn--compact"
+                                          href={exportHref}
+                                          data-admin-content-export-action
+                                        >
+                                          导出
+                                        </a>
+                                      </>
+                                    ) : item.collection === 'materials' ? (
                                       <>
                                         <button
                                           type="button"

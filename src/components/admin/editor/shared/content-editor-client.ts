@@ -6,6 +6,7 @@ import type {
   AdminMaterialsEditorValues,
   AdminPicksEditorValues
 } from '../../../../lib/admin-console/content-editor-payload';
+import type { AdminAboutEditorValues } from '../../../../lib/admin-console/content-about-contract';
 import type { AdminContentCollectionKey } from '../../../../lib/admin-console/content-collections';
 import type { AdminContentDeletableCollectionKey } from '../../../../lib/admin-console/content-delete-contract';
 import {
@@ -79,7 +80,7 @@ export type ContentEditorSaveInput = ContentEditorSaveBaseInput & (
     }
   | {
       collection: 'about';
-      body: string;
+      frontmatter: AdminAboutEditorValues;
     }
 );
 
@@ -194,6 +195,7 @@ const buildContentWriteRequestBody = (input: ContentEditorSaveInput): Record<str
     || input.collection === 'bits'
     || input.collection === 'picks'
     || input.collection === 'materials'
+    || input.collection === 'about'
   ) {
     requestBody.frontmatter = input.frontmatter;
   }

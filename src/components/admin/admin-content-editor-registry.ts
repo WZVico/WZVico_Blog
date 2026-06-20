@@ -317,11 +317,10 @@ const buildAboutEditorIslandProps = ({
 }: BuildAboutIslandPropsInput): AboutEditorIslandProps => ({
   endpoint: endpoints.endpoint,
   exportEndpoint: endpoints.exportEndpoint,
-  previewEndpoint: endpoints.previewEndpoint,
   returnHref,
   entryId: payload.entryId,
   revision: payload.revision,
-  initialBody: payload.bodyText
+  initialContent: payload.values
 });
 
 const CONTENT_EDITOR_PAGE_REGISTRY = {

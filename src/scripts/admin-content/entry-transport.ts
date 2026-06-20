@@ -182,8 +182,47 @@ const isAdminMemoEditorValues = (value: unknown): value is AdminMemoEditorValues
   && typeof value.draft === 'boolean'
   && typeof value.slug === 'string';
 
+const isAboutGuideItem = (value: unknown): value is AdminAboutEditorValues['guide']['items'][number] =>
+  isRecord(value)
+  && typeof value.title === 'string'
+  && typeof value.href === 'string'
+  && typeof value.description === 'string';
+
+const isAboutTechItem = (value: unknown): value is AdminAboutEditorValues['tech']['groups'][number]['items'][number] =>
+  isRecord(value)
+  && typeof value.title === 'string'
+  && typeof value.description === 'string';
+
+const isAboutTechGroup = (value: unknown): value is AdminAboutEditorValues['tech']['groups'][number] =>
+  isRecord(value)
+  && typeof value.title === 'string'
+  && Array.isArray(value.items)
+  && value.items.every(isAboutTechItem);
+
+const isAboutFaqItem = (value: unknown): value is AdminAboutEditorValues['faq']['items'][number] =>
+  isRecord(value)
+  && typeof value.question === 'string'
+  && typeof value.answer === 'string';
+
 const isAdminAboutEditorValues = (value: unknown): value is AdminAboutEditorValues =>
-  isRecord(value) && Object.keys(value).length === 0;
+  isRecord(value)
+  && Array.isArray(value.introLines)
+  && value.introLines.every((item) => typeof item === 'string')
+  && isRecord(value.guide)
+  && typeof value.guide.title === 'string'
+  && Array.isArray(value.guide.items)
+  && value.guide.items.every(isAboutGuideItem)
+  && isRecord(value.tech)
+  && typeof value.tech.title === 'string'
+  && Array.isArray(value.tech.groups)
+  && value.tech.groups.every(isAboutTechGroup)
+  && isRecord(value.faq)
+  && typeof value.faq.title === 'string'
+  && Array.isArray(value.faq.items)
+  && value.faq.items.every(isAboutFaqItem)
+  && isRecord(value.contact)
+  && typeof value.contact.title === 'string'
+  && typeof value.contact.note === 'string';
 
 const isAdminEssayEditorPayload = (value: unknown): value is AdminEssayEditorPayload =>
   isRecord(value)

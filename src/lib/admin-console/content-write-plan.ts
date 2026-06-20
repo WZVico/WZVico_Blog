@@ -10,7 +10,10 @@ import {
   type FrontmatterPatch
 } from './frontmatter';
 import { findMissingMarkdownBodyLocalImageReferences } from './essay-image-references';
-import { buildAdminAboutWritePlan } from './content-about-contract';
+import {
+  parseAdminAboutEditorContent,
+  stringifyAdminAboutContent
+} from './content-about-source';
 import {
   buildEssayFrontmatterFromValues,
   parseAdminEssayEditorInput,
@@ -87,6 +90,7 @@ type AdminWritePlan = {
   changedFields: string[];
   patches: FrontmatterPatch[];
   bodyText?: string;
+  sourceText?: string;
 };
 
 type FrontmatterDiffField = {
@@ -883,6 +887,28 @@ const buildMaterialsWritePlan = (
   };
 };
 
+const buildAboutWritePlan = (
+  state: AdminContentSourceState,
+  frontmatterInput: unknown
+): AdminWritePlan => {
+  const next = parseAdminAboutEditorContent(frontmatterInput);
+  if (!next.content) {
+    return {
+      issues: next.issues,
+      changedFields: [],
+      patches: []
+    };
+  }
+
+  const sourceText = stringifyAdminAboutContent(next.content);
+  return {
+    issues: [],
+    changedFields: sourceText !== state.sourceText ? ['body'] : [],
+    patches: [],
+    sourceText
+  };
+};
+
 const buildMemoWritePlan = (
   state: AdminContentSourceState,
   bodyInput?: string
@@ -1003,7 +1029,7 @@ export const buildAdminContentWritePlanFromState = async (
   if (collection === 'about') {
     return {
       state,
-      ...buildAdminAboutWritePlan(state, bodyInput)
+      ...buildAboutWritePlan(state, frontmatterInput)
     };
   }
 
@@ -1028,8 +1054,10 @@ export const buildAdminContentWritePlan = async (
 export const applyAdminContentWritePlan = (
   state: Pick<AdminContentSourceState, 'sourceText'>,
   patches: readonly FrontmatterPatch[],
-  bodyText?: string
+  bodyText?: string,
+  sourceText?: string
 ): string => {
+  if (sourceText !== undefined) return sourceText;
   const nextSourceText = patchMarkdownFrontmatter(state.sourceText, patches);
   return bodyText === undefined ? nextSourceText : replaceMarkdownBody(nextSourceText, bodyText);
 };

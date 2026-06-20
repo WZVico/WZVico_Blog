@@ -23,10 +23,13 @@ const getProjectRoot = (): string => process.env.ASTRO_WHONO_INTERNAL_TEST_PROJE
 const toRelativeProjectPath = (filePath: string): string =>
   path.relative(getProjectRoot(), filePath).replace(/\\/g, '/');
 
-const getContentSourceContentType = (fileName: string): string =>
-  fileName.toLowerCase().endsWith('.mdx')
+const getContentSourceContentType = (fileName: string): string => {
+  const normalizedFileName = fileName.toLowerCase();
+  if (normalizedFileName.endsWith('.json')) return 'application/json; charset=utf-8';
+  return normalizedFileName.endsWith('.mdx')
     ? 'text/plain; charset=utf-8'
     : 'text/markdown; charset=utf-8';
+};
 
 const toAsciiHeaderFileName = (value: string): string => {
   const normalized = value

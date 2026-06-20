@@ -1,13 +1,198 @@
 /* Admin Content Editor About Workspace
-   about 是固定单页 body-only 工作台，正文与预览骨架复用 shared editor shell。
+   about 固定页使用结构化表单编辑 src/data/about.json；公开 /about/ 样式仍由 src/styles/about.css 控制。
 */
 
-.admin-about-editor.admin-editor-shell {
-  --admin-editor-body-max-inline-size: 860px;
-  --admin-editor-preview-content-max-inline-size: var(--article-readable-inline-size);
-  --admin-editor-single-pane-max-inline-size: 1160px;
+.admin-about-editor.admin-about-structured-editor {
+  --admin-about-editor-form-inline-size: minmax(360px, 0.95fr);
+  --admin-about-editor-preview-inline-size: minmax(420px, 1.05fr);
 
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  gap: 12px;
   min-width: 0;
   min-height: 0;
   height: 100%;
+}
+
+.admin-about-editor__actions {
+  display: none;
+}
+
+.admin-about-editor__workspace {
+  display: grid;
+  grid-template-columns: var(--admin-about-editor-form-inline-size) var(--admin-about-editor-preview-inline-size);
+  gap: 16px;
+  min-width: 0;
+  min-height: 0;
+}
+
+.admin-about-editor__form,
+.admin-about-editor__preview {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+}
+
+.admin-about-editor__form {
+  display: grid;
+  align-content: start;
+  gap: 14px;
+  padding: 6px 2px 18px 0;
+}
+
+.admin-about-editor__block {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  padding: 0 0 14px;
+  border-bottom: 1px dashed color-mix(in srgb, var(--admin-row-divider) 74%, transparent);
+}
+
+.admin-about-editor__block-head {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 10px;
+  min-width: 0;
+}
+
+.admin-about-editor__block-head h3 {
+  margin: 0;
+  color: var(--muted);
+  font-size: var(--admin-text-sm);
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+.admin-about-editor__block-head--split {
+  align-items: center;
+}
+
+.admin-about-editor__rows,
+.admin-about-editor__group {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+}
+
+.admin-about-editor__group {
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--admin-control-border) 62%, transparent);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--admin-surface-muted) 54%, transparent);
+}
+
+.admin-about-editor__row {
+  display: grid;
+  grid-template-columns: minmax(92px, 0.45fr) minmax(112px, 0.55fr) minmax(180px, 1.2fr);
+  gap: 8px;
+  min-width: 0;
+  align-items: start;
+}
+
+.admin-about-editor__row--faq {
+  grid-template-columns: minmax(140px, 0.7fr) minmax(220px, 1.3fr) auto;
+}
+
+.admin-about-editor__field {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.admin-about-editor__field--full {
+  grid-column: 1 / -1;
+}
+
+.admin-about-editor__field--section-title {
+  min-width: min(100%, 320px);
+}
+
+.admin-about-editor__field > span {
+  color: var(--faint);
+  font-size: var(--admin-text-2xs);
+  font-weight: 650;
+  line-height: 1.25;
+}
+
+.admin-about-editor__field .admin-field__control {
+  min-width: 0;
+  width: 100%;
+  min-height: 31px;
+  padding-block: 5px;
+  font-size: var(--admin-text-sm);
+  resize: vertical;
+}
+
+.admin-about-editor__remove {
+  align-self: end;
+  color: var(--admin-error-accent);
+}
+
+.admin-about-editor__preview {
+  padding: 10px 12px 18px;
+  border-left: 1px solid color-mix(in srgb, var(--admin-row-divider) 76%, transparent);
+  background: var(--admin-editor-preview-surface);
+}
+
+.admin-about-editor__preview-page {
+  max-width: var(--article-readable-inline-size);
+  margin-inline: auto;
+  min-width: 0;
+}
+
+.admin-about-preview__header {
+  margin-top: 0;
+}
+
+.admin-about-editor__feedback {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: var(--admin-text-sm);
+  line-height: 1.45;
+}
+
+.admin-about-editor__feedback p {
+  margin: 0;
+}
+
+.admin-about-editor__error {
+  color: var(--admin-status-danger-text);
+}
+
+.admin-about-editor__saved {
+  color: var(--admin-status-success-text);
+}
+
+@media (max-width: 980px) {
+  .admin-about-editor.admin-about-structured-editor {
+    height: auto;
+  }
+
+  .admin-about-editor__workspace {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-about-editor__form,
+  .admin-about-editor__preview {
+    overflow: visible;
+  }
+
+  .admin-about-editor__preview {
+    border-left: 0;
+    border-top: 1px solid color-mix(in srgb, var(--admin-row-divider) 76%, transparent);
+  }
+}
+
+@media (max-width: 680px) {
+  .admin-about-editor__row,
+  .admin-about-editor__row--faq {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-about-editor__remove {
+    justify-self: start;
+  }
 }

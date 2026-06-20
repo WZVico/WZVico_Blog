@@ -100,7 +100,14 @@ const cloneMemoValues = (value: AdminMemoEditorValues): AdminMemoEditorValues =>
   slug: value.slug
 });
 
-const cloneAboutValues = (): AdminAboutEditorValues => ({});
+const cloneAboutValues = (value: AdminAboutEditorValues): AdminAboutEditorValues =>
+  JSON.parse(JSON.stringify(value)) as AdminAboutEditorValues;
+
+const isEqualAboutValues = (
+  left: AdminAboutEditorValues | null,
+  right: AdminAboutEditorValues | null
+): boolean =>
+  left === right || Boolean(left && right && JSON.stringify(left) === JSON.stringify(right));
 
 export const isEssayEditorValues = (value: AdminContentWorkspaceEditorValues | null): value is AdminEssayEditorValues =>
   Boolean(value && 'publishedAt' in value && 'updatedAt' in value && 'archive' in value && 'cover' in value && 'badge' in value && 'authorsText' in value && 'translationTranslator' in value);
@@ -384,7 +391,7 @@ const ABOUT_ADAPTER: ContentEditorAdapter<AdminAboutEditorValues> = {
   frontmatterIssuePaths: new Set<string>(),
   isFrontmatterIssuePath: isAdminAboutFrontmatterIssuePath,
   cloneValues: cloneAboutValues,
-  isEqualValues: isEqualContentEditorValues,
+  isEqualValues: isEqualAboutValues,
   getWriteFieldLabel: getAdminAboutWriteFieldLabel,
   getDeleteTitle: () => '关于'
 };

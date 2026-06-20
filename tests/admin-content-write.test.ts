@@ -24,9 +24,56 @@ describe('admin content write api', () => {
     await mkdir(path.join(tempRoot, 'src', 'content', 'bits'), { recursive: true });
     await mkdir(path.join(tempRoot, 'src', 'content', 'picks'), { recursive: true });
     await mkdir(path.join(tempRoot, 'src', 'content', 'materials'), { recursive: true });
+    await mkdir(path.join(tempRoot, 'src', 'data'), { recursive: true });
     await mkdir(path.join(tempRoot, 'public', 'author'), { recursive: true });
 
     await writeFile(path.join(tempRoot, 'public', 'author', 'alice.webp'), 'avatar');
+    await writeFile(
+      path.join(tempRoot, 'src', 'data', 'about.json'),
+      JSON.stringify({
+        introLines: ['旧介绍一', '旧介绍二'],
+        guide: {
+          title: '栏目指引',
+          items: [
+            { title: '长文', href: '/longform/', description: '长文描述' },
+            { title: '絮语', href: '/bits/', description: '絮语描述' },
+            { title: '拾选', href: '/picks/', description: '拾选描述' },
+            { title: '归档', href: '/archive/', description: '归档描述' },
+            { title: '资料', href: '/Materials/', description: '资料描述' }
+          ]
+        },
+        tech: {
+          title: '关于这里',
+          groups: [
+            {
+              title: '为什么写',
+              items: [
+                { title: '记录', description: '记录描述' },
+                { title: '学习', description: '学习描述' }
+              ]
+            },
+            {
+              title: '怎么写',
+              items: [
+                { title: 'AI 辅助', description: '辅助描述' },
+                { title: '持续更新', description: '更新描述' }
+              ]
+            }
+          ]
+        },
+        faq: {
+          title: '常见问题',
+          items: [
+            { question: '旧问题？', answer: '旧回答。' }
+          ]
+        },
+        contact: {
+          title: '联系与订阅',
+          note: '联系说明'
+        }
+      }, null, 2),
+      'utf8'
+    );
     await writeFile(
       path.join(tempRoot, 'src', 'content', 'longform', 'demo.md'),
       ['---', 'title: Demo Longform', 'date: 2026-03-18', 'draft: false', '---', '', '# Longform', '', '正文保持不变。', ''].join('\n'),
@@ -187,6 +234,95 @@ describe('admin content write api', () => {
     }
   });
 
+  it('lists the about fixed page from src/data/about.json', async () => {
+    const {
+      loadAdminContentSourceIndex,
+      loadAdminContentSourceManifest
+    } = await import('../src/lib/admin-console/content-source-index');
+    const manifest = await loadAdminContentSourceManifest();
+    const aboutPath = path.join(tempRoot, 'src', 'data', 'about.json');
+
+    expect(manifest.about).toEqual([aboutPath]);
+
+    const items = await loadAdminContentSourceIndex(manifest, 'about');
+    expect(items).toHaveLength(1);
+    expect(items[0]).toEqual(
+      expect.objectContaining({
+        collection: 'about',
+        id: 'index',
+        title: '关于',
+        relativePath: 'src/data/about.json',
+        publicHref: '/about/'
+      })
+    );
+  });
+
+  it('loads the about editor as structured content from src/data/about.json', async () => {
+    const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
+    const payload = await readAdminContentEntryEditorPayload('about', 'index');
+
+    expect(payload.collection).toBe('about');
+    expect(payload.relativePath).toBe('src/data/about.json');
+    expect(payload.values.introLines).toEqual(['旧介绍一', '旧介绍二']);
+    expect(payload.values.guide.title).toBe('栏目指引');
+    expect(payload.values.guide.items[0]).toEqual({
+      title: '长文',
+      href: '/longform/',
+      description: '长文描述'
+    });
+    expect(payload.values.faq.items[0]).toEqual({
+      question: '旧问题？',
+      answer: '旧回答。'
+    });
+  });
+
+  it('writes about structured content back to src/data/about.json through content console', async () => {
+    const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
+    const { POST } = await import('../src/pages/api/admin/content/entry');
+    const current = await readAdminContentEntryEditorPayload('about', 'index');
+    const nextContent = {
+      ...current.values,
+      introLines: ['新介绍一', ...current.values.introLines.slice(1)],
+      contact: {
+        ...current.values.contact,
+        note: '新的联系说明'
+      }
+    };
+
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/entry', {
+        collection: 'about',
+        entryId: 'index',
+        revision: current.revision,
+        frontmatter: nextContent
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/entry')
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+    expect(payload.result.relativePath).toBe('src/data/about.json');
+    expect(payload.result.changedFields).toEqual(['body']);
+    expect(payload.payload.values.introLines[0]).toBe('新介绍一');
+    expect(payload.payload.values.contact.note).toBe('新的联系说明');
+
+    const after = JSON.parse(await readFile(path.join(tempRoot, 'src', 'data', 'about.json'), 'utf8'));
+    expect(after.introLines[0]).toBe('新介绍一');
+    expect(after.contact.note).toBe('新的联系说明');
+  });
+
+  it('exports the about source json from the content console endpoint', async () => {
+    const { GET } = await import('../src/pages/api/admin/content/export');
+    const response = await GET({
+      url: new URL('http://127.0.0.1:4321/api/admin/content/export?collection=about&entryId=index')
+    } as never);
+
+    expect(response.status).toBe(200);
+    expect(response.headers.get('content-type')).toBe('application/json; charset=utf-8');
+    expect(response.headers.get('content-disposition')).toContain('about.json');
+    expect(await response.text()).toContain('旧介绍一');
+  });
   it('loads editable payloads for picks and materials entries', async () => {
     const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
 

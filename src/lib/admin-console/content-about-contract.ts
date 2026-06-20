@@ -1,6 +1,8 @@
+import type { AboutContent } from '../about-content';
+import { parseAdminAboutSourceContent } from './content-about-source';
 import type { AdminContentValidationIssue } from './content-entry-contract';
 
-export type AdminAboutEditorValues = Record<string, never>;
+export type AdminAboutEditorValues = AboutContent;
 
 export type AdminAboutEditorPayload = {
   collection: 'about';
@@ -28,35 +30,21 @@ type AdminAboutPayloadSourceState = {
   defaultPublicSlug: string;
   revision: string;
   relativePath: string;
-  bodyText: string;
-};
-
-type AdminAboutWriteSourceState = {
+  sourceText: string;
   bodyText: string;
 };
 
 const ABOUT_FIELD_LABELS: Readonly<Record<string, string>> = {
-  body: '正文'
+  introLines: '开头介绍',
+  guide: '栏目指引',
+  tech: '关于这里',
+  faq: '常见问题',
+  contact: '联系与订阅',
+  body: '页面内容'
 };
 
-export const createAdminAboutEditorValues = (): AdminAboutEditorValues => ({});
-
-export const buildAdminAboutWritePlan = (
-  state: AdminAboutWriteSourceState,
-  bodyInput?: string
-): AdminAboutWritePlan => {
-  const changedFields: string[] = [];
-  if (bodyInput !== undefined && bodyInput !== state.bodyText) {
-    changedFields.push('body');
-  }
-
-  return {
-    issues: [],
-    changedFields,
-    patches: [],
-    ...(bodyInput !== undefined ? { bodyText: bodyInput } : {})
-  };
-};
+export const createAdminAboutEditorValues = (sourceText: string): AdminAboutEditorValues =>
+  parseAdminAboutSourceContent(sourceText);
 
 export const buildAdminAboutEditorPayload = (
   state: AdminAboutPayloadSourceState
@@ -70,10 +58,11 @@ export const buildAdminAboutEditorPayload = (
   writable: true,
   readonlyReason: null,
   bodyText: state.bodyText,
-  values: createAdminAboutEditorValues()
+  values: createAdminAboutEditorValues(state.sourceText)
 });
 
 export const getAdminAboutWriteFieldLabel = (field: string): string =>
   ABOUT_FIELD_LABELS[field] ?? field;
 
-export const isAdminAboutFrontmatterIssuePath = (_path?: string): boolean => false;
+export const isAdminAboutFrontmatterIssuePath = (path?: string): boolean =>
+  Boolean(path && (path.startsWith('introLines') || path.startsWith('guide') || path.startsWith('tech') || path.startsWith('faq') || path.startsWith('contact')));

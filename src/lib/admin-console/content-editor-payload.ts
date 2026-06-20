@@ -175,6 +175,11 @@ export type AdminContentWorkspaceEditorPayload =
   | AdminMemoEditorPayload
   | AdminAboutEditorPayload;
 
+type AdminContentEditorPayloadFor<Collection extends AdminContentEntryWriteCollectionKey> = Extract<
+  AdminContentEditorPayload,
+  { collection: Collection }
+>;
+
 const getStringArray = (value: unknown): string[] =>
   Array.isArray(value)
     ? value
@@ -379,10 +384,10 @@ export const buildAdminContentEntryEditorPayloadFromState = (
   );
 };
 
-export const readAdminContentEntryEditorPayload = async (
-  collection: AdminContentEntryWriteCollectionKey,
+export const readAdminContentEntryEditorPayload = async <Collection extends AdminContentEntryWriteCollectionKey>(
+  collection: Collection,
   entryId: string
-): Promise<AdminContentEditorPayload> => {
+): Promise<AdminContentEditorPayloadFor<Collection>> => {
   if (!getAdminContentCollectionCapability(collection).entryWritable) {
     throw new AdminContentEntryResolutionError(
       'invalid-entry-id',
@@ -390,7 +395,9 @@ export const readAdminContentEntryEditorPayload = async (
     );
   }
 
-  return buildAdminContentEntryEditorPayloadFromState(await loadAdminContentSourceState(collection, entryId));
+  return buildAdminContentEntryEditorPayloadFromState(
+    await loadAdminContentSourceState(collection, entryId)
+  ) as AdminContentEditorPayloadFor<Collection>;
 };
 
 

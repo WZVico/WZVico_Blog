@@ -17,6 +17,7 @@ import {
   type AdminContentCollectionKey
 } from './content-collections';
 import { isRecord } from './content-entry-utils';
+import { renderAdminAboutBodyText } from './content-about-source';
 
 export type AdminContentEntryResolutionErrorCode = 'invalid-entry-id' | 'source-not-found';
 
@@ -243,6 +244,13 @@ export const resolveAdminContentEntryIdFromSourcePath = (
   filePath: string
 ): string => {
   const absoluteFilePath = toAdminContentAbsoluteProjectPath(filePath);
+  const fixedPage = getAdminContentFixedPageCapability(collection);
+  if (fixedPage) {
+    const fixedPageRelative = toAdminContentRelativeProjectPath(fixedPage.sourcePath);
+    if (toAdminContentRelativeProjectPath(absoluteFilePath) === fixedPageRelative) {
+      return fixedPage.entryId;
+    }
+  }
   const relative = path.relative(getCollectionRoot(collection), absoluteFilePath).replace(/\\/g, '/');
   if (relative.startsWith('../') || relative === '..' || path.isAbsolute(relative)) {
     throw new AdminContentEntryResolutionError(
@@ -262,9 +270,6 @@ export const resolveAdminContentEntryIdFromSourcePath = (
 export const listAdminCollectionSourceFiles = async (
   collection: AdminContentCollectionKey
 ): Promise<string[]> => {
-  const root = getCollectionRoot(collection);
-  if (!existsSync(root)) return [];
-
   const fixedPage = getAdminContentFixedPageCapability(collection);
   if (fixedPage) {
     const candidates = [toAdminContentAbsoluteProjectPath(fixedPage.sourcePath)];
@@ -279,6 +284,9 @@ export const listAdminCollectionSourceFiles = async (
     }
     return files;
   }
+
+  const root = getCollectionRoot(collection);
+  if (!existsSync(root)) return [];
 
   const walk = async (dirPath: string): Promise<string[]> => {
     const entries = await readdir(dirPath, { withFileTypes: true });
@@ -314,15 +322,12 @@ export const loadAdminContentSourceState = async (
   entryId: string
 ): Promise<AdminContentSourceState> => {
   const sourcePath = resolveAdminContentEntrySourcePath(collection, entryId);
+  const fixedPage = getAdminContentFixedPageCapability(collection);
   // 以实际源文件路径回算 entryId，避免把公开 id 当作磁盘文件名使用。
-  const sourceEntryId = resolveAdminContentEntryIdFromSourcePath(collection, sourcePath);
+  const sourceEntryId = fixedPage?.entryId ?? resolveAdminContentEntryIdFromSourcePath(collection, sourcePath);
   const publicEntryId = resolveDefaultPublicEntryId(sourceEntryId);
   const sourceText = await readFile(sourcePath, 'utf8');
-  const section = splitMarkdownFrontmatter(sourceText);
-  const frontmatterDocument = parseMarkdownFrontmatterDocument(section.frontmatterText);
-  const rawFrontmatter = frontmatterDocument.toJS();
-
-  return {
+  const baseState = {
     collection,
     entryId: sourceEntryId,
     publicEntryId,
@@ -330,7 +335,24 @@ export const loadAdminContentSourceState = async (
     sourcePath,
     relativePath: toAdminContentRelativeProjectPath(sourcePath),
     revision: hashSourceText(sourceText),
-    sourceText,
+    sourceText
+  };
+
+  if (collection === 'about') {
+    return {
+      ...baseState,
+      bodyText: renderAdminAboutBodyText(sourceText),
+      frontmatterDocument: parseMarkdownFrontmatterDocument(null),
+      rawFrontmatter: {}
+    };
+  }
+
+  const section = splitMarkdownFrontmatter(sourceText);
+  const frontmatterDocument = parseMarkdownFrontmatterDocument(section.frontmatterText);
+  const rawFrontmatter = frontmatterDocument.toJS();
+
+  return {
+    ...baseState,
     bodyText: section.bodyText,
     frontmatterDocument,
     rawFrontmatter: isRecord(rawFrontmatter) ? rawFrontmatter : {}

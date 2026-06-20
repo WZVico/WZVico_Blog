@@ -31,6 +31,8 @@ import {
   parseMarkdownFrontmatterDocument,
   splitMarkdownFrontmatter
 } from './frontmatter';
+import { renderAdminAboutBodyText } from './content-about-source';
+import { getAdminContentCollectionCapability } from './content-collections';
 
 // Admin Content 列表跟随 src/content.config.ts 当前 glob 边界：仅索引 .md。
 const ADMIN_CONTENT_SOURCE_INDEX_EXT_RE = /\.md$/i;
@@ -516,6 +518,20 @@ const readSourceRecord = async (
     }
 
     const sourceText = await readFile(sourcePath, 'utf8');
+    if (collection === 'about') {
+      const bodyText = renderAdminAboutBodyText(sourceText);
+      return {
+        collection,
+        sourcePath,
+        ...identity,
+        frontmatter: {},
+        sourceModifiedAt,
+        sourceError: null,
+        bodyText,
+        bodyDerived: buildBodyDerived(bodyText, getBodyExcerptLimit(collection))
+      };
+    }
+
     const section = splitMarkdownFrontmatter(sourceText);
     const document = parseMarkdownFrontmatterDocument(section.frontmatterText);
     const rawFrontmatter = document.toJS();
@@ -614,8 +630,9 @@ const createSourceIndexItems = (
 export const loadAdminContentSourceManifest = async (): Promise<AdminContentSourceManifest> => {
   const entries = await Promise.all(
     ADMIN_CONTENT_COLLECTIONS.map(async (collection) => {
+      const capability = getAdminContentCollectionCapability(collection);
       const files = (await listAdminCollectionSourceFiles(collection))
-        .filter((filePath) => ADMIN_CONTENT_SOURCE_INDEX_EXT_RE.test(filePath))
+        .filter((filePath) => capability.fixedPage || ADMIN_CONTENT_SOURCE_INDEX_EXT_RE.test(filePath))
         .filter((filePath) => !(collection === 'picks' && resolveAdminContentEntryIdFromSourcePath(collection, filePath) === 'index'));
       return [collection, orderSourceFiles(files)] as const;
     })

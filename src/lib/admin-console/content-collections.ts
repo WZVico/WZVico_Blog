@@ -148,16 +148,16 @@ export const ADMIN_CONTENT_COLLECTION_CAPABILITIES = {
   },
   about: {
     collection: 'about',
-    label: '关于（隐藏兼容）',
+    label: '关于',
     consoleSectionHref: '/about/',
     fixedPage: {
       entryId: 'index',
-      sourcePath: 'src/content/about/index.md'
+      sourcePath: 'src/data/about.json'
     },
-    visible: false,
+    visible: true,
     entryWritable: true,
     writable: true,
-    exportable: false,
+    exportable: true,
     deletable: false,
     draftStatus: false,
     create: false,
@@ -168,8 +168,8 @@ export const ADMIN_CONTENT_COLLECTION_CAPABILITIES = {
     bodyImageUpload: false,
     imageUpload: false,
     imagePicker: false,
-    readonlyReason: '本项目未启用 about 内容集合；/about/ 页面设置继续由现有后台负责。',
-    deleteUnsupportedReason: 'about 是现有页面设置，不从 Content Console 删除。'
+    readonlyReason: null,
+    deleteUnsupportedReason: '关于是固定页面配置，不从 Content Console 删除。'
   }
 } as const satisfies Record<AdminContentCollectionKey, AdminContentCollectionCapability>;
 
