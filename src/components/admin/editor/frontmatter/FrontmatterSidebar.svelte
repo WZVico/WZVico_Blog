@@ -24,6 +24,11 @@ type AdminContentIssue = {
   message: string;
 };
 
+type AuthorLibraryProfile = {
+  name: string;
+  avatar: string;
+};
+
 type Props = {
   value: AdminContentWorkspaceEditorValues;
   collection?: AdminContentCollectionKey;
@@ -33,6 +38,7 @@ type Props = {
   showEntryId?: boolean;
   slugPlaceholder?: string;
   bitsDefaultAuthor?: BitsCardAuthorInput;
+  authorProfiles?: readonly AuthorLibraryProfile[];
   ariaLabel?: string;
   fieldScope?: 'all' | 'bits-summary';
   onEntryIdInput?: (value: string) => void;
@@ -48,11 +54,18 @@ let {
   showEntryId = false,
   slugPlaceholder = '',
   bitsDefaultAuthor = {},
+  authorProfiles = [],
   ariaLabel = '内容字段',
   fieldScope = 'all',
   onEntryIdInput = () => {},
   onDirty = () => {}
 }: Props = $props();
+
+let authorSearchText = $state('');
+let translatorSearchText = $state('');
+
+const AUTHOR_LIBRARY_LIST_ID = 'admin-essay-author-library-options';
+const TRANSLATOR_LIBRARY_LIST_ID = 'admin-essay-translator-library-options';
 
 const getIssue = (path: string): string =>
   issues.find((issue) => issue.path === path)?.message ?? '';
@@ -85,6 +98,139 @@ const formatLocalDateText = (date: Date): string => {
 };
 
 const getLocalDateText = (): string => formatLocalDateText(new Date());
+
+const normalizePersonKey = (value: string): string => value.trim().toLocaleLowerCase();
+
+const authorLibraryOptions = $derived(
+  Array.from(
+    authorProfiles.reduce((profiles, profile) => {
+      const name = profile.name.trim();
+      if (!name) return profiles;
+
+      const key = normalizePersonKey(name);
+      const existing = profiles.get(key);
+      profiles.set(key, {
+        name,
+        avatar: existing?.avatar || profile.avatar.trim()
+      });
+      return profiles;
+    }, new Map<string, AuthorLibraryProfile>()).values()
+  ).sort((left, right) => left.name.localeCompare(right.name, 'zh-Hans-CN'))
+);
+
+const authorProfileByName = $derived(
+  new Map(authorLibraryOptions.map((profile) => [normalizePersonKey(profile.name), profile]))
+);
+
+const splitPersonNames = (value: string): string[] =>
+  Array.from(new Set(value.split(/\r?\n|[,，、；;]+/).map((item) => item.trim()).filter(Boolean)));
+
+const splitPersonAvatarLines = (value: string): string[] =>
+  value.replace(/\r\n?/g, '\n').split('\n').map((item) => item.trim());
+
+const trimTrailingBlankItems = (items: string[]): string[] => {
+  while (items.length > 0 && !items[items.length - 1]) items.pop();
+  return items;
+};
+
+const getAuthorProfileByName = (name: string): AuthorLibraryProfile | null =>
+  authorProfileByName.get(normalizePersonKey(name)) ?? null;
+
+const getAuthorProfileBySearchText = (searchText: string): AuthorLibraryProfile | null => {
+  const normalized = normalizePersonKey(searchText);
+  if (!normalized) return null;
+  return getAuthorProfileByName(searchText)
+    ?? authorLibraryOptions.find((profile) => normalizePersonKey(profile.name).includes(normalized))
+    ?? null;
+};
+
+const getCurrentEssayAuthorNames = (): string[] =>
+  isEssayEditorValues(value) ? splitPersonNames(value.authorsText || value.authorName) : [];
+
+const getCurrentEssayAuthorAvatars = (): string[] => {
+  if (!isEssayEditorValues(value)) return [];
+  const avatars = splitPersonAvatarLines(value.authorAvatarsText);
+  if (avatars.length === 0 && value.authorAvatar.trim()) return [value.authorAvatar.trim()];
+  if (value.authorAvatar.trim() && !avatars[0]) avatars[0] = value.authorAvatar.trim();
+  return avatars;
+};
+
+const syncEssayAuthorFields = (names: string[], avatars: string[]) => {
+  if (!isEssayEditorValues(value)) return;
+  const nextAvatars = trimTrailingBlankItems(avatars.slice(0, names.length));
+  value.authorsText = names.join('\n');
+  value.authorName = names[0] ?? '';
+  value.authorAvatar = nextAvatars[0] ?? '';
+  value.authorAvatarsText = nextAvatars.length > 0 ? nextAvatars.join('\n') : '';
+};
+
+const handleAuthorsTextInput = () => {
+  if (!isEssayEditorValues(value)) return;
+  const names = splitPersonNames(value.authorsText);
+  value.authorName = names[0] ?? '';
+  if (value.authorAvatarsText.trim()) {
+    value.authorAvatarsText = trimTrailingBlankItems(getCurrentEssayAuthorAvatars().slice(0, names.length)).join('\n');
+    value.authorAvatar = splitPersonAvatarLines(value.authorAvatarsText)[0] ?? '';
+  }
+};
+
+const handleAuthorAvatarsTextInput = () => {
+  if (!isEssayEditorValues(value)) return;
+  value.authorAvatar = splitPersonAvatarLines(value.authorAvatarsText)[0] ?? '';
+};
+
+const applyAuthorProfile = (profile: AuthorLibraryProfile) => {
+  if (!isEssayEditorValues(value)) return;
+  const currentNames = getCurrentEssayAuthorNames();
+  const currentAvatars = getCurrentEssayAuthorAvatars();
+  const profileKey = normalizePersonKey(profile.name);
+  const existingIndex = currentNames.findIndex((name) => normalizePersonKey(name) === profileKey);
+  const nextNames = existingIndex === -1 ? [...currentNames, profile.name] : [...currentNames];
+  const nextAvatars = [...currentAvatars];
+  const targetIndex = existingIndex === -1 ? nextNames.length - 1 : existingIndex;
+  if (profile.avatar) nextAvatars[targetIndex] = profile.avatar;
+  syncEssayAuthorFields(nextNames, nextAvatars);
+  authorSearchText = '';
+  onDirty?.();
+};
+
+const applyAuthorSearch = () => {
+  const profile = getAuthorProfileBySearchText(authorSearchText);
+  if (!profile) return;
+  applyAuthorProfile(profile);
+};
+
+const applyTranslatorProfile = (profile: AuthorLibraryProfile) => {
+  if (!isEssayEditorValues(value)) return;
+  value.translationTranslator = profile.name;
+  if (profile.avatar) value.translationAvatar = profile.avatar;
+  translatorSearchText = '';
+  onDirty?.();
+};
+
+const applyTranslatorSearch = () => {
+  const profile = getAuthorProfileBySearchText(translatorSearchText || (isEssayEditorValues(value) ? value.translationTranslator : ''));
+  if (!profile) return;
+  applyTranslatorProfile(profile);
+};
+
+const applyTranslatorFromCurrentValue = () => {
+  if (!isEssayEditorValues(value)) return;
+  const profile = getAuthorProfileByName(value.translationTranslator);
+  if (profile) applyTranslatorProfile(profile);
+};
+
+const handleAuthorSearchKeydown = (event: KeyboardEvent) => {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  applyAuthorSearch();
+};
+
+const handleTranslatorSearchKeydown = (event: KeyboardEvent) => {
+  if (event.key !== 'Enter') return;
+  event.preventDefault();
+  applyTranslatorSearch();
+};
 
 const getLocalTimezoneOffsetText = (date: Date): string => {
   const offsetMinutes = -date.getTimezoneOffset();
@@ -146,6 +292,21 @@ const publishedAtIssue = $derived(
 );
 const updatedAtIssue = $derived(
   getIssue('updatedAt') || (isEssayEditorValues(value) ? getUpdatedAtInputIssue(value.updatedAt, value.date, value.publishedAt) : '')
+);
+const essayAuthorIssue = $derived(getIssue('authorsText') || getIssue('authorName'));
+const essayAuthorAvatarIssue = $derived(getIssue('authorAvatarsText') || getIssue('authorAvatar'));
+const essayAuthorPreviewItems = $derived(
+  isEssayEditorValues(value)
+    ? getCurrentEssayAuthorNames().map((name, index) => {
+        const avatar = (getCurrentEssayAuthorAvatars()[index] || getAuthorProfileByName(name)?.avatar || '').trim();
+        return {
+          name,
+          avatar,
+          previewSrc: avatar ? getAdminImageFieldPreviewSrc('page.bits.defaultAuthor.avatar', avatar, base) : null,
+          fallback: Array.from(name.trim()).at(0)?.toUpperCase() ?? '?'
+        };
+      })
+    : []
 );
 
 const setPublishedAtNow = () => {
@@ -385,58 +546,134 @@ const bitsAuthorAvatarFallback = $derived(
         <p id={getFieldIssueId('cover')} class="admin-content-editor__error" hidden={!getIssue('cover')}>{getIssue('cover')}</p>
       </label>
 
-      <label class="admin-field admin-content-editor__field" class:is-invalid={Boolean(getIssue('authorsText') || getIssue('authorName'))}>
-        <span class="admin-field__label">作者</span>
+      <div class="admin-field admin-content-editor__field" class:is-invalid={Boolean(essayAuthorIssue)}>
+        <label class="admin-field__label" for="admin-essay-authors">作者</label>
         <textarea
+          id="admin-essay-authors"
           class="admin-field__control"
           name="authorsText"
           bind:value={value.authorsText}
           rows="3"
           placeholder="每行一位作者"
-          aria-invalid={getIssue('authorsText') || getIssue('authorName') ? 'true' : undefined}
-          aria-describedby={getFieldDescribedBy('authorsText', getIssue('authorsText') || getIssue('authorName'))}
+          aria-invalid={essayAuthorIssue ? 'true' : undefined}
+          aria-describedby={getFieldDescribedBy('authorsText', essayAuthorIssue)}
+          oninput={handleAuthorsTextInput}
           {disabled}
         ></textarea>
-        <p id={getFieldIssueId('authorsText')} class="admin-content-editor__error" hidden={!(getIssue('authorsText') || getIssue('authorName'))}>{getIssue('authorsText') || getIssue('authorName')}</p>
-      </label>
+        {#if authorLibraryOptions.length > 0}
+          <div class="admin-editor-frontmatter__library-combo admin-editor-frontmatter__library-combo--inline">
+            <input
+              class="admin-field__control admin-editor-frontmatter__library-search"
+              type="search"
+              bind:value={authorSearchText}
+              list={AUTHOR_LIBRARY_LIST_ID}
+              placeholder="输入姓名检索作者"
+              aria-label="检索作者库"
+              disabled={disabled}
+              onkeydown={handleAuthorSearchKeydown}
+            />
+            <button
+              class="admin-btn admin-btn--secondary admin-btn--compact admin-btn--icon admin-editor-frontmatter__library-add"
+              type="button"
+              aria-label="添加作者"
+              title="添加作者"
+              disabled={disabled || !authorSearchText.trim()}
+              onclick={applyAuthorSearch}
+            >
+              <AdminEditorIcon name="plus" size={15} strokeWidth={2} />
+            </button>
+          </div>
+          <datalist id={AUTHOR_LIBRARY_LIST_ID}>
+            {#each authorLibraryOptions as profile (profile.name)}
+              <option value={profile.name}>{profile.avatar || profile.name}</option>
+            {/each}
+          </datalist>
+        {/if}
+        <p id={getFieldIssueId('authorsText')} class="admin-content-editor__error" hidden={!essayAuthorIssue}>{essayAuthorIssue}</p>
+      </div>
 
-      <div class="admin-editor-frontmatter__datetime-grid">
-        <label class="admin-field admin-content-editor__field" class:is-invalid={Boolean(getIssue('authorAvatar'))}>
-          <span class="admin-field__label">作者头像</span>
-          <input
-            class="admin-field__control"
-            name="authorAvatar"
-            type="text"
-            bind:value={value.authorAvatar}
-            placeholder="author/avatar.webp"
-            spellcheck="false"
-            aria-invalid={getIssue('authorAvatar') ? 'true' : undefined}
-            aria-describedby={getFieldDescribedBy('authorAvatar')}
-            {disabled}
-          />
-          <p id={getFieldIssueId('authorAvatar')} class="admin-content-editor__error" hidden={!getIssue('authorAvatar')}>{getIssue('authorAvatar')}</p>
-        </label>
-
-        <label class="admin-field admin-content-editor__field admin-editor-frontmatter__toggle-field">
-          <input type="checkbox" bind:checked={value.authorShowAvatar} {disabled} />
-          <span class="admin-field__label">显示作者头像</span>
-        </label>
+      <div class="admin-field admin-content-editor__field admin-editor-frontmatter__author-avatar-field" class:is-invalid={Boolean(essayAuthorAvatarIssue)}>
+        <label class="admin-field__label" for="admin-essay-author-avatars">作者头像</label>
+        <div class="admin-editor-frontmatter__author-avatar-layout" class:has-preview={essayAuthorPreviewItems.length > 0}>
+          <div class="admin-editor-frontmatter__author-avatar-main">
+            <textarea
+              id="admin-essay-author-avatars"
+              class="admin-field__control"
+              name="authorAvatarsText"
+              bind:value={value.authorAvatarsText}
+              rows="3"
+              placeholder="每行对应一位作者"
+              spellcheck="false"
+              aria-invalid={essayAuthorAvatarIssue ? 'true' : undefined}
+              aria-describedby={getFieldDescribedBy('authorAvatarsText', essayAuthorAvatarIssue)}
+              oninput={handleAuthorAvatarsTextInput}
+              {disabled}
+            ></textarea>
+            <label class="admin-editor-frontmatter__inline-checkbox admin-editor-frontmatter__author-avatar-toggle">
+              <span>显示作者头像</span>
+              <input type="checkbox" bind:checked={value.authorShowAvatar} {disabled} />
+            </label>
+            <p id={getFieldIssueId('authorAvatarsText')} class="admin-content-editor__error" hidden={!essayAuthorAvatarIssue}>{essayAuthorAvatarIssue}</p>
+          </div>
+          {#if essayAuthorPreviewItems.length > 0}
+            <div class="admin-editor-frontmatter__author-preview" role="list" aria-label="作者头像">
+              {#each essayAuthorPreviewItems as item (item.name)}
+                <span class="admin-editor-frontmatter__author-preview-item" role="listitem" title={item.avatar ? `${item.name} / ${item.avatar}` : item.name}>
+                  <span class="admin-editor-frontmatter__author-preview-avatar" aria-hidden="true">
+                    {#if item.previewSrc}
+                      <img src={item.previewSrc} alt="" loading="lazy" decoding="async" />
+                    {:else}
+                      <span>{item.fallback}</span>
+                    {/if}
+                  </span>
+                  <span class="admin-editor-frontmatter__author-preview-name">{item.name}</span>
+                </span>
+              {/each}
+            </div>
+          {/if}
+        </div>
       </div>
 
       <div class="admin-editor-frontmatter__datetime-grid">
-        <label class="admin-field admin-content-editor__field" class:is-invalid={Boolean(getIssue('translationTranslator'))}>
-          <span class="admin-field__label">译者</span>
-          <input
-            class="admin-field__control"
-            name="translationTranslator"
-            type="text"
-            bind:value={value.translationTranslator}
-            aria-invalid={getIssue('translationTranslator') ? 'true' : undefined}
-            aria-describedby={getFieldDescribedBy('translationTranslator')}
-            {disabled}
-          />
+        <div class="admin-field admin-content-editor__field" class:is-invalid={Boolean(getIssue('translationTranslator'))}>
+          <label class="admin-field__label" for="admin-essay-translator">译者</label>
+          <div class="admin-editor-frontmatter__library-combo admin-editor-frontmatter__library-combo--inline">
+            <input
+              id="admin-essay-translator"
+              class="admin-field__control admin-editor-frontmatter__library-search"
+              name="translationTranslator"
+              type="search"
+              bind:value={value.translationTranslator}
+              list={TRANSLATOR_LIBRARY_LIST_ID}
+              aria-invalid={getIssue('translationTranslator') ? 'true' : undefined}
+              aria-describedby={getFieldDescribedBy('translationTranslator')}
+              oninput={() => {
+                translatorSearchText = value.translationTranslator;
+              }}
+              onkeydown={handleTranslatorSearchKeydown}
+              onchange={applyTranslatorFromCurrentValue}
+              {disabled}
+            />
+            {#if authorLibraryOptions.length > 0}
+              <button
+                class="admin-btn admin-btn--secondary admin-btn--compact admin-btn--icon admin-editor-frontmatter__library-add"
+                type="button"
+                aria-label="套用译者"
+                title="套用译者"
+                disabled={disabled || !(translatorSearchText || value.translationTranslator).trim()}
+                onclick={applyTranslatorSearch}
+              >
+                <AdminEditorIcon name="check-mark" size={15} strokeWidth={2} />
+              </button>
+              <datalist id={TRANSLATOR_LIBRARY_LIST_ID}>
+                {#each authorLibraryOptions as profile (profile.name)}
+                  <option value={profile.name}>{profile.avatar || profile.name}</option>
+                {/each}
+              </datalist>
+            {/if}
+          </div>
           <p id={getFieldIssueId('translationTranslator')} class="admin-content-editor__error" hidden={!getIssue('translationTranslator')}>{getIssue('translationTranslator')}</p>
-        </label>
+        </div>
 
         <label class="admin-field admin-content-editor__field" class:is-invalid={Boolean(getIssue('translationAvatar'))}>
           <span class="admin-field__label">译者头像</span>
@@ -487,9 +724,9 @@ const bitsAuthorAvatarFallback = $derived(
         </label>
       </div>
 
-      <label class="admin-field admin-content-editor__field admin-editor-frontmatter__toggle-field">
+      <label class="admin-editor-frontmatter__inline-checkbox admin-editor-frontmatter__translator-toggle">
+        <span>显示译者头像</span>
         <input type="checkbox" bind:checked={value.translationShowAvatar} {disabled} />
-        <span class="admin-field__label">显示译者头像</span>
       </label>
 
       <div class="admin-field admin-content-editor__field" class:is-invalid={Boolean(getIssue('tags'))}>

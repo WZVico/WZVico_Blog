@@ -31,6 +31,7 @@ import {
   ADMIN_CONTENT_BULK_EXPORT_API_PATH
 } from '../../../lib/admin-console/admin-api-paths';
 import { isAdminContentDeletableCollectionKey } from '../../../lib/admin-console/content-delete-contract';
+import { readAdminAuthorProfiles } from '../../../lib/admin-console/authors';
 import { getThemeSettings } from '../../../lib/theme-settings';
 import { createWithBase, formatISODate } from '../../../utils/format';
 
@@ -40,21 +41,27 @@ const base = import.meta.env.BASE_URL ?? '/';
 const withBase = createWithBase(base);
 const { settings } = getThemeSettings();
 const bitsDefaultAuthor = settings.page.bits.defaultAuthor;
+const authorProfiles = shouldShowContentConsole
+  ? await readAdminAuthorProfiles().catch(() => [])
+  : [];
 const { default: adminShellStylesHref } = await import('../../../styles/components/admin/shell.css?url');
 const contentHref = '/admin/content/';
 
 const loadContentDevState = async () => {
   const [
     { default: adminContentStylesHref },
-    { default: adminContentFilterMenusScriptHref }
+    { default: adminContentFilterMenusScriptHref },
+    { default: adminContentListActionsScriptHref }
   ] = await Promise.all([
     import('../../../styles/components/admin/content/index.css?url'),
-    import('../../../scripts/admin-content/filter-menus.ts?url')
+    import('../../../scripts/admin-content/filter-menus.ts?url'),
+    import('../../../scripts/admin-content/list-actions.ts?url')
   ]);
 
   return {
     stylesHref: [adminShellStylesHref, adminContentStylesHref],
     filterMenusScriptHref: adminContentFilterMenusScriptHref,
+    listActionsScriptHref: adminContentListActionsScriptHref,
     pageData: await getAdminContentConsolePageData(Astro.url.searchParams)
   };
 };
@@ -84,6 +91,7 @@ const adminContentBulkStatusEndpoint = withBase(ADMIN_CONTENT_BULK_STATUS_API_PA
 const adminContentBulkDeleteEndpoint = withBase(ADMIN_CONTENT_BULK_DELETE_API_PATH);
 const adminContentBulkExportEndpoint = withBase(ADMIN_CONTENT_BULK_EXPORT_API_PATH);
 const adminContentFilterMenusScriptHref = contentDevState?.filterMenusScriptHref ?? null;
+const adminContentListActionsScriptHref = contentDevState?.listActionsScriptHref ?? null;
 const shouldOpenContentFilters = pageData?.hasActiveFilters ?? false;
 const clearScopedStateHref = pageData && pageData.collection !== 'all'
   ? withBase(getAdminContentEntryListHref(pageData.collection))
@@ -199,7 +207,7 @@ const getContentEmptyMessage = (sectionLabel: string): string => {
 const CONTENT_CREATE_ACTIONS = {
   longform: {
     attribute: 'data-admin-content-create-action',
-    label: '新建文章'
+    label: '新建长文'
   },
   bits: {
     attribute: 'data-admin-content-bits-create-action',
@@ -242,6 +250,7 @@ const getContentCreateAction = (
           createEndpoint={adminContentCreateEndpoint}
           deleteEndpoint={adminContentDeleteEndpoint}
           bitsDefaultAuthor={bitsDefaultAuthor}
+          authorProfiles={authorProfiles}
         />
       </div>
     ) : null}
@@ -255,6 +264,8 @@ const getContentCreateAction = (
             `admin-content-console--scope-${pageData.collection}`
           ]}
           data-admin-content-root
+          data-admin-content-entry-endpoint={adminContentEntryEndpoint}
+          data-admin-content-delete-endpoint={adminContentDeleteEndpoint}
         >
           <form class="admin-content-toolbar" method="get">
             <div class="admin-content-home-toolbar">
@@ -711,6 +722,9 @@ const getContentCreateAction = (
 
           {adminContentFilterMenusScriptHref ? (
             <script is:inline type="module" src={adminContentFilterMenusScriptHref}></script>
+          ) : null}
+          {adminContentListActionsScriptHref ? (
+            <script is:inline type="module" src={adminContentListActionsScriptHref}></script>
           ) : null}
         </section>
       ) : (

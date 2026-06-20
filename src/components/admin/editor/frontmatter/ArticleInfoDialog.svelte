@@ -17,6 +17,11 @@ type AdminContentIssue = {
   message: string;
 };
 
+type AuthorLibraryProfile = {
+  name: string;
+  avatar: string;
+};
+
 type Props = {
   open: boolean;
   value: AdminContentWorkspaceEditorValues;
@@ -31,6 +36,7 @@ type Props = {
   slugPlaceholder?: string;
   relativePath?: string;
   bitsDefaultAuthor?: BitsCardAuthorInput;
+  authorProfiles?: readonly AuthorLibraryProfile[];
   dialogTitle?: string;
   fieldsAriaLabel?: string;
   fieldScope?: 'all' | 'bits-summary';
@@ -59,8 +65,9 @@ let {
   slugPlaceholder = '',
   relativePath = '',
   bitsDefaultAuthor = {},
-  dialogTitle = '文章信息',
-  fieldsAriaLabel = '随笔字段',
+  authorProfiles = [],
+  dialogTitle = '长文信息',
+  fieldsAriaLabel = '长文字段',
   fieldScope = 'all',
   showPublishToggles = true,
   draftLocked = false,
@@ -192,6 +199,7 @@ $effect(() => {
             {showEntryId}
             {slugPlaceholder}
             {bitsDefaultAuthor}
+            {authorProfiles}
             ariaLabel={fieldsAriaLabel}
             {fieldScope}
             {onEntryIdInput}

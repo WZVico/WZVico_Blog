@@ -36,12 +36,16 @@
 }
 
 .article-header .meta-line__item--tags {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   flex-wrap: wrap;
   max-width: 100%;
   min-width: 0;
   width: max-content;
   white-space: normal;
+}
+
+.article-header .meta-line__item--tags.is-line-start {
+  flex-basis: 100%;
 }
 
 .article-header .meta-line__item--tags .tag {

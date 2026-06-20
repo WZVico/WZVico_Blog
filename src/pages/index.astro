@@ -473,20 +473,23 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  row-gap: 6px;
 }
 
 .meta-line__item {
   display: inline-flex;
   align-items: center;
+  flex: 0 0 auto;
+  max-width: 100%;
+  min-width: 0;
 }
 
 .meta-line__item:not(.meta-line__item--tags):not(.meta-line__item--people) {
-  flex: 0 0 auto;
   white-space: nowrap;
 }
 
 .meta-line__item--tags {
-  flex: 0 1 auto;
+  flex: 0 0 auto;
   flex-wrap: wrap;
   gap: 0.65em;
   max-width: 100%;
@@ -503,13 +506,10 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
   flex-basis: 100%;
 }
 
-.meta-line__item--tags.is-line-start.is-after-avatar-line {
-  margin-top: 4px;
-}
-
 .meta-line__item--people {
   --article-byline-label-gap: 10px;
   gap: var(--article-byline-label-gap);
+  flex-wrap: wrap;
 }
 
 .meta-line__item + .meta-line__item::before {
@@ -518,7 +518,7 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
   color: var(--faint);
 }
 
-.meta-line__item--tags.is-line-start::before {
+.meta-line__item.is-line-start::before {
   content: none;
   margin: 0;
 }

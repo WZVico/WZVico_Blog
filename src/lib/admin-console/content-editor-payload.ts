@@ -31,6 +31,7 @@ export type AdminEssayEditorValues = {
   authorsText: string;
   authorName: string;
   authorAvatar: string;
+  authorAvatarsText: string;
   authorShowAvatar: boolean;
   translationTranslator: string;
   translationAvatar: string;
@@ -205,6 +206,8 @@ const toEssayEditorValues = (state: AdminContentSourceState): AdminEssayEditorVa
   const author = isRecord(frontmatter.author) ? frontmatter.author : null;
   const authors = Array.isArray(frontmatter.authors) ? frontmatter.authors.filter(isRecord) : [];
   const firstAuthor = authors[0] ?? author;
+  const authorPeople = authors.length > 0 ? authors : firstAuthor ? [firstAuthor] : [];
+  const authorAvatarTexts = authorPeople.map((item) => normalizeOptionalText(item.avatar));
   const translation = isRecord(frontmatter.translation) ? frontmatter.translation : null;
 
   return {
@@ -219,12 +222,13 @@ const toEssayEditorValues = (state: AdminContentSourceState): AdminEssayEditorVa
     slug: normalizeOptionalText(frontmatter.slug),
     cover: normalizeOptionalText(frontmatter.cover),
     badge: normalizeOptionalText(frontmatter.badge),
-    authorsText: (authors.length > 0 ? authors : firstAuthor ? [firstAuthor] : [])
+    authorsText: authorPeople
       .map((item) => normalizeOptionalText(item.name))
       .filter(Boolean)
       .join('\n'),
     authorName: normalizeOptionalText(firstAuthor?.name),
     authorAvatar: normalizeOptionalText(firstAuthor?.avatar),
+    authorAvatarsText: authorAvatarTexts.some(Boolean) ? authorAvatarTexts.join('\n') : '',
     authorShowAvatar: firstAuthor?.showAvatar !== false,
     translationTranslator: normalizeOptionalText(translation?.translator),
     translationAvatar: normalizeOptionalText(translation?.avatar),

@@ -116,6 +116,37 @@ describe('admin content write api', () => {
     expect(payload.values.date).toBe('2026-03-18');
     if (payload.collection === 'longform') {
       expect(payload.values.publishedAt).toBe('');
+      expect(payload.values.authorAvatarsText).toBe('');
+    }
+  });
+
+  it('loads editable payload for longform multi-author avatars', async () => {
+    await writeFile(
+      path.join(tempRoot, 'src', 'content', 'longform', 'multi-author.md'),
+      [
+        '---',
+        'title: Multi Author',
+        'date: 2026-03-19',
+        'authors:',
+        '  - name: Alice',
+        '    avatar: author/alice.webp',
+        '  - name: Bob',
+        '    avatar: author/bob.webp',
+        '---',
+        '',
+        'multi body',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+
+    const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
+    const payload = await readAdminContentEntryEditorPayload('longform', 'multi-author');
+
+    if (payload.collection === 'longform') {
+      expect(payload.values.authorsText).toBe('Alice\nBob');
+      expect(payload.values.authorAvatar).toBe('author/alice.webp');
+      expect(payload.values.authorAvatarsText).toBe('author/alice.webp\nauthor/bob.webp');
     }
   });
 
@@ -280,8 +311,10 @@ describe('admin content write api', () => {
     const current = await readAdminContentEntryEditorPayload('longform', 'demo');
     const nextValues = {
       ...current.values,
+      authorsText: 'Alice\nBob',
       authorName: 'Alice',
       authorAvatar: 'author/alice.webp',
+      authorAvatarsText: 'author/alice.webp\nauthor/bob.webp',
       authorShowAvatar: false,
       translationTranslator: 'WZVico',
       translationSource: 'Original Essay',
@@ -301,13 +334,12 @@ describe('admin content write api', () => {
     expect(response.status).toBe(200);
     const payload = JSON.parse(await response.text());
     expect(payload.ok).toBe(true);
-    expect(payload.result.changedFields).toEqual(['author', 'translation']);
+    expect(payload.result.changedFields).toEqual(['authors', 'translation']);
 
     const after = await readFile(path.join(tempRoot, 'src', 'content', 'longform', 'demo.md'), 'utf8');
-    expect(after).toContain('author:');
-    expect(after).toContain('name: Alice');
-    expect(after).toContain('avatar: author/alice.webp');
-    expect(after).toContain('showAvatar: false');
+    expect(after).toContain('authors:');
+    expect(after).toContain('  - name: Alice\n    avatar: author/alice.webp\n    showAvatar: false');
+    expect(after).toContain('  - name: Bob\n    avatar: author/bob.webp\n    showAvatar: false');
     expect(after).toContain('translation:');
     expect(after).toContain('translator: WZVico');
     expect(after).toContain('source: Original Essay');
@@ -806,7 +838,7 @@ describe('admin content write api', () => {
           date: '2026-06-04',
           publishedAt: '',
           updatedAt: '',
-          tagsText: 'admin\ncontent',
+          tagsText: 'admin, content',
           draft: false,
           archive: true,
           slug: '',
@@ -815,6 +847,7 @@ describe('admin content write api', () => {
           authorsText: '',
           authorName: '',
           authorAvatar: '',
+          authorAvatarsText: '',
           authorShowAvatar: true,
           translationTranslator: '',
           translationAvatar: '',

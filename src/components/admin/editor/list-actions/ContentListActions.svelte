@@ -5,13 +5,9 @@ import type {
   AdminContentEditorPayload,
   AdminEssayEditorValues
 } from '../../../../lib/admin-console/content-editor-payload';
-import {
-  isAdminContentDeletableCollectionKey,
-  type AdminContentDeletableCollectionKey
-} from '../../../../lib/admin-console/content-delete-contract';
+import type { AdminContentDeletableCollectionKey } from '../../../../lib/admin-console/content-delete-contract';
 import type { BitsCardAuthorInput } from '../../../../lib/bits-card-view-model';
 import {
-  getPayloadDeleteResult,
   getPayloadEditorPayload,
   getPayloadErrors,
   getPayloadIssues,
@@ -19,10 +15,7 @@ import {
   parseResponseBody,
   type AdminContentIssue
 } from '../../../../scripts/admin-content/entry-transport';
-import {
-  closeClosestAdminDetailsMenu,
-  initAdminDetailsMenus
-} from '../../../../scripts/admin-content/details-menu';
+import { closeClosestAdminDetailsMenu } from '../../../../scripts/admin-content/details-menu';
 import { createWithBase } from '../../../../utils/format';
 import {
   ESSAY_PUBLIC_SLUG_RE,
@@ -47,15 +40,28 @@ type ContentInfoCollection = Extract<AdminContentDeletableCollectionKey, 'longfo
 type ContentInfoFrontmatter = AdminEssayEditorValues | AdminBitsEditorValues;
 type ContentInfoPayload = Extract<AdminContentEditorPayload, { collection: ContentInfoCollection }>;
 
+type AuthorLibraryProfile = {
+  name: string;
+  avatar: string;
+};
+
 type Props = {
   base?: string;
   endpoint: string;
   createEndpoint: string;
   deleteEndpoint: string;
   bitsDefaultAuthor?: BitsCardAuthorInput;
+  authorProfiles?: readonly AuthorLibraryProfile[];
 };
 
-let { base = '/', endpoint, createEndpoint, deleteEndpoint, bitsDefaultAuthor = {} }: Props = $props();
+let {
+  base = '/',
+  endpoint,
+  createEndpoint,
+  deleteEndpoint,
+  bitsDefaultAuthor = {},
+  authorProfiles = []
+}: Props = $props();
 
 let dialog = $state<ArticleInfoDialog | null>(null);
 let open = $state(false);
@@ -89,6 +95,7 @@ const createEmptyFrontmatter = (): AdminEssayEditorValues => ({
   authorsText: '',
   authorName: '',
   authorAvatar: '',
+  authorAvatarsText: '',
   authorShowAvatar: true,
   translationTranslator: '',
   translationAvatar: '',
@@ -271,30 +278,6 @@ const resetToBaseline = () => {
 
 const closeActionMenu = (trigger: HTMLElement) => {
   closeClosestAdminDetailsMenu(trigger, '.admin-content-item__more');
-};
-
-const getRowTitle = (trigger: HTMLElement, entryId: string): string => {
-  const row = trigger.closest<HTMLElement>('[data-admin-content-item]');
-  return row?.querySelector<HTMLElement>('[data-admin-content-row-title]')?.textContent?.trim() || entryId;
-};
-
-const getRowCollectionLabel = (trigger: HTMLElement): string =>
-  trigger
-    .closest<HTMLElement>('.admin-content-module')
-    ?.querySelector<HTMLElement>('.admin-content-module__head h3 span')
-    ?.textContent
-    ?.trim()
-  || '该分类';
-
-const getDeletePayload = (
-  payload: unknown,
-  collection: AdminContentDeletableCollectionKey,
-  entryId: string
-): AdminContentEditorPayload | null => {
-  const entryPayload = getPayloadEditorPayload(payload);
-  if (!entryPayload || entryPayload.collection !== collection || entryPayload.entryId !== entryId) return null;
-  if (typeof entryPayload.revision !== 'string' || typeof entryPayload.relativePath !== 'string') return null;
-  return entryPayload;
 };
 
 const getInfoPayload = (
@@ -500,112 +483,6 @@ const saveDialog = () => {
   void saveEditor();
 };
 
-const deleteEntry = async (trigger: HTMLElement) => {
-  if (busy) {
-    errors = [];
-    setStatus('warn', '操作进行中');
-    return;
-  }
-
-  const rawCollection = trigger.dataset.collection?.trim() ?? '';
-  const entryId = trigger.dataset.entryId?.trim() ?? '';
-  const expectedRelativePath = trigger.dataset.relativePath?.trim() ?? '';
-
-  if (!isAdminContentDeletableCollectionKey(rawCollection) || !entryId || !expectedRelativePath) {
-    errors = [];
-    setStatus('error', '删除信息不完整，请刷新后重试');
-    return;
-  }
-
-  busy = true;
-  errors = [];
-  issues = [];
-  setStatus('loading', '正在确认删除');
-
-  try {
-    // 列表中的 revision 可能已经过期，确认前先读取一次最新文件状态。
-    const loadResponse = await fetch(buildEntryEndpoint(rawCollection, entryId), {
-      method: 'GET',
-      headers: {
-        Accept: 'application/json'
-      },
-      cache: 'no-store'
-    });
-    const loadPayload = await parseResponseBody(loadResponse);
-    const entryPayload = getDeletePayload(loadPayload, rawCollection, entryId);
-
-    if (!loadResponse.ok || !isPayloadOk(loadPayload) || !entryPayload) {
-      const payloadErrors = getPayloadErrors(loadPayload);
-      errors = payloadErrors;
-      issues = getPayloadIssues(loadPayload);
-      setStatus('error', payloadErrors.length > 0 ? '删除确认失败' : '删除确认失败，请刷新后重试');
-      return;
-    }
-
-    if (entryPayload.relativePath !== expectedRelativePath) {
-      errors = [];
-      setStatus('warn', '列表已过期，请刷新后再删除');
-      return;
-    }
-
-    const title = getRowTitle(trigger, entryId);
-    const confirmed = window.confirm([
-      `确认删除《${title}》？`,
-      '',
-      `类型：${getRowCollectionLabel(trigger)}`,
-      `源文件：${entryPayload.relativePath}`,
-      '',
-      '文件会移到 .trash/content/，之后可从回收站手动恢复。'
-    ].join('\n'));
-
-    if (!confirmed) {
-      setStatus('ready', '已取消删除', { autoClear: true });
-      return;
-    }
-
-    setStatus('loading', '正在删除');
-    const deleteResponse = await fetch(deleteEndpoint, {
-      method: 'POST',
-      headers: {
-        Accept: 'application/json',
-        'Content-Type': 'application/json; charset=utf-8'
-      },
-      cache: 'no-store',
-      body: JSON.stringify({
-        collection: rawCollection,
-        entryId,
-        revision: entryPayload.revision,
-        expectedRelativePath: entryPayload.relativePath
-      })
-    });
-    const deletePayload = await parseResponseBody(deleteResponse);
-
-    if (!deleteResponse.ok || !isPayloadOk(deletePayload)) {
-      const payloadErrors = getPayloadErrors(deletePayload);
-      errors = payloadErrors;
-      issues = getPayloadIssues(deletePayload);
-      const state = deleteResponse.status === 409 ? 'warn' : 'error';
-      const fallbackText = deleteResponse.status === 409 ? '检测到外部更新' : '删除失败，请检查控制台日志';
-      setStatus(state, payloadErrors.length > 0 ? (deleteResponse.status === 409 ? '检测到外部更新' : '删除失败') : fallbackText);
-      return;
-    }
-
-    const result = getPayloadDeleteResult(deletePayload);
-    if (!result || !result.deleted || !result.trashedPath) {
-      errors = [];
-      setStatus('error', '删除响应异常，请检查开发日志');
-      return;
-    }
-
-    reloadContentList(CONTENT_LIST_ACTION_FEEDBACK_DELETED);
-  } catch {
-    errors = [];
-    setStatus('error', '删除请求失败，请稍后重试');
-  } finally {
-    busy = false;
-  }
-};
-
 const handleClick = (event: MouseEvent) => {
   if (!(event.target instanceof Element)) return;
 
@@ -616,13 +493,6 @@ const handleClick = (event: MouseEvent) => {
     return;
   }
 
-  const deleteTrigger = event.target.closest<HTMLElement>('[data-admin-content-delete-action]');
-  if (deleteTrigger) {
-    event.preventDefault();
-    closeActionMenu(deleteTrigger);
-    void deleteEntry(deleteTrigger);
-    return;
-  }
 
   const trigger = event.target.closest<HTMLElement>('[data-admin-content-info-action]');
   if (!trigger) return;
@@ -649,9 +519,6 @@ $effect(() => {
   document.querySelectorAll<HTMLButtonElement>('[data-admin-content-create-action]').forEach((button) => {
     button.disabled = busy;
   });
-  document.querySelectorAll<HTMLButtonElement>('[data-admin-content-delete-action]').forEach((button) => {
-    button.disabled = busy;
-  });
 });
 
 $effect(() => {
@@ -661,12 +528,8 @@ $effect(() => {
 });
 
 $effect(() => {
-  const cleanupDetailsMenus = initAdminDetailsMenus({
-    selector: '.admin-content-item__more'
-  });
   document.addEventListener('click', handleClick);
   return () => {
-    cleanupDetailsMenus();
     document.removeEventListener('click', handleClick);
   };
 });
@@ -686,9 +549,10 @@ $effect(() => {
     entryId={dialogMode === 'create' ? createEntryId : selectedEntryId}
     showEntryId={dialogMode === 'create'}
     {slugPlaceholder}
-    dialogTitle={dialogMode === 'create' ? '新建文章' : selectedCollection === 'bits' ? '修改信息' : '文章信息'}
-    fieldsAriaLabel={selectedCollection === 'bits' ? '标题、摘要与作者' : '随笔字段'}
+    dialogTitle={dialogMode === 'create' ? '新建长文' : selectedCollection === 'bits' ? '修改信息' : '长文信息'}
+    fieldsAriaLabel={selectedCollection === 'bits' ? '标题、摘要与作者' : '长文字段'}
     {bitsDefaultAuthor}
+    {authorProfiles}
     fieldScope={selectedCollection === 'bits' ? 'bits-summary' : 'all'}
     draftLocked={dialogMode === 'create'}
     draftLockHelp={dialogMode === 'create' ? '默认草稿，完善正文后发布。' : ''}

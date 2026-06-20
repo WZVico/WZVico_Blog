@@ -1,6 +1,11 @@
 import type { AdminEssayEditorValues } from '../../../../lib/admin-console/content-editor-payload';
 import type { EditorOutlineEssaySourceItem } from '../markdown/editor-outline-helpers';
 
+type AuthorLibraryProfile = {
+  name: string;
+  avatar: string;
+};
+
 type BaseEssayEditorShellProps = {
   endpoint: string;
   exportEndpoint: string;
@@ -13,6 +18,7 @@ type BaseEssayEditorShellProps = {
   defaultPublicSlug: string;
   revision: string;
   initialArticleInfoOpen?: boolean;
+  authorProfiles?: readonly AuthorLibraryProfile[];
 };
 
 export type EssayEditorShellProps = BaseEssayEditorShellProps & {

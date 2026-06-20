@@ -3,6 +3,7 @@ import {
   parseEssayPublishedAtInput
 } from '../../utils/date-only';
 import { normalizeBitsAvatarPath, toSafeHttpUrl } from '../../utils/format';
+import { splitTagInput } from '../../utils/tag-input';
 import {
   ESSAY_PUBLIC_SLUG_RE,
   RESERVED_ESSAY_SLUGS,
@@ -135,6 +136,7 @@ export const parseAdminEssayEditorInput = (
     authorsText: getOptionalStringField(input, 'authorsText'),
     authorName: getOptionalStringField(input, 'authorName'),
     authorAvatar: getOptionalStringField(input, 'authorAvatar'),
+    authorAvatarsText: getOptionalStringField(input, 'authorAvatarsText'),
     authorShowAvatar: getOptionalBooleanField(input, 'authorShowAvatar', true),
     translationTranslator: getOptionalStringField(input, 'translationTranslator'),
     translationAvatar: getOptionalStringField(input, 'translationAvatar'),
@@ -157,14 +159,31 @@ export const parseAdminEssayEditorInput = (
       };
 };
 
-export const parseTagsText = (value: string): string[] =>
-  value
-    .split(/\r?\n/)
-    .map((item) => item.trim())
-    .filter(Boolean);
+const splitTagsLine = (value: string): string[] =>
+  splitTagInput(value, {
+    stripLeadingHash: true,
+    fallbackWhitespace: false
+  });
+
+export const parseTagsText = (value: string): string[] => {
+  const normalized = value.trim();
+  if (!normalized) return [];
+
+  if (/\r|\n/.test(normalized)) {
+    return Array.from(new Set(normalized.split(/\r\n|\r|\n/).flatMap(splitTagsLine)));
+  }
+
+  return splitTagInput(normalized, { stripLeadingHash: true });
+};
 
 const splitAuthorInput = (value: string): string[] =>
   Array.from(new Set(value.split(/\r?\n|[,，、；;]+/).map((item) => item.trim()).filter(Boolean)));
+
+const splitAuthorAvatarInput = (value: string): string[] => {
+  const avatars = value.replace(/\r\n?/g, '\n').split('\n').map((item) => item.trim());
+  while (avatars.length > 0 && !avatars[avatars.length - 1]) avatars.pop();
+  return avatars;
+};
 
 const resolveDefaultPublicEntryId = (sourceEntryId: string): string => {
   const publicEntryId = contentSourceEntryIdToPublicEntryId(sourceEntryId);
@@ -315,15 +334,26 @@ export const buildEssayFrontmatterFromValues = (
   const slug = values.slug.trim();
   const authorNames = splitAuthorInput(values.authorsText.trim() || values.authorName.trim());
   const authorAvatarRaw = values.authorAvatar.trim();
-  const authorAvatar = authorAvatarRaw ? normalizeBitsAvatarPath(authorAvatarRaw) : '';
+  const authorAvatarInputs = splitAuthorAvatarInput(values.authorAvatarsText);
+  if (authorAvatarInputs.length === 0 && authorAvatarRaw) {
+    authorAvatarInputs.push(authorAvatarRaw);
+  } else if (authorAvatarRaw && !authorAvatarInputs[0]) {
+    authorAvatarInputs[0] = authorAvatarRaw;
+  }
+  const authorAvatars = authorAvatarInputs.map((avatar) => avatar ? normalizeBitsAvatarPath(avatar) : '');
+  const authorAvatar = authorAvatars[0] ?? '';
+  const getAuthorAvatar = (index: number): string => authorAvatars[index] ?? '';
+  const authorAvatarIssuePath = values.authorAvatarsText.trim() ? 'authorAvatarsText' : 'authorAvatar';
   const translationAvatarRaw = values.translationAvatar.trim();
   const translationAvatar = translationAvatarRaw ? normalizeBitsAvatarPath(translationAvatarRaw) : '';
   const translationSourceUrlRaw = values.translationSourceUrl.trim();
   const translationSourceUrl = translationSourceUrlRaw ? toSafeHttpUrl(translationSourceUrlRaw) : '';
 
-  if (authorAvatarRaw && !authorAvatar) {
-    issues.push(createIssue('authorAvatar', 'author.avatar 只允许相对图片路径（例如 author/avatar.webp）'));
-  }
+  authorAvatarInputs.forEach((rawAvatar, index) => {
+    if (rawAvatar && !authorAvatars[index]) {
+      issues.push(createIssue(index === 0 ? authorAvatarIssuePath : 'authorAvatarsText', 'author.avatar 只允许相对图片路径（例如 author/avatar.webp）'));
+    }
+  });
   if (translationAvatarRaw && !translationAvatar) {
     issues.push(createIssue('translationAvatar', 'translation.avatar 只允许相对图片路径（例如 author/avatar.webp）'));
   }
@@ -382,11 +412,14 @@ export const buildEssayFrontmatterFromValues = (
         : {}),
       ...(authorNames.length > 1
         ? {
-            authors: authorNames.map((name: string, index: number) => ({
-              name,
-              ...(index === 0 && authorAvatar ? { avatar: authorAvatar } : {}),
-              ...(values.authorShowAvatar ? {} : { showAvatar: false })
-            }))
+            authors: authorNames.map((name: string, index: number) => {
+              const avatar = getAuthorAvatar(index);
+              return {
+                name,
+                ...(avatar ? { avatar } : {}),
+                ...(values.authorShowAvatar ? {} : { showAvatar: false })
+              };
+            })
           }
         : {}),
       ...((values.translationTranslator.trim()

@@ -5,12 +5,18 @@ import ContentActionStatus from './ContentActionStatus.svelte';
 import ContentListActions from './ContentListActions.svelte';
 import type { BitsCardAuthorInput } from '../../../../lib/bits-card-view-model';
 
+type AuthorLibraryProfile = {
+  name: string;
+  avatar: string;
+};
+
 type Props = {
   base?: string;
   endpoint: string;
   createEndpoint: string;
   deleteEndpoint: string;
   bitsDefaultAuthor?: BitsCardAuthorInput;
+  authorProfiles?: readonly AuthorLibraryProfile[];
 };
 
 const props = Astro.props;

@@ -14,6 +14,11 @@ import type { MarkdownInsertPlacement } from '../markdown/markdown-tools';
 import type { ImageBlockDraft } from '../media-insert/image-insert-helpers';
 import type { GalleryBlockDraft } from '../media-insert/gallery-insert-helpers';
 
+type AuthorLibraryProfile = {
+  name: string;
+  avatar: string;
+};
+
 type Props = {
   frontmatter: AdminContentWorkspaceEditorValues;
   collection: AdminContentWriteCollectionKey;
@@ -35,6 +40,7 @@ type Props = {
   galleryInsertEnabled: boolean;
   imageUploadEndpoint: string;
   entryId: string;
+  authorProfiles?: readonly AuthorLibraryProfile[];
   onFrontmatterClose: () => void;
   onFrontmatterReset: () => void;
   onFrontmatterSave: () => void | Promise<void>;
@@ -66,6 +72,7 @@ let {
   galleryInsertEnabled,
   imageUploadEndpoint,
   entryId,
+  authorProfiles = [],
   onFrontmatterClose,
   onFrontmatterReset,
   onFrontmatterSave,
@@ -96,6 +103,7 @@ export const captureReturnFocus = (trigger?: Element | null) => {
   dirty={frontmatterDirty}
   {canSave}
   {slugPlaceholder}
+  {authorProfiles}
   onClose={onFrontmatterClose}
   onReset={onFrontmatterReset}
   onSave={onFrontmatterSave}

@@ -28,6 +28,11 @@ import type { MaterialsEditorIslandProps } from './editor/structured/materials-e
 
 type WithBase = (path: string) => string;
 
+type AuthorLibraryProfile = {
+  name: string;
+  avatar: string;
+};
+
 export type AdminContentEditorEndpoints = {
   endpoint: string;
   exportEndpoint: string;
@@ -81,6 +86,7 @@ type BuildBaseIslandPropsInput<Payload extends AdminContentWorkspaceEditorPayloa
 type BuildEssayIslandPropsInput = BuildBaseIslandPropsInput<AdminEssayEditorPayload> & {
   essayOutlineItems: EditorOutlineEssaySourceItem[];
   initialArticleInfoOpen: boolean;
+  authorProfiles: readonly AuthorLibraryProfile[];
 };
 
 type BuildBitsIslandPropsInput = BuildBaseIslandPropsInput<AdminBitsEditorPayload> & {
@@ -241,7 +247,8 @@ const buildEssayEditorIslandProps = ({
   endpoints,
   returnHref,
   essayOutlineItems,
-  initialArticleInfoOpen
+  initialArticleInfoOpen,
+  authorProfiles
 }: BuildEssayIslandPropsInput): EssayEditorShellProps => ({
   ...endpoints,
   returnHref,
@@ -252,7 +259,8 @@ const buildEssayEditorIslandProps = ({
   initialFrontmatter: payload.values,
   initialBody: payload.bodyText,
   essayOutlineItems,
-  initialArticleInfoOpen
+  initialArticleInfoOpen,
+  authorProfiles
 });
 
 const buildBitsEditorIslandProps = ({
@@ -455,7 +463,8 @@ export const buildAdminContentEditorIslandProps = ({
   returnHref,
   defaultAuthor,
   outlines,
-  initialArticleInfoOpen
+  initialArticleInfoOpen,
+  authorProfiles
 }: {
   payload: AdminContentWorkspaceEditorPayload;
   endpoints: AdminContentEditorEndpoints;
@@ -463,6 +472,7 @@ export const buildAdminContentEditorIslandProps = ({
   defaultAuthor: BitsCardAuthorInput;
   outlines: AdminContentEditorOutlines;
   initialArticleInfoOpen: boolean;
+  authorProfiles: readonly AuthorLibraryProfile[];
 }): AdminContentEditorIslandProps => {
   if (payload.collection === 'longform') {
     return CONTENT_EDITOR_PAGE_REGISTRY.longform.buildIslandProps({
@@ -470,7 +480,8 @@ export const buildAdminContentEditorIslandProps = ({
       endpoints,
       returnHref,
       essayOutlineItems: outlines.essayOutlineItems,
-      initialArticleInfoOpen
+      initialArticleInfoOpen,
+      authorProfiles
     });
   }
 

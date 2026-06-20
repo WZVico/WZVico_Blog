@@ -160,9 +160,9 @@ const cloneLongformEntries = (entries: readonly LongformEntry[]) => entries.slic
 const shouldUseDefaultLongformCache = (includeDraft?: boolean) =>
   shouldMemoizeLongformQueries && includeDraft !== true;
 
-const loadSortedLongforms = async ({ includeDraft }: LongformQueryOptions = {}) => {
+const loadSortedLongforms = async ({ includeDraft = false }: LongformQueryOptions = {}) => {
   const longforms = await getPublished('longform', {
-    ...(includeDraft === undefined ? {} : { includeDraft }),
+    includeDraft,
     orderBy: orderByLongformDate
   });
   assertUniqueLongformSlugs(longforms);

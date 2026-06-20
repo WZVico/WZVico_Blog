@@ -56,6 +56,10 @@ const articleReadingStats = articleMetaSettings.showWordCount || articleMetaSett
     })()
   : { wordCount: 0, readingMinutes: 0 };
 const numberFormatter = new Intl.NumberFormat('zh-CN');
+const readingStatsMetaText = [
+  articleMetaSettings.showWordCount ? `共 ${numberFormatter.format(articleReadingStats.wordCount)} 字` : '',
+  articleMetaSettings.showReadingTime ? `约 ${numberFormatter.format(articleReadingStats.readingMinutes)} 分钟` : ''
+].filter(Boolean).join('，');
 const withBase = createWithBase(import.meta.env.BASE_URL ?? '/');
 const { settings } = getThemeSettings();
 const { authors: articleAuthors, translator: translatorPerson } = getLongformArticlePeople(entry, settings, withBase);
@@ -173,14 +177,9 @@ const translationSourceLabel = translationSource || (translationSourceUrl ? '原
             {articleMetaSettings.dateLabel ? `${articleMetaSettings.dateLabel}` : ''}{formatISODateUtc(entry.data.date)}
           </span>
         ) : null}
-        {articleMetaSettings.showWordCount ? (
-          <span class="meta-line__item meta-line__item--desktop-meta">
-            共 {numberFormatter.format(articleReadingStats.wordCount)} 字
-          </span>
-        ) : null}
-        {articleMetaSettings.showReadingTime ? (
-          <span class="meta-line__item meta-line__item--desktop-meta">
-            约 {numberFormatter.format(articleReadingStats.readingMinutes)} 分钟
+        {readingStatsMetaText ? (
+          <span class="meta-line__item meta-line__item--desktop-meta meta-line__item--reading-stats">
+            {readingStatsMetaText}
           </span>
         ) : null}
         {articleMetaSettings.showTags && visibleTags.length ? (

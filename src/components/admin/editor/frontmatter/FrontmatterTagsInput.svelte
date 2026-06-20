@@ -1,4 +1,5 @@
 <script lang="ts">
+import { splitTagInput } from '../../../../utils/tag-input';
 import AdminEditorIcon from '../shared/AdminEditorIcon.svelte';
 
 type Props = {
@@ -51,6 +52,10 @@ const commitTags = (nextTags: readonly string[]) => {
 
 const addTags = (rawTags: readonly string[]): boolean => {
   const nextTags = rawTags
+    .flatMap((tag) => splitTagInput(tag, {
+      stripLeadingHash: true,
+      fallbackWhitespace: false
+    }))
     .map((tag) => tag.trim())
     .filter(Boolean);
   if (nextTags.length === 0) return false;
@@ -85,12 +90,11 @@ const handleKeydown = (event: KeyboardEvent) => {
 
 const handlePaste = (event: ClipboardEvent) => {
   const clipboardText = event.clipboardData?.getData('text/plain') ?? '';
-  if (!/\r|\n/.test(clipboardText)) return;
+  if (!/[,\n\r，、；;]/.test(clipboardText)) return;
 
   event.preventDefault();
-  const pastedTags = clipboardText.split(/\r\n|\r|\n/);
   const inputDraft = inputValue.trim();
-  const added = addTags(inputDraft ? [inputDraft, ...pastedTags] : pastedTags);
+  const added = addTags(inputDraft ? [inputDraft, clipboardText] : [clipboardText]);
   if (added) inputValue = '';
 };
 

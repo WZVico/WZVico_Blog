@@ -136,6 +136,7 @@ const isAdminEssayEditorValues = (value: unknown): value is AdminEssayEditorValu
   && typeof value.authorsText === 'string'
   && typeof value.authorName === 'string'
   && typeof value.authorAvatar === 'string'
+  && typeof value.authorAvatarsText === 'string'
   && typeof value.authorShowAvatar === 'boolean'
   && typeof value.translationTranslator === 'string'
   && typeof value.translationAvatar === 'string'
