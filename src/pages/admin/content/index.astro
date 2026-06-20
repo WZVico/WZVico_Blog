@@ -3,6 +3,7 @@ import AdminLayout from '../../../components/admin/AdminLayout.astro';
 import AdminIcon from '../../../components/admin/AdminIcon.astro';
 import AdminReadonlyNotice from '../../../components/admin/AdminReadonlyNotice.astro';
 import AdminShell from '../../../components/admin/AdminShell.astro';
+import AdminContentAuthorModule from '../../../components/admin/AdminContentAuthorModule.astro';
 import {
   ADMIN_CONTENT_DRAFT_OPTIONS,
   ADMIN_CONTENT_SORT_OPTIONS,
@@ -28,7 +29,8 @@ import {
   ADMIN_CONTENT_EXPORT_API_PATH,
   ADMIN_CONTENT_BULK_STATUS_API_PATH,
   ADMIN_CONTENT_BULK_DELETE_API_PATH,
-  ADMIN_CONTENT_BULK_EXPORT_API_PATH
+  ADMIN_CONTENT_BULK_EXPORT_API_PATH,
+  ADMIN_CONTENT_AUTHORS_API_PATH
 } from '../../../lib/admin-console/admin-api-paths';
 import { isAdminContentDeletableCollectionKey } from '../../../lib/admin-console/content-delete-contract';
 import { readAdminAuthorProfiles } from '../../../lib/admin-console/authors';
@@ -90,8 +92,10 @@ const adminContentDeleteEndpoint = withBase(ADMIN_CONTENT_DELETE_API_PATH);
 const adminContentBulkStatusEndpoint = withBase(ADMIN_CONTENT_BULK_STATUS_API_PATH);
 const adminContentBulkDeleteEndpoint = withBase(ADMIN_CONTENT_BULK_DELETE_API_PATH);
 const adminContentBulkExportEndpoint = withBase(ADMIN_CONTENT_BULK_EXPORT_API_PATH);
+const adminContentAuthorsEndpoint = withBase(ADMIN_CONTENT_AUTHORS_API_PATH);
 const adminContentFilterMenusScriptHref = contentDevState?.filterMenusScriptHref ?? null;
 const adminContentListActionsScriptHref = contentDevState?.listActionsScriptHref ?? null;
+const shouldShowAuthorLibrary = Boolean(pageData && pageData.mode === 'overview');
 const shouldOpenContentFilters = pageData?.hasActiveFilters ?? false;
 const clearScopedStateHref = pageData && pageData.collection !== 'all'
   ? withBase(getAdminContentEntryListHref(pageData.collection))
@@ -118,6 +122,7 @@ const getContentPublicLinkLabel = (item: Pick<AdminContentIndexItem, 'collection
   const capability = getAdminContentCollectionCapability(item.collection);
   if (capability.fixedPage) return `转到${capability.label}`;
   if (item.collection === 'bits') return '前台查看';
+  if (item.collection === 'materials') return '打开资料';
   return '转到文章';
 };
 
@@ -128,6 +133,10 @@ const getContentInfoActionLabel = (item: Pick<AdminContentIndexItem, 'collection
   if (capability.fixedPage) return `${capability.label}信息`;
   return '编辑信息';
 };
+
+
+const isExternalHttpHref = (href: string | null): boolean =>
+  Boolean(href && /^https?:\/\//i.test(href));
 
 const hasListInfoAction = (collection: AdminContentCollectionKey): collection is 'longform' | 'bits' =>
   collection === 'longform' || collection === 'bits';
@@ -220,7 +229,7 @@ const CONTENT_CREATE_ACTIONS = {
   },
   bits: {
     attribute: 'data-admin-content-bits-create-action',
-    label: '新建动态'
+    label: '新建絮语'
   },
   picks: {
     attribute: 'data-admin-content-picks-create-action',
@@ -536,15 +545,21 @@ const getContentCreateAction = (
                                 const capability = getAdminContentCollectionCapability(item.collection);
                                 const editPath = getAdminContentEntryEditHref(item.collection, item.id);
                                 const editHref = withBase(editPath);
-                                const supportsListInfoAction = capability.writable && hasListInfoAction(item.collection);
-                                const articleInfoHref = capability.writable
+                                const publicHref = item.publicHref ? withBase(item.publicHref) : null;
+                                const supportsEntryEditor = capability.writable && item.collection !== 'materials';
+                                const supportsListInfoAction = supportsEntryEditor && hasListInfoAction(item.collection);
+                                const articleInfoHref = supportsEntryEditor
                                   ? item.collection === 'longform'
                                     ? withBase(`${editPath}?panel=info`)
                                     : editHref
                                   : null;
-                                const entryTitleHref = capability.writable ? editHref : getCollectionListHref(item.collection);
-                                const publicHref = item.publicHref ? withBase(item.publicHref) : null;
                                 const publicFallbackLabel = getAdminContentPublicFallbackLabel(item);
+                                const entryTitleHref = item.collection === 'materials'
+                                  ? publicHref
+                                  : supportsEntryEditor
+                                    ? editHref
+                                    : publicHref ?? getCollectionListHref(item.collection);
+                                const entryTitleIsExternal = isExternalHttpHref(entryTitleHref);
                                 const exportHref = getContentEntryExportHref(item.collection, item.id);
                                 const deleteUnsupportedReason = capability.deleteUnsupportedReason ?? `当前 collection 暂不支持删除：${item.collection}`;
                                 const sourceErrorPanelId = item.sourceError
@@ -578,7 +593,18 @@ const getContentCreateAction = (
                                     </p>
 
                                   <div class="admin-content-item__title-row">
-                                    <a class="admin-content-row-title" href={entryTitleHref} data-admin-content-row-title>{item.title}</a>
+                                    <a
+                                      class:list={[
+                                        'admin-content-row-title',
+                                        !entryTitleHref && 'is-disabled'
+                                      ]}
+                                      href={entryTitleHref ?? undefined}
+                                      rel={entryTitleIsExternal ? 'noreferrer' : undefined}
+                                      aria-disabled={entryTitleHref ? undefined : 'true'}
+                                      title={entryTitleHref ? undefined : publicFallbackLabel}
+                                      tabindex={entryTitleHref ? undefined : '-1'}
+                                      data-admin-content-row-title
+                                    >{item.title}</a>
                                     {
                                       item.sourceError && sourceErrorPanelId ? (
                                         <details class="admin-content-source-error">
@@ -617,20 +643,47 @@ const getContentCreateAction = (
                                   </div>
 
                                   <div class="admin-content-item__actions">
-                                    {capability.writable ? (
-                                      <a class="admin-btn admin-btn--secondary admin-btn--compact" href={editHref}>
-                                        编辑
-                                      </a>
+                                    {item.collection === 'materials' ? (
+                                      <>
+                                        <button
+                                          type="button"
+                                          class="admin-btn admin-btn--secondary admin-btn--compact"
+                                          data-admin-content-materials-edit-action
+                                          data-entry-id={item.id}
+                                        >
+                                          编辑
+                                        </button>
+                                        {isAdminContentDeletableCollectionKey(item.collection) ? (
+                                          <button
+                                            type="button"
+                                            class="admin-btn admin-btn--danger admin-btn--compact admin-content-item__inline-delete"
+                                            data-admin-content-delete-action
+                                            data-collection={item.collection}
+                                            data-entry-id={item.id}
+                                            data-relative-path={item.relativePath}
+                                          >
+                                            删除
+                                          </button>
+                                        ) : (
+                                          <span class="admin-btn admin-btn--danger admin-btn--compact is-disabled" aria-disabled="true" title={deleteUnsupportedReason}>删除</span>
+                                        )}
+                                      </>
                                     ) : (
-                                      <span
-                                        class="admin-btn admin-btn--secondary admin-btn--compact is-disabled"
-                                        aria-disabled="true"
-                                        title={capability.readonlyReason ?? '当前内容暂不支持编辑'}
-                                      >
-                                        待接入
-                                      </span>
-                                    )}
-                                    <details class="admin-content-item__more">
+                                      <>
+                                        {supportsEntryEditor ? (
+                                          <a class="admin-btn admin-btn--secondary admin-btn--compact" href={editHref}>
+                                            编辑
+                                          </a>
+                                        ) : (
+                                          <span
+                                            class="admin-btn admin-btn--secondary admin-btn--compact is-disabled"
+                                            aria-disabled="true"
+                                            title={capability.readonlyReason ?? '当前内容暂不支持编辑'}
+                                          >
+                                            待接入
+                                          </span>
+                                        )}
+                                        <details class="admin-content-item__more">
                                       <summary class="admin-btn admin-btn--ghost admin-btn--compact">更多</summary>
                                       <div class="admin-content-more-panel" aria-label="内容操作">
                                         <a
@@ -690,7 +743,9 @@ const getContentCreateAction = (
                                           </span>
                                         )}
                                       </div>
-                                    </details>
+                                        </details>
+                                      </>
+                                    )}
                                   </div>
                                   </li>
                                 );
@@ -712,6 +767,15 @@ const getContentCreateAction = (
               )
             }
           </div>
+
+          {
+            shouldShowAuthorLibrary ? (
+              <AdminContentAuthorModule
+                authors={authorProfiles}
+                endpoint={adminContentAuthorsEndpoint}
+              />
+            ) : null
+          }
 
           {
             pageData.pagination && pageData.pagination.totalPages > 1 ? (
@@ -739,6 +803,15 @@ const getContentCreateAction = (
           {adminContentListActionsScriptHref ? (
             <script is:inline type="module" src={adminContentListActionsScriptHref}></script>
           ) : null}
+          {
+            shouldShowAuthorLibrary ? (
+              <script>
+                import { initAdminContentAuthors } from '../../../scripts/admin-content/authors';
+
+                initAdminContentAuthors();
+              </script>
+            ) : null
+          }
         </section>
       ) : (
         <AdminReadonlyNotice>

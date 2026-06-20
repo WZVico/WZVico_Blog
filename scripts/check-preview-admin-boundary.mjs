@@ -8,7 +8,6 @@ import {
   assertAdminContentStaticResponse,
   assertAdminImageStaticResponse,
   assertAdminOverviewHeader,
-  assertHasAdminRouteNav,
   assertNoAdminRouteNav,
   assertAdminSettingsStaticResponse,
   assertStaticUnsupportedApiShell,
@@ -113,7 +112,7 @@ const assertAdminOverviewShell = (label, response, options = {}) => {
   expect(!response.body.includes('id="admin-data-bootstrap"'), `${label} should not emit data bootstrap payload`);
 
   if (expectMaintainerView) {
-    assertHasAdminRouteNav(label, response.body);
+    assertNoAdminRouteNav(label, response.body);
     expect(
       response.body.includes('data-admin-overview-mode="maintainer"'),
       `${label} is missing the maintainer overview mode marker`
@@ -163,7 +162,7 @@ const assertReadonlyAdminChecksShell = (label, response) => {
 };
 
 const assertAdminCategoryShell = (label, response, options = {}) => {
-  const { expectBitsDraft = false, expectMaterialsCreate = false, expectNav = false } = options;
+  const { expectBitsDraft = false, expectMaterialsCreate = false, expectCategoryTabs = false } = options;
   expect(response.status === 200, `${label} returned ${response.status}`);
   expect(
     response.contentType.toLowerCase().includes('text/html'),
@@ -197,12 +196,10 @@ const assertAdminCategoryShell = (label, response, options = {}) => {
     expect(!response.body.includes('data-materials-create-add'), `${label} should not expose bulk add rows`);
     expect(response.body.includes('data-materials-create-submit'), `${label} is missing materials submit action`);
   }
-  if (expectNav) {
-    assertHasAdminRouteNav(label, response.body);
+  assertNoAdminRouteNav(label, response.body);
+  if (expectCategoryTabs) {
     expect(response.body.includes('admin-category-tabs'), `${label} is missing the category tabs`);
     expect(response.body.includes('长文'), `${label} is missing the default longform tab`);
-  } else {
-    assertNoAdminRouteNav(label, response.body);
   }
 };
 
@@ -245,8 +242,7 @@ const assertReadonlyAdminImageShell = (label, response) => {
   expect(!response.body.includes('id="admin-images-bootstrap"'), `${label} should not emit images bootstrap payload outside dev`);
 };
 
-const assertReadonlyAdminContentShell = (label, response, options = {}) => {
-  const { expectNav = false } = options;
+const assertReadonlyAdminContentShell = (label, response) => {
   expect(response.status === 200, `${label} returned ${response.status}`);
   expect(
     response.contentType.toLowerCase().includes('text/html'),
@@ -257,16 +253,12 @@ const assertReadonlyAdminContentShell = (label, response, options = {}) => {
     response.body.includes('若需查看或编辑内容索引'),
     `${label} is missing the Content Console local-development notice`
   );
-  if (expectNav) {
-    assertHasAdminRouteNav(label, response.body);
-  } else {
-    assertNoAdminRouteNav(label, response.body);
-  }
+  assertNoAdminRouteNav(label, response.body);
   expect(!response.body.includes('data-admin-content-root'), `${label} should stay readonly outside dev`);
 };
 
 const assertDevAdminContentConsoleShell = (label, response, options = {}) => {
-  const { expectNav = false } = options;
+  const { expectAuthorLibrary = false } = options;
   expect(response.status === 200, `${label} returned ${response.status}`);
   expect(
     response.contentType.toLowerCase().includes('text/html'),
@@ -279,11 +271,17 @@ const assertDevAdminContentConsoleShell = (label, response, options = {}) => {
     !response.body.includes('若需查看或编辑内容索引'),
     `${label} should render the editable Content Console in dev`
   );
-  if (expectNav) {
-    assertHasAdminRouteNav(label, response.body);
+  if (expectAuthorLibrary) {
+    expect(response.body.includes('data-author-content-root'), `${label} is missing the author module root`);
+    expect(response.body.includes('作者'), `${label} is missing the author module heading`);
+    expect(
+      response.body.includes('data-author-content-endpoint="/api/admin/content/authors/"'),
+      `${label} is missing the Content Console author endpoint`
+    );
   } else {
-    assertNoAdminRouteNav(label, response.body);
+    expect(!response.body.includes('data-author-content-root'), `${label} should not render the author module outside overview`);
   }
+  assertNoAdminRouteNav(label, response.body);
 };
 
 const assertAdminThemeDevBootstrapSafe = (label, response) => {
@@ -293,7 +291,7 @@ const assertAdminThemeDevBootstrapSafe = (label, response) => {
     `${label} did not return HTML`
   );
   expect(response.body.includes('data-admin-root'), `${label} lost the admin console shell`);
-  assertHasAdminRouteNav(label, response.body);
+  assertNoAdminRouteNav(label, response.body);
   expect(response.body.includes('id="admin-bootstrap"'), `${label} is missing the bootstrap container`);
   expect(
     response.body.includes(ADMIN_BOOTSTRAP_XSS_SENTINEL),
@@ -361,6 +359,7 @@ export const runPreviewAdminBoundaryCheck = async () => {
     const contentBulkStatusGetResponse = await request(baseUrl, '/api/admin/content/bulk-status/');
     const contentBulkDeleteGetResponse = await request(baseUrl, '/api/admin/content/bulk-delete/');
     const contentBulkExportGetResponse = await request(baseUrl, '/api/admin/content/bulk-export/');
+    const contentAuthorsGetResponse = await request(baseUrl, '/api/admin/content/authors/');
     const contentPreviewGetResponse = await request(baseUrl, '/api/admin/preview/');
     const bitsCreateGetResponse = await request(baseUrl, '/api/admin/category/bits/');
     const materialsCreateGetResponse = await request(baseUrl, '/api/admin/category/materials/');
@@ -430,6 +429,7 @@ export const runPreviewAdminBoundaryCheck = async () => {
     assertAdminContentStaticResponse('GET /api/admin/content/bulk-status/', contentBulkStatusGetResponse, '/api/admin/content/bulk-status/');
     assertAdminContentStaticResponse('GET /api/admin/content/bulk-delete/', contentBulkDeleteGetResponse, '/api/admin/content/bulk-delete/');
     assertAdminContentStaticResponse('GET /api/admin/content/bulk-export/', contentBulkExportGetResponse, '/api/admin/content/bulk-export/');
+    assertAdminContentStaticResponse('GET /api/admin/content/authors/', contentAuthorsGetResponse, '/api/admin/content/authors/');
     assertAdminContentStaticResponse('GET /api/admin/preview/', contentPreviewGetResponse, '/api/admin/preview/');
     assertAdminBitsCreateStaticResponse('GET /api/admin/category/bits/', bitsCreateGetResponse);
     assertAdminMaterialsCreateStaticResponse('GET /api/admin/category/materials/', materialsCreateGetResponse);
@@ -493,16 +493,18 @@ export const runDevAdminSettingsSmokeCheck = async () => {
     const categoryBitsResponse = await request(baseUrl, '/admin/category/?tab=bits');
     const categoryMaterialsResponse = await request(baseUrl, '/admin/category/?tab=materials');
     const bitsResponse = await request(baseUrl, '/bits/');
-    assertDevAdminContentConsoleShell('Dev GET /admin/content/', contentOverviewResponse, { expectNav: true });
-    assertDevAdminContentConsoleShell('Dev GET /admin/content/?collection=longform', contentLongformResponse, { expectNav: true });
-    assertAdminCategoryShell('Dev GET /admin/category/', categoryResponse, { expectNav: true });
+    assertDevAdminContentConsoleShell('Dev GET /admin/content/', contentOverviewResponse, {
+      expectAuthorLibrary: true
+    });
+    assertDevAdminContentConsoleShell('Dev GET /admin/content/?collection=longform', contentLongformResponse);
+    assertAdminCategoryShell('Dev GET /admin/category/', categoryResponse, { expectCategoryTabs: true });
     assertAdminCategoryShell('Dev GET /admin/category/?tab=bits', categoryBitsResponse, {
       expectBitsDraft: true,
-      expectNav: true
+      expectCategoryTabs: true
     });
     assertAdminCategoryShell('Dev GET /admin/category/?tab=materials', categoryMaterialsResponse, {
       expectMaterialsCreate: true,
-      expectNav: true
+      expectCategoryTabs: true
     });
     assertBitsPageWithoutDraftTools('Dev GET /bits/', bitsResponse);
 

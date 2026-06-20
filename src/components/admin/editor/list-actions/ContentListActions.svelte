@@ -24,6 +24,7 @@ import {
 } from '../../../../utils/slug-rules';
 import ArticleInfoDialog from '../frontmatter/ArticleInfoDialog.svelte';
 import {
+  CONTENT_LIST_ACTION_FEEDBACK_CREATED,
   CONTENT_LIST_ACTION_FEEDBACK_DELETED,
   CONTENT_LIST_ACTION_FEEDBACK_SAVED,
   storeContentListActionFeedback,
@@ -512,6 +513,8 @@ onMount(() => {
     setStatus('ok', '已保存', { autoClear: true });
   } else if (feedback === CONTENT_LIST_ACTION_FEEDBACK_DELETED) {
     setStatus('ok', '已移到回收站', { autoClear: true });
+  } else if (feedback === CONTENT_LIST_ACTION_FEEDBACK_CREATED) {
+    setStatus('ok', '已创建资料', { autoClear: true });
   }
 });
 

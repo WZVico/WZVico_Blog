@@ -57,6 +57,7 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/api/admin/content/bulk-status',
     'dist/api/admin/content/bulk-delete',
     'dist/api/admin/content/bulk-export',
+    'dist/api/admin/content/authors',
     'dist/api/admin/preview',
     'dist/api/admin/images/list',
     'dist/api/admin/images/meta',
@@ -325,6 +326,7 @@ export const runProductionArtifactCheck = async (options = {}) => {
     ['dist/api/admin/content/bulk-status', '/api/admin/content/bulk-status/'],
     ['dist/api/admin/content/bulk-delete', '/api/admin/content/bulk-delete/'],
     ['dist/api/admin/content/bulk-export', '/api/admin/content/bulk-export/'],
+    ['dist/api/admin/content/authors', '/api/admin/content/authors/'],
     ['dist/api/admin/preview', '/api/admin/preview/']
   ];
   for (const [artifactPath, expectedPath] of contentApiArtifacts) {

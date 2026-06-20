@@ -1,0 +1,44 @@
+---
+import AdminIcon from './AdminIcon.astro';
+import type { AdminAuthorProfile } from '../../lib/admin-console/authors';
+
+const {
+  authors = [],
+  endpoint = '',
+  routeLabel = '/author/'
+} = Astro.props as {
+  authors?: AdminAuthorProfile[];
+  endpoint?: string;
+  routeLabel?: string;
+};
+---
+
+<section
+  class="admin-content-module admin-content-author-module"
+  aria-labelledby="admin-content-author-title"
+  data-author-content-root
+  data-author-content-endpoint={endpoint || undefined}
+  data-author-content-initial={JSON.stringify(authors)}
+>
+  <div class="admin-content-module__head">
+    <h3 id="admin-content-author-title">
+      <span>作者</span>
+      <span class="admin-content-module__title-count" data-author-content-count>{authors.length}</span>
+      <span class="admin-content-module__route">{routeLabel}</span>
+    </h3>
+    <div class="admin-content-module__actions">
+      <button
+        class="admin-btn admin-btn--ghost admin-btn--compact admin-content-create-action"
+        type="button"
+        data-author-content-new
+      >
+        <AdminIcon name="plus" size={13} strokeWidth={2.2} class="admin-content-create-action__icon" />
+        <span>新建作者</span>
+      </button>
+    </div>
+  </div>
+
+  <ol class="admin-content-list admin-content-author-list" aria-label="作者目录" data-author-content-list></ol>
+  <p class="admin-content-empty" data-author-content-empty hidden>当前还没有作者。</p>
+  <p class="admin-content-author-status" data-author-content-status role="status" aria-live="polite"></p>
+</section>

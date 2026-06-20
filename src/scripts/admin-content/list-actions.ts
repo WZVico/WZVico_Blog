@@ -20,6 +20,7 @@ const CLEANUP_KEY = '__astroWhonoAdminContentListActionsCleanup';
 const ROOT_SELECTOR = '[data-admin-content-root]';
 const ITEM_MENU_SELECTOR = '.admin-content-item__more';
 const DELETE_ACTION_SELECTOR = '[data-admin-content-delete-action]';
+const DELETE_RELOAD_FALLBACK_DELAY_MS = 2_000;
 
 type WindowWithAdminContentListActions = Window & {
   [CLEANUP_KEY]?: () => void;
@@ -33,6 +34,7 @@ type DeletePayload = {
 };
 
 let busy = false;
+let reloading = false;
 
 const setStatus = (
   state: StatusState,
@@ -63,10 +65,13 @@ const setDeleteButtonsDisabled = (disabled: boolean) => {
   });
 };
 
+// Give Astro's content layer time to finish its debounced asset-import write before reloading.
 const reloadContentList = () => {
   storeContentListActionFeedback(CONTENT_LIST_ACTION_FEEDBACK_DELETED);
+  reloading = true;
+  setDeleteButtonsDisabled(true);
   setStatus('loading', '已删除，正在刷新列表…');
-  window.location.reload();
+  window.setTimeout(() => window.location.reload(), DELETE_RELOAD_FALLBACK_DELAY_MS);
 };
 
 const getRowTitle = (trigger: HTMLElement, entryId: string): string => {
@@ -119,7 +124,7 @@ const readDeleteActionDataset = (trigger: HTMLElement): {
 };
 
 const runDelete = async (trigger: HTMLElement) => {
-  if (busy) {
+  if (busy || reloading) {
     setStatus('warn', '操作进行中');
     return;
   }
@@ -211,7 +216,9 @@ const runDelete = async (trigger: HTMLElement) => {
     setStatus('error', '删除请求失败，请稍后重试');
   } finally {
     busy = false;
-    setDeleteButtonsDisabled(false);
+    if (!reloading) {
+      setDeleteButtonsDisabled(false);
+    }
   }
 };
 

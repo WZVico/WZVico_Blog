@@ -130,7 +130,7 @@ describe('admin-console/content', () => {
         archive: null,
         relativePath: 'src/content/materials/202606/material.md'
       }))
-    ).toContain('/Materials/');
+    ).toContain('缺少可打开的链接');
     expect(
       getAdminContentPublicFallbackLabel(createItem({
         collection: 'bits',

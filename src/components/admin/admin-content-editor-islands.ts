@@ -3,7 +3,7 @@ import type { AdminContentEditorIslandKey } from './admin-content-editor-registr
 
 export type AdminContentEditorIslandComponent = AstroComponentFactory;
 
-export const ADMIN_CONTENT_EDITOR_ISLAND_KEYS = ['longform', 'bits', 'picks', 'materials', 'memo', 'about'] as const satisfies readonly AdminContentEditorIslandKey[];
+export const ADMIN_CONTENT_EDITOR_ISLAND_KEYS = ['longform', 'bits', 'picks', 'memo', 'about'] as const satisfies readonly AdminContentEditorIslandKey[];
 
 export const loadAdminContentEditorIsland = async (
   island: AdminContentEditorIslandKey
@@ -15,8 +15,6 @@ export const loadAdminContentEditorIsland = async (
       return (await import('./editor/bits/BitsEditorIsland.astro')).default;
     case 'picks':
       return (await import('./editor/structured/PicksEditorIsland.astro')).default;
-    case 'materials':
-      return (await import('./editor/structured/MaterialsEditorIsland.astro')).default;
     case 'memo':
       return (await import('./editor/fixed-page/MemoEditorIsland.astro')).default;
     case 'about':

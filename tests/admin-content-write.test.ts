@@ -120,6 +120,18 @@ describe('admin content write api', () => {
     }
   });
 
+  it('uses the material link as the content-console public href', async () => {
+    const {
+      loadAdminContentSourceIndex,
+      loadAdminContentSourceManifest
+    } = await import('../src/lib/admin-console/content-source-index');
+    const manifest = await loadAdminContentSourceManifest();
+    const items = await loadAdminContentSourceIndex(manifest, 'materials');
+    const material = items.find((item) => item.id === '202606/material');
+
+    expect(material?.publicHref).toBe('https://example.com/old');
+  });
+
   it('loads editable payload for longform multi-author avatars', async () => {
     await writeFile(
       path.join(tempRoot, 'src', 'content', 'longform', 'multi-author.md'),
@@ -928,7 +940,8 @@ describe('admin content write api', () => {
     const payload = JSON.parse(await response.text());
     expect(payload.ok).toBe(true);
     expect(payload.result.relativePath).toBe('src/content/materials/202606/年度资料-2026-06-04-172850.md');
-    expect(payload.editHref).toBe('/admin/content/materials/_edit/202606/%E5%B9%B4%E5%BA%A6%E8%B5%84%E6%96%99-2026-06-04-172850/');
+    expect(payload.editHref).toBeNull();
+    expect(payload.result.editHref).toBeNull();
     expect(payload.payload.collection).toBe('materials');
     expect(payload.payload.values.href).toBe('https://example.com/material');
 
@@ -936,6 +949,9 @@ describe('admin content write api', () => {
     expect(after).toContain('title: 年度资料');
     expect(after).toContain('href: https://example.com/material');
     expect(after).toContain('label: PDF');
+    expect(after).toMatch(/date: 2026-06-04T17:28:50(?:Z|[+-]\d{2}:\d{2})/);
+    expect(after).toContain('description: 资料描述');
+    expect(after).not.toContain('tags:');
   });
   it('creates picks entries as monthly single-entry markdown files', async () => {
     vi.useFakeTimers();
@@ -1097,6 +1113,9 @@ describe('admin content write api', () => {
     expect(after).toContain('title: 年度资料');
     expect(after).toContain('href: "https://example.com/material"');
     expect(after).toContain('label: PDF');
+    expect(after).toMatch(/date: 2026-06-04T17:28:50(?:Z|[+-]\d{2}:\d{2})/);
+    expect(after).toContain('description: 资料描述');
+    expect(after).not.toContain('tags:');
   });
 
   it('creates bits entries inside the current month folder', async () => {
@@ -1316,6 +1335,34 @@ describe('admin content write api', () => {
       {
         name: 'WZVico',
         avatar: ''
+      }
+    ]);
+  });
+
+  it('saves the managed author library from the content console endpoint', async () => {
+    const { POST } = await import('../src/pages/api/admin/content/authors');
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/authors', {
+        authors: [
+          {
+            name: 'Content Author',
+            avatar: 'author/alice.webp'
+          }
+        ]
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/authors')
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+    expect(payload.result.relativePath).toBe('src/data/authors.json');
+
+    const after = JSON.parse(await readFile(path.join(tempRoot, 'src', 'data', 'authors.json'), 'utf8'));
+    expect(after).toEqual([
+      {
+        name: 'Content Author',
+        avatar: 'author/alice.webp'
       }
     ]);
   });

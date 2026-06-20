@@ -42,13 +42,6 @@ export const ADMIN_ROUTES: readonly AdminRouteDefinition[] = [
     description: '内容索引与 frontmatter 控制台'
   },
   {
-    id: 'category',
-    href: '/admin/category/',
-    label: 'Category',
-    sidebarLabel: '分类',
-    description: '分类管理'
-  },
-  {
     id: 'images',
     href: '/admin/images/',
     label: 'Images',

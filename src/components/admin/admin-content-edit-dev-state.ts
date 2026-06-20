@@ -72,6 +72,9 @@ export const loadAdminContentEditDevState = async ({
   loadOutlines = loadAdminContentEditorOutlines
 }: LoadAdminContentEditDevStateInput): Promise<AdminContentEditDevState> => {
   const payload = await readPayload(collection, entryId);
+  if (payload.collection === 'materials') {
+    throw new Error('资料不再使用独立编辑器，请回到 Content Console 通过弹窗编辑。');
+  }
 
   const registration = getAdminContentEditorPageRegistration(payload.collection);
   const [editorStylesHref, outlines] = await Promise.all([

@@ -1,14 +1,17 @@
-export type ContentListActionFeedback = 'saved' | 'deleted';
+export type ContentListActionFeedback = 'saved' | 'deleted' | 'created';
 
 export const CONTENT_LIST_ACTION_FEEDBACK_STORAGE_KEY = 'astro-whono:admin-content:action-feedback';
 export const CONTENT_LIST_ACTION_FEEDBACK_SAVED = 'saved';
 export const CONTENT_LIST_ACTION_FEEDBACK_DELETED = 'deleted';
+export const CONTENT_LIST_ACTION_FEEDBACK_CREATED = 'created';
 
 export const CONTENT_LIST_DELETE_FEEDBACK_STORAGE_KEY = 'astro-whono:admin-content:delete-feedback';
 export const CONTENT_LIST_DELETE_FEEDBACK_VALUE = CONTENT_LIST_ACTION_FEEDBACK_DELETED;
 
 const isContentListActionFeedback = (value: string | null): value is ContentListActionFeedback =>
-  value === CONTENT_LIST_ACTION_FEEDBACK_SAVED || value === CONTENT_LIST_ACTION_FEEDBACK_DELETED;
+  value === CONTENT_LIST_ACTION_FEEDBACK_SAVED
+  || value === CONTENT_LIST_ACTION_FEEDBACK_DELETED
+  || value === CONTENT_LIST_ACTION_FEEDBACK_CREATED;
 
 export const storeContentListActionFeedback = (value: ContentListActionFeedback): void => {
   try {

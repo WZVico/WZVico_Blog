@@ -59,6 +59,9 @@ const contentEditDevState = shouldShowContentConsole
     })
   : null;
 const selectedEntryEditorPayload = contentEditDevState?.payload ?? null;
+if (selectedEntryEditorPayload?.collection === 'materials') {
+  throw new Error('资料不再使用独立编辑器，请回到 Content Console 通过弹窗编辑。');
+}
 const workspaceEditorPayload = selectedEntryEditorPayload;
 const editorRegistration = workspaceEditorPayload
   ? getAdminContentEditorPageRegistration(workspaceEditorPayload.collection)

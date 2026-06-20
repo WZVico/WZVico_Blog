@@ -456,7 +456,7 @@ const createMaterialsSourceIndexItem: FrontmatterAdapter = (record) => {
   return createBaseItem(record, {
     title,
     slug: href || record.publicEntryId,
-    publicHref: '/Materials/',
+    publicHref: href || null,
     isDraft: false,
     archive: null,
     date,

@@ -26,5 +26,10 @@ const props = Astro.props;
   <ContentActionStatus client:only="svelte" />
   <ContentListActions client:only="svelte" {...props} />
   <BitsCreateAction client:only="svelte" base={props.base ?? '/'} createEndpoint={props.createEndpoint} />
-  <StructuredCreateAction client:only="svelte" base={props.base ?? '/'} createEndpoint={props.createEndpoint} />
+  <StructuredCreateAction
+    client:only="svelte"
+    base={props.base ?? '/'}
+    endpoint={props.endpoint}
+    createEndpoint={props.createEndpoint}
+  />
 </div>

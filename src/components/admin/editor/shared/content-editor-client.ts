@@ -148,6 +148,17 @@ export type ContentEditorCreateOutcome = Omit<ContentEditorRequestOutcome, 'revi
   editHref: string | null;
 };
 
+export type ContentEditorLoadInput = {
+  endpoint: string;
+  collection: AdminContentCollectionKey;
+  entryId: string;
+  fetchImpl?: FetchLike;
+};
+
+export type ContentEditorLoadOutcome = ContentEditorRequestOutcome & {
+  payload: AdminContentEditorPayload | null;
+};
+
 const JSON_REQUEST_HEADERS = {
   Accept: 'application/json',
   'Content-Type': 'application/json; charset=utf-8'
@@ -160,6 +171,14 @@ const buildContentWriteEndpoint = (endpoint: string, dryRun: boolean): string =>
   const baseUrl = typeof window === 'undefined' ? 'http://127.0.0.1/' : window.location.href;
   const url = new URL(endpoint, baseUrl);
   url.searchParams.set('dryRun', '1');
+  return url.toString();
+};
+
+const buildContentReadEndpoint = (endpoint: string, collection: AdminContentCollectionKey, entryId: string): string => {
+  const baseUrl = typeof window === 'undefined' ? 'http://127.0.0.1/' : window.location.href;
+  const url = new URL(endpoint, baseUrl);
+  url.searchParams.set('collection', collection);
+  url.searchParams.set('entryId', entryId);
   return url.toString();
 };
 
@@ -205,6 +224,32 @@ export const saveContentEntry = async (input: ContentEditorSaveInput): Promise<C
     result: getPayloadResult(payload),
     latestValues: getPayloadEditorValues(payload, collection),
     latestBody: getPayloadEditorBody(payload, collection)
+  };
+};
+
+export const loadContentEntry = async ({
+  endpoint,
+  collection,
+  entryId,
+  fetchImpl
+}: ContentEditorLoadInput): Promise<ContentEditorLoadOutcome> => {
+  const response = await getFetch(fetchImpl)(buildContentReadEndpoint(endpoint, collection, entryId), {
+    method: 'GET',
+    headers: {
+      Accept: 'application/json'
+    },
+    cache: 'no-store'
+  });
+  const payload = await parseResponseBody(response);
+
+  return {
+    responseOk: response.ok,
+    status: response.status,
+    payloadOk: isPayloadOk(payload),
+    revision: getPayloadRevision(payload),
+    errors: getPayloadErrors(payload),
+    issues: getPayloadIssues(payload),
+    payload: getPayloadEditorPayload(payload)
   };
 };
 

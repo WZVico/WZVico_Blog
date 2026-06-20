@@ -253,7 +253,7 @@ const MATERIALS_FIELD_LABELS: Readonly<Record<string, string>> = {
   title: '标题',
   href: '链接',
   date: '日期',
-  label: '标签',
+  label: '类型',
   description: '描述',
   body: '正文'
 };

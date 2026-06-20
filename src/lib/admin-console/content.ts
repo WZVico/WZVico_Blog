@@ -503,7 +503,7 @@ export const getAdminContentPublicFallbackLabel = (item: AdminContentIndexItem):
   }
 
   if (item.collection === 'materials') {
-    return '资料条目统一汇总到 /Materials/';
+    return '资料条目缺少可打开的链接';
   }
 
   return '当前条目未生成公开页链接';

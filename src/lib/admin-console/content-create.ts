@@ -81,7 +81,7 @@ export type AdminContentCreatePlan = {
   sourcePath: string;
   relativePath: string;
   sourceText: string;
-  editHref: string;
+  editHref: string | null;
   issues: AdminContentValidationIssue[];
 };
 
@@ -345,7 +345,7 @@ const buildCreatePlanIdentity = (
     defaultPublicSlug: flattenEntryIdToSlug(publicEntryId),
     sourcePath,
     relativePath: toAdminContentRelativeProjectPath(sourcePath),
-    editHref: getAdminContentEntryEditHref(collection, entryId)
+    editHref: collection === 'materials' ? null : getAdminContentEntryEditHref(collection, entryId)
   };
 };
 
@@ -400,7 +400,7 @@ const buildEmptyCreatePlanWithIssues = (
   sourcePath: '',
   relativePath: '',
   sourceText: '',
-  editHref: '',
+  editHref: null,
   issues
 });
 

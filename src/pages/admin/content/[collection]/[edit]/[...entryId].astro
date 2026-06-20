@@ -18,26 +18,32 @@ export const getStaticPaths = async () => {
   }
 
   const paths = await Promise.all(
-    ADMIN_CONTENT_WRITE_COLLECTION_KEYS.map(async (collection) => {
-      const files = await listAdminCollectionSourceFiles(collection);
-      return files.map((filePath) => {
-        const entryId = resolveAdminContentEntryIdFromSourcePath(collection, filePath);
-        return {
-          params: { collection, edit: '_edit', entryId }
-        };
-      });
-    })
+    ADMIN_CONTENT_WRITE_COLLECTION_KEYS
+      .filter((collection) => collection !== 'materials')
+      .map(async (collection) => {
+        const files = await listAdminCollectionSourceFiles(collection);
+        return files.map((filePath) => {
+          const entryId = resolveAdminContentEntryIdFromSourcePath(collection, filePath);
+          return {
+            params: { collection, edit: '_edit', entryId }
+          };
+        });
+      })
   );
 
   return paths.flat();
 };
 
-const collectionParam = Astro.params.collection;
-if (!isAdminContentCollectionKey(collectionParam ?? '')) {
-  throw new Error(`Unsupported admin content edit collection route: ${collectionParam ?? '(missing)'}`);
+const collectionParam = String(Astro.params.collection ?? '');
+if (collectionParam === 'materials') {
+  throw new Error('资料在 Content Console 中创建后即完成，不再提供编辑器。');
 }
 
-if (!isAdminContentWriteCollectionKey(collectionParam ?? '')) {
+if (!isAdminContentCollectionKey(collectionParam)) {
+  throw new Error(`Unsupported admin content edit collection route: ${collectionParam || '(missing)'}`);
+}
+
+if (!isAdminContentWriteCollectionKey(collectionParam)) {
   throw new Error(getAdminContentReadOnlyReason(collectionParam) ?? `Admin content collection is readonly: ${collectionParam}`);
 }
 
