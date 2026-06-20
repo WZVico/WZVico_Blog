@@ -514,7 +514,7 @@ onMount(() => {
   } else if (feedback === CONTENT_LIST_ACTION_FEEDBACK_DELETED) {
     setStatus('ok', '已移到回收站', { autoClear: true });
   } else if (feedback === CONTENT_LIST_ACTION_FEEDBACK_CREATED) {
-    setStatus('ok', '已创建资料', { autoClear: true });
+    setStatus('ok', '已创建', { autoClear: true });
   }
 });
 

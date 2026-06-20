@@ -58,6 +58,7 @@ export type AdminContentSourceIndexItem = {
   publicEntryId: string;
   title: string;
   slug: string | null;
+  pickStatus?: 'shared' | 'planned';
   relativePath: string;
   publicHref: string | null;
   isDraft: boolean;
@@ -416,6 +417,7 @@ const createPicksSourceIndexItem: FrontmatterAdapter = (record) => {
   return createBaseItem(record, {
     title,
     slug,
+    pickStatus: status,
     publicHref: frontmatter.draft === true ? null : '/picks/',
     isDraft: frontmatter.draft === true,
     archive: null,

@@ -1,11 +1,12 @@
 <script lang="ts">
 import { onMount } from 'svelte';
 import { createModalDialogFocusController } from '../../../../scripts/admin-console/modal-dialog-focus';
-import { createWithBase } from '../../../../utils/format';
 import type {
   AdminContentEditorPayload,
   AdminMaterialsEditorPayload,
-  AdminMaterialsEditorValues
+  AdminMaterialsEditorValues,
+  AdminPicksEditorPayload,
+  AdminPicksEditorValues
 } from '../../../../lib/admin-console/content-editor-payload';
 import AdminEditorIcon from '../shared/AdminEditorIcon.svelte';
 import type { AdminStatusFeedbackOptions, StatusState } from './content-action-feedback';
@@ -32,10 +33,11 @@ type StructuredCreateCollection = 'picks' | 'materials';
 type DialogMode = 'create' | 'edit';
 
 const PICKS_CREATE_TRIGGER_SELECTOR = '[data-admin-content-picks-create-action]';
+const PICKS_EDIT_TRIGGER_SELECTOR = '[data-admin-content-picks-edit-action]';
 const MATERIALS_CREATE_TRIGGER_SELECTOR = '[data-admin-content-materials-create-action]';
 const MATERIALS_EDIT_TRIGGER_SELECTOR = '[data-admin-content-materials-edit-action]';
 
-let { base = '/', endpoint, createEndpoint }: Props = $props();
+let { endpoint, createEndpoint }: Props = $props();
 
 let open = $state(false);
 let busy = $state(false);
@@ -45,6 +47,9 @@ let createActionLabel = $state('新建内容');
 let selectedEntryId = $state('');
 let revision = $state('');
 let dateValue = $state('');
+let yearValue = $state('');
+let slugValue = $state('');
+let draftValue = $state(false);
 let titleValue = $state('');
 let statusValue = $state<'shared' | 'planned'>('shared');
 let authorsValue = $state('');
@@ -54,14 +59,15 @@ let hrefValue = $state('');
 let labelValue = $state('');
 let descriptionValue = $state('');
 let baselineMaterialsValue = $state<AdminMaterialsEditorValues | null>(null);
+let baselinePicksValue = $state<AdminPicksEditorValues | null>(null);
+let baselinePicksBody = $state('');
 let issues = $state<AdminContentIssue[]>([]);
 let panelEl = $state<HTMLElement | null>(null);
 let firstInputEl = $state<HTMLInputElement | null>(null);
 let closeButtonEl = $state<HTMLButtonElement | null>(null);
 
-const withBase = $derived(createWithBase(base));
 const isPicks = $derived(collection === 'picks');
-const dialogTitle = $derived(dialogMode === 'edit' ? '编辑资料' : createActionLabel);
+const dialogTitle = $derived(dialogMode === 'edit' ? (isPicks ? '编辑拾选' : '编辑资料') : createActionLabel);
 const closeLabel = $derived(`关闭${dialogTitle}`);
 const materialsDirty = $derived(
   !baselineMaterialsValue
@@ -70,13 +76,28 @@ const materialsDirty = $derived(
   || labelValue !== baselineMaterialsValue.label
   || descriptionValue !== baselineMaterialsValue.description
 );
+const getEffectivePicksBody = (): string => statusValue === 'planned' ? '' : reasonValue;
+const getBaselinePicksBody = (values: AdminPicksEditorValues, bodyText: string): string =>
+  values.status === 'planned' ? '' : bodyText;
+const picksDirty = $derived(
+  !baselinePicksValue
+  || titleValue !== baselinePicksValue.title
+  || dateValue !== baselinePicksValue.date
+  || yearValue !== baselinePicksValue.year
+  || statusValue !== baselinePicksValue.status
+  || authorsValue !== baselinePicksValue.authorsText
+  || tagsValue !== baselinePicksValue.tagsText
+  || draftValue !== baselinePicksValue.draft
+  || slugValue !== baselinePicksValue.slug
+  || getEffectivePicksBody() !== baselinePicksBody
+);
 const canSubmit = $derived(
   !busy
   && titleValue.trim().length > 0
   && (
     collection === 'materials'
       ? hrefValue.trim().length > 0 && (dialogMode === 'create' || materialsDirty)
-      : statusValue === 'planned' || reasonValue.trim().length > 0
+      : (statusValue === 'planned' || reasonValue.trim().length > 0) && (dialogMode === 'create' || picksDirty)
   )
 );
 
@@ -105,9 +126,14 @@ const resetFields = () => {
   labelValue = '';
   descriptionValue = '';
   dateValue = '';
+  yearValue = '';
+  slugValue = '';
+  draftValue = false;
   revision = '';
   selectedEntryId = '';
   baselineMaterialsValue = null;
+  baselinePicksValue = null;
+  baselinePicksBody = '';
   issues = [];
 };
 
@@ -141,6 +167,97 @@ const openCreateDialog = (trigger: HTMLElement, nextCollection: StructuredCreate
   open = true;
 };
 
+const isPicksPayload = (payload: AdminContentEditorPayload | null): payload is AdminPicksEditorPayload =>
+  Boolean(payload && payload.collection === 'picks');
+
+const isPicksValues = (value: unknown): value is AdminPicksEditorValues =>
+  Boolean(
+    value
+    && typeof value === 'object'
+    && 'title' in value
+    && 'date' in value
+    && 'year' in value
+    && 'status' in value
+    && 'authorsText' in value
+    && 'tagsText' in value
+    && 'draft' in value
+    && 'slug' in value
+  );
+
+const setPicksFields = (values: AdminPicksEditorValues, bodyText: string) => {
+  titleValue = values.title;
+  dateValue = values.date;
+  yearValue = values.year;
+  statusValue = values.status;
+  authorsValue = values.authorsText;
+  reasonValue = bodyText;
+  tagsValue = values.tagsText;
+  draftValue = values.draft;
+  slugValue = values.slug;
+};
+
+const getPicksValues = (): AdminPicksEditorValues => ({
+  title: titleValue,
+  date: dateValue,
+  year: yearValue,
+  status: statusValue,
+  authorsText: authorsValue,
+  tagsText: tagsValue,
+  draft: draftValue,
+  slug: slugValue
+});
+
+const openPicksEditDialog = async (trigger: HTMLElement) => {
+  if (busy) {
+    setStatus('warn', '操作进行中');
+    return;
+  }
+
+  const entryId = trigger.dataset.entryId?.trim() ?? '';
+  if (!entryId) {
+    setStatus('error', '拾选信息不完整，请刷新后重试');
+    return;
+  }
+
+  resetFields();
+  collection = 'picks';
+  dialogMode = 'edit';
+  createActionLabel = '编辑拾选';
+  selectedEntryId = entryId;
+  clearStatus();
+  dialogFocus.captureReturnFocus(trigger);
+  open = true;
+  busy = true;
+  setStatus('loading', '正在加载拾选');
+
+  try {
+    const outcome = await loadContentEntry({
+      endpoint,
+      collection: 'picks',
+      entryId
+    });
+    const payload = outcome.payload;
+
+    if (!outcome.responseOk || !outcome.payloadOk || !isPicksPayload(payload)) {
+      issues = outcome.issues;
+      open = false;
+      setStatus('error', outcome.errors.length > 0 ? '加载拾选失败' : '加载响应异常，请检查开发日志');
+      return;
+    }
+
+    selectedEntryId = payload.entryId;
+    revision = payload.revision;
+    baselinePicksValue = { ...payload.values };
+    baselinePicksBody = getBaselinePicksBody(payload.values, payload.bodyText);
+    setPicksFields(payload.values, payload.bodyText);
+    clearStatus();
+  } catch {
+    open = false;
+    setStatus('error', '加载拾选失败，请稍后重试');
+  } finally {
+    busy = false;
+  }
+};
 const isMaterialsPayload = (payload: AdminContentEditorPayload | null): payload is AdminMaterialsEditorPayload =>
   Boolean(payload && payload.collection === 'materials');
 
@@ -266,11 +383,61 @@ const saveMaterialsEdit = async () => {
   }
 };
 
+const savePicksEdit = async () => {
+  if (!canSubmit || busy || !selectedEntryId || !revision) return;
+
+  busy = true;
+  issues = [];
+  setStatus('loading', '正在保存拾选');
+
+  try {
+    const outcome = await saveContentEntry({
+      endpoint,
+      collection: 'picks',
+      entryId: selectedEntryId,
+      revision,
+      frontmatter: getPicksValues(),
+      body: getEffectivePicksBody()
+    });
+
+    if (outcome.revision && outcome.responseOk) revision = outcome.revision;
+
+    if (!outcome.responseOk || !outcome.payloadOk) {
+      issues = outcome.issues;
+      setStatus(outcome.status === 409 ? 'warn' : 'error', outcome.status === 409 ? '检测到外部更新' : '保存拾选失败');
+      return;
+    }
+
+    if (isPicksValues(outcome.latestValues)) {
+      const latestBody = typeof outcome.latestBody === 'string' ? outcome.latestBody : getEffectivePicksBody();
+      baselinePicksValue = { ...outcome.latestValues };
+      baselinePicksBody = getBaselinePicksBody(outcome.latestValues, latestBody);
+      setPicksFields(outcome.latestValues, latestBody);
+    }
+
+    if (outcome.result?.changed) {
+      storeContentListActionFeedback(CONTENT_LIST_ACTION_FEEDBACK_SAVED);
+      setStatus('ok', '已保存拾选');
+      window.location.reload();
+      return;
+    }
+
+    setStatus('ready', '没有变化', { autoClear: true });
+  } catch {
+    setStatus('error', '保存拾选失败，请稍后重试');
+  } finally {
+    busy = false;
+  }
+};
 const saveCreate = async () => {
   if (!canSubmit || busy) return;
 
   if (dialogMode === 'edit') {
-    await saveMaterialsEdit();
+    if (collection === 'picks') {
+      await savePicksEdit();
+    } else {
+      await saveMaterialsEdit();
+    }
     return;
   }
 
@@ -302,8 +469,7 @@ const saveCreate = async () => {
           }
         });
 
-    const needsEditHref = collection === 'picks';
-    if (!outcome.responseOk || !outcome.payloadOk || (needsEditHref && !outcome.editHref)) {
+    if (!outcome.responseOk || !outcome.payloadOk) {
       issues = outcome.issues;
       setStatus('error', outcome.errors.length > 0 ? '创建失败' : '创建响应异常，请检查开发日志');
       return;
@@ -316,13 +482,9 @@ const saveCreate = async () => {
       return;
     }
 
-    if (!outcome.editHref) {
-      setStatus('error', '创建响应异常，请检查开发日志');
-      return;
-    }
-
-    setStatus('ok', '已创建，进入编辑页');
-    window.location.assign(withBase(outcome.editHref));
+    storeContentListActionFeedback(CONTENT_LIST_ACTION_FEEDBACK_CREATED);
+    setStatus('ok', '已创建拾选');
+    window.location.reload();
   } catch {
     setStatus('error', '创建请求失败，请稍后重试');
   } finally {
@@ -337,6 +499,13 @@ const handleClick = (event: MouseEvent) => {
   if (materialsEditTrigger) {
     event.preventDefault();
     void openMaterialsEditDialog(materialsEditTrigger);
+    return;
+  }
+
+  const picksEditTrigger = event.target.closest<HTMLElement>(PICKS_EDIT_TRIGGER_SELECTOR);
+  if (picksEditTrigger) {
+    event.preventDefault();
+    void openPicksEditDialog(picksEditTrigger);
     return;
   }
 
@@ -362,7 +531,7 @@ onMount(() => {
 });
 
 $effect(() => {
-  document.querySelectorAll<HTMLButtonElement>(`${PICKS_CREATE_TRIGGER_SELECTOR}, ${MATERIALS_CREATE_TRIGGER_SELECTOR}, ${MATERIALS_EDIT_TRIGGER_SELECTOR}`).forEach((button) => {
+  document.querySelectorAll<HTMLButtonElement>(`${PICKS_CREATE_TRIGGER_SELECTOR}, ${PICKS_EDIT_TRIGGER_SELECTOR}, ${MATERIALS_CREATE_TRIGGER_SELECTOR}, ${MATERIALS_EDIT_TRIGGER_SELECTOR}`).forEach((button) => {
     button.disabled = busy;
   });
 });
@@ -423,7 +592,7 @@ $effect(() => {
         </header>
 
         <div class="admin-modal__body">
-          <div class="admin-editor-frontmatter" aria-label={dialogMode === 'edit' ? '资料字段' : '新增字段'}>
+          <div class="admin-editor-frontmatter" aria-label={dialogMode === 'edit' ? (isPicks ? '拾选字段' : '资料字段') : '新增字段'}>
             <div class="admin-editor-frontmatter__fields">
               <label class="admin-field admin-content-editor__field" class:is-invalid={Boolean(getIssue('title'))}>
                 <span class="admin-field__label">标题</span>
@@ -455,6 +624,36 @@ $effect(() => {
                   </div>
                   <small>{getIssue('status')}</small>
                 </fieldset>
+
+                {#if dialogMode === 'edit'}
+                  <div class="admin-content-structured-create-dialog__split">
+                    <label class="admin-field admin-content-editor__field" class:is-invalid={Boolean(getIssue('date'))}>
+                      <span class="admin-field__label">日期</span>
+                      <input class="admin-field__control" name="date" type="text" bind:value={dateValue} disabled={busy} />
+                      <small>{getIssue('date')}</small>
+                    </label>
+                    <label class="admin-field admin-content-editor__field" class:is-invalid={Boolean(getIssue('year'))}>
+                      <span class="admin-field__label">年份</span>
+                      <input class="admin-field__control" name="year" type="text" inputmode="numeric" bind:value={yearValue} disabled={busy} />
+                      <small>{getIssue('year')}</small>
+                    </label>
+                  </div>
+
+                  <label class="admin-field admin-content-editor__field" class:is-invalid={Boolean(getIssue('slug'))}>
+                    <span class="admin-field__label">Slug</span>
+                    <input class="admin-field__control" name="slug" type="text" bind:value={slugValue} disabled={busy} />
+                    <small>{getIssue('slug')}</small>
+                  </label>
+
+                  <label class="admin-field admin-content-editor__field admin-content-structured-create-dialog__check" class:is-invalid={Boolean(getIssue('draft'))}>
+                    <span class="admin-field__label">发布状态</span>
+                    <span class="admin-content-structured-create-dialog__checkline">
+                      <input name="draft" type="checkbox" bind:checked={draftValue} disabled={busy} />
+                      <span>草稿</span>
+                    </span>
+                    <small>{getIssue('draft')}</small>
+                  </label>
+                {/if}
 
                 <label class="admin-field admin-content-editor__field" class:is-invalid={Boolean(getIssue('authorsText', 'authors'))}>
                   <span class="admin-field__label">作者</span>

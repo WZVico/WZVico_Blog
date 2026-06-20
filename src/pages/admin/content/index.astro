@@ -546,19 +546,24 @@ const getContentCreateAction = (
                                 const editPath = getAdminContentEntryEditHref(item.collection, item.id);
                                 const editHref = withBase(editPath);
                                 const publicHref = item.publicHref ? withBase(item.publicHref) : null;
+                                const isPicksEntry = item.collection === 'picks';
                                 const supportsEntryEditor = capability.writable && item.collection !== 'materials';
                                 const supportsListInfoAction = supportsEntryEditor && hasListInfoAction(item.collection);
                                 const articleInfoHref = supportsEntryEditor
                                   ? item.collection === 'longform'
                                     ? withBase(`${editPath}?panel=info`)
-                                    : editHref
+                                    : item.collection === 'bits'
+                                      ? editHref
+                                      : null
                                   : null;
                                 const publicFallbackLabel = getAdminContentPublicFallbackLabel(item);
                                 const entryTitleHref = item.collection === 'materials'
                                   ? publicHref
-                                  : supportsEntryEditor
-                                    ? editHref
-                                    : publicHref ?? getCollectionListHref(item.collection);
+                                  : isPicksEntry
+                                    ? publicHref ?? getCollectionListHref(item.collection)
+                                    : supportsEntryEditor
+                                      ? editHref
+                                      : publicHref ?? getCollectionListHref(item.collection);
                                 const entryTitleIsExternal = isExternalHttpHref(entryTitleHref);
                                 const exportHref = getContentEntryExportHref(item.collection, item.id);
                                 const deleteUnsupportedReason = capability.deleteUnsupportedReason ?? `当前 collection 暂不支持删除：${item.collection}`;
@@ -642,6 +647,12 @@ const getContentCreateAction = (
                                       [draft]
                                     </span>
                                     <span
+                                      class="admin-content-row-mark admin-content-row-mark--planned"
+                                      hidden={item.collection !== 'picks' || item.pickStatus !== 'planned'}
+                                    >
+                                      待拾
+                                    </span>
+                                    <span
                                       class="admin-content-row-mark admin-content-row-mark--archive"
                                       data-admin-content-row-archive
                                       hidden={item.archive !== false}
@@ -692,9 +703,20 @@ const getContentCreateAction = (
                                     ) : (
                                       <>
                                         {supportsEntryEditor ? (
-                                          <a class="admin-btn admin-btn--secondary admin-btn--compact" href={editHref}>
-                                            编辑
-                                          </a>
+                                          item.collection === 'picks' ? (
+                                            <button
+                                              type="button"
+                                              class="admin-btn admin-btn--secondary admin-btn--compact"
+                                              data-admin-content-picks-edit-action
+                                              data-entry-id={item.id}
+                                            >
+                                              编辑
+                                            </button>
+                                          ) : (
+                                            <a class="admin-btn admin-btn--secondary admin-btn--compact" href={editHref}>
+                                              编辑
+                                            </a>
+                                          )
                                         ) : (
                                           <span
                                             class="admin-btn admin-btn--secondary admin-btn--compact is-disabled"

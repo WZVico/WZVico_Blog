@@ -179,6 +179,36 @@ describe('admin content write api', () => {
     expect(material?.publicHref).toBe('https://example.com/old');
   });
 
+  it('exposes planned picks status for content-console row badges', async () => {
+    await writeFile(
+      path.join(tempRoot, 'src', 'content', 'picks', '202606', 'planned.md'),
+      [
+        '---',
+        'title: 《待拾书》',
+        'year: 2026',
+        'status: planned',
+        'authors:',
+        '  - 待拾作者',
+        'tags:',
+        '  - 待拾',
+        'draft: false',
+        '---',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+
+    const {
+      loadAdminContentSourceIndex,
+      loadAdminContentSourceManifest
+    } = await import('../src/lib/admin-console/content-source-index');
+    const manifest = await loadAdminContentSourceManifest();
+    const items = await loadAdminContentSourceIndex(manifest, 'picks');
+
+    expect(items.find((item) => item.id === '202606/pick')?.pickStatus).toBe('shared');
+    expect(items.find((item) => item.id === '202606/planned')?.pickStatus).toBe('planned');
+  });
+
   it('loads editable payload for longform multi-author avatars', async () => {
     await writeFile(
       path.join(tempRoot, 'src', 'content', 'longform', 'multi-author.md'),
