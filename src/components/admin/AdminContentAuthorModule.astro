@@ -38,6 +38,27 @@ const {
     </div>
   </div>
 
+  <div class="admin-content-author-bulk-actions" data-author-content-bulk-actions hidden>
+    <span class="admin-content-author-bulk-actions__summary">
+      已选 <strong data-author-content-bulk-count>0</strong> 位作者
+    </span>
+    <button
+      class="admin-btn admin-btn--danger admin-btn--compact"
+      type="button"
+      data-author-content-bulk-delete
+    >
+      <AdminIcon name="trash" size={13} strokeWidth={2.1} />
+      <span>批量删除</span>
+    </button>
+    <button
+      class="admin-btn admin-btn--ghost admin-btn--compact"
+      type="button"
+      data-author-content-bulk-clear
+    >
+      取消选择
+    </button>
+  </div>
+
   <ol class="admin-content-list admin-content-author-list" aria-label="作者目录" data-author-content-list></ol>
   <p class="admin-content-empty" data-author-content-empty hidden>当前还没有作者。</p>
   <p class="admin-content-author-status" data-author-content-status role="status" aria-live="polite"></p>

@@ -175,7 +175,13 @@ const createEditMain = (author: AuthorProfile, rowLabel: string): HTMLElement =>
   return main;
 };
 
-const createBulkSelect = (label: string): HTMLElement => {
+type BulkSelectOptions = {
+  key?: string;
+  checked?: boolean;
+  disabled?: boolean;
+};
+
+const createBulkSelect = (label: string, options: BulkSelectOptions = {}): HTMLElement => {
   const wrapper = document.createElement('label');
   wrapper.className = 'admin-content-bulk-select';
   wrapper.title = label;
@@ -185,6 +191,11 @@ const createBulkSelect = (label: string): HTMLElement => {
   checkbox.type = 'checkbox';
   checkbox.dataset.authorContentSelect = '';
   checkbox.setAttribute('aria-label', label);
+  if (options.key) {
+    checkbox.dataset.authorContentSelectKey = options.key;
+  }
+  checkbox.checked = options.checked === true;
+  checkbox.disabled = options.disabled === true || !options.key;
   wrapper.appendChild(checkbox);
   return wrapper;
 };
@@ -220,7 +231,8 @@ const createActions = (isEditing: boolean): HTMLElement => {
 const createRow = (
   author: AuthorProfile,
   index: number,
-  editing: EditableRow | null
+  editing: EditableRow | null,
+  selectedAuthorKeys: ReadonlySet<string> = new Set()
 ): HTMLElement => {
   const isNew = index < 0;
   const isEditing = Boolean(editing && editing.index === index && editing.kind === (isNew ? 'new' : 'existing'));
@@ -231,7 +243,19 @@ const createRow = (
   row.dataset.authorIndex = String(index);
   row.dataset.authorKind = isNew ? 'new' : 'existing';
 
-  row.appendChild(createBulkSelect(isNew ? '选择新建作者' : `选择作者 ${author.name}`));
+  const authorKey = isNew ? '' : getAuthorKey(author.name);
+  row.appendChild(createBulkSelect(
+    isNew
+      ? '新建作者暂不能批量操作'
+      : isEditing
+        ? `正在编辑作者 ${author.name}`
+        : `选择作者 ${author.name}`,
+    {
+      key: authorKey,
+      checked: Boolean(authorKey && selectedAuthorKeys.has(authorKey)),
+      disabled: isNew || isEditing
+    }
+  ));
   row.appendChild(createAvatar(author));
   row.appendChild(isEditing ? createEditMain(author, label) : createViewMain(author));
   row.appendChild(createActions(isEditing));
@@ -301,24 +325,64 @@ export const initAdminContentAuthors = (): void => {
   const emptyEl = query<HTMLElement>(root, '[data-author-content-empty]');
   const countEl = query<HTMLElement>(root, '[data-author-content-count]');
   const newBtn = query<HTMLButtonElement>(root, '[data-author-content-new]');
+  const bulkActionsEl = query<HTMLElement>(root, '[data-author-content-bulk-actions]');
+  const bulkCountEl = query<HTMLElement>(root, '[data-author-content-bulk-count]');
+  const bulkDeleteBtn = query<HTMLButtonElement>(root, '[data-author-content-bulk-delete]');
+  const bulkClearBtn = query<HTMLButtonElement>(root, '[data-author-content-bulk-clear]');
   const statusEl = query<HTMLElement>(root, '[data-author-content-status]');
   let authors = parseInitialAuthors(root.dataset.authorContentInitial);
   let editing: EditableRow | null = null;
   let draftAuthor: AuthorProfile | null = null;
   let busy = false;
+  let selectedAuthorKeys = new Set<string>();
+
+  const pruneSelectedAuthorKeys = () => {
+    const authorKeys = new Set(authors.map((author) => getAuthorKey(author.name)));
+    selectedAuthorKeys = new Set(Array.from(selectedAuthorKeys).filter((key) => authorKeys.has(key)));
+  };
+
+  const getSelectedAuthors = (): AuthorProfile[] =>
+    authors.filter((author) => selectedAuthorKeys.has(getAuthorKey(author.name)));
+
+  const updateBulkActions = () => {
+    const selectedCount = getSelectedAuthors().length;
+    if (bulkActionsEl) bulkActionsEl.hidden = selectedCount === 0;
+    if (bulkCountEl) bulkCountEl.textContent = String(selectedCount);
+    if (bulkDeleteBtn) bulkDeleteBtn.disabled = busy || selectedCount === 0;
+    if (bulkClearBtn) bulkClearBtn.disabled = busy || selectedCount === 0;
+  };
+
+  const clearSelectedAuthors = () => {
+    selectedAuthorKeys.clear();
+    queryAll<HTMLInputElement>(root, '[data-author-content-select]').forEach((checkbox) => {
+      checkbox.checked = false;
+    });
+    updateBulkActions();
+  };
+
+  const syncSelectedAuthorCheckboxes = () => {
+    selectedAuthorKeys = new Set(
+      queryAll<HTMLInputElement>(root, '[data-author-content-select]:checked')
+        .map((checkbox) => checkbox.dataset.authorContentSelectKey?.trim() ?? '')
+        .filter(Boolean)
+    );
+    updateBulkActions();
+  };
 
   const render = () => {
     if (!listEl) return;
+    pruneSelectedAuthorKeys();
     listEl.replaceChildren();
     if (draftAuthor) {
-      listEl.appendChild(createRow(draftAuthor, -1, editing));
+      listEl.appendChild(createRow(draftAuthor, -1, editing, selectedAuthorKeys));
     }
     authors.forEach((author, index) => {
-      listEl.appendChild(createRow(author, index, editing));
+      listEl.appendChild(createRow(author, index, editing, selectedAuthorKeys));
     });
     if (emptyEl) emptyEl.hidden = authors.length > 0 || Boolean(draftAuthor);
     if (countEl) countEl.textContent = String(authors.length);
     if (newBtn) newBtn.disabled = Boolean(draftAuthor) || busy;
+    updateBulkActions();
   };
 
   const setBusy = (nextBusy: boolean) => {
@@ -327,17 +391,51 @@ export const initAdminContentAuthors = (): void => {
       if (button.dataset.authorContentAction === 'cancel') return;
       button.disabled = busy;
     });
+    queryAll<HTMLInputElement>(root, '[data-author-content-select]').forEach((checkbox) => {
+      checkbox.disabled = busy || !checkbox.dataset.authorContentSelectKey || Boolean(checkbox.closest('.is-editing'));
+    });
     if (newBtn) newBtn.disabled = busy || Boolean(draftAuthor);
+    updateBulkActions();
   };
 
   const focusEditingName = () => {
     query<HTMLInputElement>(root, '[data-author-content-name-input]')?.focus();
   };
 
+  const deleteSelectedAuthors = async () => {
+    const selectedAuthors = getSelectedAuthors();
+    if (selectedAuthors.length === 0 || busy) return;
+    if (!endpoint) {
+      setStatus(statusEl, '当前页面缺少保存接口。', 'error');
+      return;
+    }
+
+    const names = selectedAuthors.map((author) => author.name);
+    if (!window.confirm(`删除 ${selectedAuthors.length} 位作者？\n\n${names.join('、')}`)) return;
+
+    const deleteKeys = new Set(selectedAuthors.map((author) => getAuthorKey(author.name)));
+    const nextAuthors = authors.filter((author) => !deleteKeys.has(getAuthorKey(author.name)));
+    setBusy(true);
+    setStatus(statusEl, '正在批量删除作者...');
+    try {
+      authors = await persistAuthors(endpoint, nextAuthors);
+      selectedAuthorKeys.clear();
+      editing = null;
+      draftAuthor = null;
+      render();
+      setStatus(statusEl, `已删除 ${selectedAuthors.length} 位作者。`, 'success');
+    } catch (error) {
+      setStatus(statusEl, error instanceof Error ? error.message : '批量删除作者失败', 'error');
+    } finally {
+      setBusy(false);
+    }
+  };
+
   render();
 
   newBtn?.addEventListener('click', () => {
     clearStatus(statusEl);
+    clearSelectedAuthors();
     draftAuthor = { name: '', avatar: '' };
     editing = { kind: 'new', index: -1 };
     render();
@@ -346,13 +444,35 @@ export const initAdminContentAuthors = (): void => {
 
   root.addEventListener('input', (event) => {
     if (!(event.target instanceof Element)) return;
+    if (!event.target.matches('[data-author-content-name-input], [data-author-content-avatar-input]')) return;
     const row = event.target.closest<HTMLElement>('[data-author-content-row]');
     if (row) updateAvatarPreview(row);
     clearStatus(statusEl);
   });
 
+  root.addEventListener('change', (event) => {
+    if (!(event.target instanceof HTMLInputElement)) return;
+    if (!event.target.matches('[data-author-content-select]')) return;
+    syncSelectedAuthorCheckboxes();
+    clearStatus(statusEl);
+  });
+
   root.addEventListener('click', async (event) => {
     if (!(event.target instanceof Element)) return;
+
+    const bulkClearButton = event.target.closest<HTMLButtonElement>('[data-author-content-bulk-clear]');
+    if (bulkClearButton) {
+      clearSelectedAuthors();
+      clearStatus(statusEl);
+      return;
+    }
+
+    const bulkDeleteButton = event.target.closest<HTMLButtonElement>('[data-author-content-bulk-delete]');
+    if (bulkDeleteButton) {
+      await deleteSelectedAuthors();
+      return;
+    }
+
     const button = event.target.closest<HTMLButtonElement>('[data-author-content-action]');
     if (!button || busy) return;
 
@@ -365,6 +485,7 @@ export const initAdminContentAuthors = (): void => {
     clearStatus(statusEl);
 
     if (action === 'edit' && Number.isInteger(index)) {
+      clearSelectedAuthors();
       draftAuthor = null;
       editing = { kind: 'existing', index };
       render();
@@ -393,6 +514,7 @@ export const initAdminContentAuthors = (): void => {
       setStatus(statusEl, '正在删除作者...');
       try {
         authors = await persistAuthors(endpoint, nextAuthors);
+        selectedAuthorKeys.delete(getAuthorKey(author.name));
         editing = null;
         draftAuthor = null;
         render();
@@ -426,6 +548,7 @@ export const initAdminContentAuthors = (): void => {
       setStatus(statusEl, isNew ? '正在新建作者...' : '正在保存作者...');
       try {
         authors = await persistAuthors(endpoint, nextAuthors);
+        selectedAuthorKeys.clear();
         editing = null;
         draftAuthor = null;
         render();

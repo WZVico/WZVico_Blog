@@ -87,7 +87,7 @@ export const ADMIN_CONTENT_COLLECTION_CAPABILITIES = {
     writable: true,
     exportable: true,
     deletable: true,
-    draftStatus: true,
+    draftStatus: false,
     create: true,
     multiEntry: true,
     articleFilters: true,

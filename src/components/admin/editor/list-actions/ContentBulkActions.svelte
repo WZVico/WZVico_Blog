@@ -288,7 +288,7 @@ const postJson = async (endpoint: string, payload: unknown) => {
 
 const runStatus = async (targetDraft: boolean) => {
   if (actionsDisabled) return;
-  const entries = selected;
+  const entries = selected.filter((entry) => isAdminContentDraftStatusCollectionKey(entry.collection));
   if (entries.length === 0 || statusCount === 0) {
     setStatus('warn', '没有可更新状态的内容', { autoClear: true });
     return;
@@ -663,16 +663,18 @@ onMount(() => {
         <span class="admin-content-bulk-trigger__count">{selectedCount}</span>
       </summary>
       <div class="admin-content-bulk-menu__panel" aria-label="批量操作">
-        <button class="admin-content-menu-item" type="button" disabled={actionsDisabled || statusCount === 0} onclick={() => void runStatus(false)}>
-          <AdminEditorIcon name="check" size={14} />
-          <span>发布</span>
-          <span class="admin-content-bulk-menu__count">{statusCount}</span>
-        </button>
-        <button class="admin-content-menu-item" type="button" disabled={actionsDisabled || statusCount === 0} onclick={() => void runStatus(true)}>
-          <AdminEditorIcon name="lock" size={14} />
-          <span>改草稿</span>
-          <span class="admin-content-bulk-menu__count">{statusCount}</span>
-        </button>
+        {#if statusCount > 0}
+          <button class="admin-content-menu-item" type="button" disabled={actionsDisabled} onclick={() => void runStatus(false)}>
+            <AdminEditorIcon name="check" size={14} />
+            <span>发布</span>
+            <span class="admin-content-bulk-menu__count">{statusCount}</span>
+          </button>
+          <button class="admin-content-menu-item" type="button" disabled={actionsDisabled} onclick={() => void runStatus(true)}>
+            <AdminEditorIcon name="lock" size={14} />
+            <span>改草稿</span>
+            <span class="admin-content-bulk-menu__count">{statusCount}</span>
+          </button>
+        {/if}
         <button class="admin-content-menu-item" type="button" disabled={actionsDisabled || exportCount === 0} onclick={() => void runExport()}>
           <AdminEditorIcon name="download" size={14} />
           <span>下载</span>

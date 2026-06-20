@@ -131,6 +131,16 @@ describe('admin-console/content', () => {
     expect(filtered[0]?.id).toBe('202606/example');
   });
 
+  it('does not treat picks as a draft-status collection for filters', () => {
+    const state = getAdminContentFilterState(new URLSearchParams([
+      ['collection', 'picks'],
+      ['draft', 'draft']
+    ]));
+
+    expect(state.draft).toBe('all');
+    expect(getAdminContentFilterHref(state, {}, '/admin/content/')).toBe('/admin/content/?collection=picks');
+  });
+
   it('filters materials by year without applying draft status filters', () => {
     const items = [
       createItem({
