@@ -6,7 +6,7 @@ import type {
   AdminMaterialsEditorValues,
   AdminPicksEditorValues
 } from '../../../../lib/admin-console/content-editor-payload';
-import type { AdminAboutEditorValues } from '../../../../lib/admin-console/content-about-contract';
+import type { AdminAboutEditorValues } from '../../../../lib/admin-console/content-about-shared';
 import type { AdminContentCollectionKey } from '../../../../lib/admin-console/content-collections';
 import type { AdminContentDeletableCollectionKey } from '../../../../lib/admin-console/content-delete-contract';
 import {

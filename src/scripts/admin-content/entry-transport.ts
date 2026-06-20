@@ -13,10 +13,8 @@ import type {
 } from '../../lib/admin-console/content-editor-payload';
 import type { AdminContentEntryWriteCollectionKey } from '../../lib/admin-console/content-collections';
 import type { AdminContentValidationIssue } from '../../lib/admin-console/content-entry-contract';
-import type {
-  AdminAboutEditorPayload,
-  AdminAboutEditorValues
-} from '../../lib/admin-console/content-about-contract';
+import type { AdminAboutEditorPayload } from '../../lib/admin-console/content-about-contract';
+import type { AdminAboutEditorValues } from '../../lib/admin-console/content-about-shared';
 
 export type AdminContentWriteResult = {
   changed: boolean;

@@ -7,12 +7,12 @@ import type {
   AdminPicksEditorValues
 } from '../../../../lib/admin-console/content-editor-payload';
 import type { AdminContentWriteCollectionKey } from '../../../../lib/admin-console/content-collections';
-import type { AdminAboutEditorValues } from '../../../../lib/admin-console/content-about-contract';
+import type { AdminAboutEditorValues } from '../../../../lib/admin-console/content-about-shared';
 import { getAdminContentCollectionCapability } from '../../../../lib/admin-console/content-collections';
 import {
   getAdminAboutWriteFieldLabel,
   isAdminAboutFrontmatterIssuePath
-} from '../../../../lib/admin-console/content-about-contract';
+} from '../../../../lib/admin-console/content-about-shared';
 import { hasOwn } from '../../../../lib/admin-console/content-entry-utils';
 
 type ContentEditorCapabilities = {

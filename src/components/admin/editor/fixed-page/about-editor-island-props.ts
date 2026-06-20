@@ -1,4 +1,4 @@
-import type { AdminAboutEditorValues } from '../../../../lib/admin-console/content-about-contract';
+import type { AdminAboutEditorValues } from '../../../../lib/admin-console/content-about-shared';
 
 export type AboutEditorIslandProps = {
   endpoint: string;

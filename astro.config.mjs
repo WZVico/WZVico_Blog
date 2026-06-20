@@ -105,6 +105,18 @@ export default defineConfig({
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url))
       }
+    },
+    optimizeDeps: {
+      include: [
+        'emoji-picker-element',
+        '@lucide/svelte/icons/*',
+        '@codemirror/commands',
+        '@codemirror/lang-markdown',
+        '@codemirror/language',
+        '@codemirror/state',
+        '@codemirror/view',
+        '@lezer/highlight'
+      ]
     }
   },
   markdown: createPublicMarkdownConfig()

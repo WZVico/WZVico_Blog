@@ -15,6 +15,7 @@ export type BitsEditorIslandProps = {
   revision: string;
   initialFrontmatter: AdminBitsEditorValues;
   initialBody: string;
+  initialArticleInfoOpen?: boolean;
   defaultAuthor: BitsCardAuthorInput;
   bitsOutlineItems?: EditorOutlineListSourceItem[];
 };

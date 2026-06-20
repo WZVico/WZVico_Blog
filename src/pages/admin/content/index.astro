@@ -525,7 +525,7 @@ const getContentCreateAction = (
                                   type="button"
                                   {...{ [createAction.attribute]: true }}
                                   data-create-action-label={createAction.label}
-                                  disabled
+                                  disabled={section.collection !== 'longform' && section.collection !== 'bits'}
                                 >
                                   <AdminIcon name="plus" size={13} strokeWidth={2.2} class="admin-content-create-action__icon" />
                                   <span>{createAction.label}</span>
@@ -553,7 +553,7 @@ const getContentCreateAction = (
                                   ? item.collection === 'longform'
                                     ? withBase(`${editPath}?panel=info`)
                                     : item.collection === 'bits'
-                                      ? editHref
+                                      ? withBase(`${editPath}?panel=info`)
                                       : null
                                   : null;
                                 const publicFallbackLabel = getAdminContentPublicFallbackLabel(item);

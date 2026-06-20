@@ -1,7 +1,5 @@
-export type {
-  AdminAboutEditorPayload,
-  AdminAboutEditorValues
-} from './content-about-contract';
+export type { AdminAboutEditorPayload } from './content-about-contract';
+export type { AdminAboutEditorValues } from './content-about-shared';
 
 export type { AdminContentValidationIssue } from './content-entry-contract';
 

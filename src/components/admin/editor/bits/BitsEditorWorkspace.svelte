@@ -90,6 +90,7 @@ type Props = {
   revision: string;
   initialFrontmatter: AdminBitsEditorValues;
   initialBody: string;
+  initialArticleInfoOpen?: boolean;
   defaultAuthor: BitsCardAuthorInput;
   bitsOutlineItems?: EditorOutlineListSourceItem[];
 };
@@ -135,6 +136,7 @@ let {
   revision,
   initialFrontmatter,
   initialBody,
+  initialArticleInfoOpen = false,
   defaultAuthor,
   bitsOutlineItems = []
 }: Props = $props();
@@ -158,7 +160,8 @@ const createInitialSnapshot = () => {
     revision,
     frontmatter,
     body: normalizeEditorBodyValue(initialBody),
-    imageRows: getEditableBitsImageRows(frontmatter.imagesText)
+    imageRows: getEditableBitsImageRows(frontmatter.imagesText),
+    bitsInfoOpen: initialArticleInfoOpen
   };
 };
 
@@ -184,7 +187,7 @@ let previewHtml = $state('');
 let previewBusy = $state(false);
 let previewError = $state('');
 let previewWarnings = $state<string[]>([]);
-let bitsInfoOpen = $state(false);
+let bitsInfoOpen = $state(initialSnapshot.bitsInfoOpen);
 let bitsInfoDialog = $state<ArticleInfoDialog | null>(null);
 const previewRequestGuard = createEditorPreviewRequestGuard();
 const readDevAdminEditorDefaults = () =>

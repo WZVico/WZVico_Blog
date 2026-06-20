@@ -1,8 +1,12 @@
-import type { AboutContent } from '../about-content';
+import type { AdminAboutEditorValues } from './content-about-shared';
 import { parseAdminAboutSourceContent } from './content-about-source';
 import type { AdminContentValidationIssue } from './content-entry-contract';
 
-export type AdminAboutEditorValues = AboutContent;
+export type { AdminAboutEditorValues } from './content-about-shared';
+export {
+  getAdminAboutWriteFieldLabel,
+  isAdminAboutFrontmatterIssuePath
+} from './content-about-shared';
 
 export type AdminAboutEditorPayload = {
   collection: 'about';
@@ -34,14 +38,6 @@ type AdminAboutPayloadSourceState = {
   bodyText: string;
 };
 
-const ABOUT_FIELD_LABELS: Readonly<Record<string, string>> = {
-  introLines: '开头介绍',
-  guide: '栏目指引',
-  tech: '关于这里',
-  faq: '常见问题',
-  contact: '联系与订阅',
-  body: '页面内容'
-};
 
 export const createAdminAboutEditorValues = (sourceText: string): AdminAboutEditorValues =>
   parseAdminAboutSourceContent(sourceText);
@@ -60,9 +56,3 @@ export const buildAdminAboutEditorPayload = (
   bodyText: state.bodyText,
   values: createAdminAboutEditorValues(state.sourceText)
 });
-
-export const getAdminAboutWriteFieldLabel = (field: string): string =>
-  ABOUT_FIELD_LABELS[field] ?? field;
-
-export const isAdminAboutFrontmatterIssuePath = (path?: string): boolean =>
-  Boolean(path && (path.startsWith('introLines') || path.startsWith('guide') || path.startsWith('tech') || path.startsWith('faq') || path.startsWith('contact')));

@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises';
 import { describe, expect, it } from 'vitest';
 
 const {
@@ -143,5 +144,62 @@ describe('admin-console/content', () => {
         relativePath: 'src/content/bits/202606/example.md'
       }))
     ).toContain('bit-bits-example');
+  });
+
+  it('keeps browser editor adapters away from the server-only about contract', async () => {
+    const source = await readFile(
+      new URL('../src/components/admin/editor/shared/content-editor-adapters.ts', import.meta.url),
+      'utf8'
+    );
+
+    expect(source).toContain('content-about-shared');
+    expect(source).not.toContain('content-about-contract');
+  });
+
+  it('passes the initial info panel state to bits editor props', async () => {
+    const {
+      buildAdminContentEditorIslandProps,
+      createEmptyAdminContentEditorOutlines
+    } = await import('../src/components/admin/admin-content-editor-registry');
+
+    const props = buildAdminContentEditorIslandProps({
+      payload: {
+        collection: 'bits',
+        entryId: '202606/bits-demo',
+        publicEntryId: '202606/bits-demo',
+        defaultPublicSlug: 'bits-demo',
+        revision: 'revision',
+        relativePath: 'src/content/bits/202606/bits-demo.md',
+        writable: true,
+        readonlyReason: null,
+        bodyText: 'demo body',
+        values: {
+          title: 'Bits Demo',
+          description: '',
+          date: '2026-06-04T12:00:00+08:00',
+          tagsText: '',
+          draft: false,
+          authorName: '',
+          authorAvatar: '',
+          imagesText: ''
+        }
+      },
+      endpoints: {
+        endpoint: '/api/admin/content/entry/',
+        exportEndpoint: '/api/admin/content/export/',
+        deleteEndpoint: '/api/admin/content/delete/',
+        previewEndpoint: '/api/admin/preview/',
+        imageUploadEndpoint: '/api/admin/images/upload/'
+      },
+      returnHref: '/admin/content/?collection=bits',
+      defaultAuthor: {},
+      outlines: createEmptyAdminContentEditorOutlines(),
+      initialArticleInfoOpen: true,
+      authorProfiles: []
+    });
+
+    expect(props).toMatchObject({
+      initialArticleInfoOpen: true
+    });
   });
 });

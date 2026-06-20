@@ -91,6 +91,7 @@ type BuildEssayIslandPropsInput = BuildBaseIslandPropsInput<AdminEssayEditorPayl
 type BuildBitsIslandPropsInput = BuildBaseIslandPropsInput<AdminBitsEditorPayload> & {
   defaultAuthor: BitsCardAuthorInput;
   bitsOutlineItems: EditorOutlineListSourceItem[];
+  initialArticleInfoOpen: boolean;
 };
 
 type BuildPicksIslandPropsInput = BuildBaseIslandPropsInput<AdminPicksEditorPayload>;
@@ -264,7 +265,8 @@ const buildBitsEditorIslandProps = ({
   endpoints,
   returnHref,
   defaultAuthor,
-  bitsOutlineItems
+  bitsOutlineItems,
+  initialArticleInfoOpen
 }: BuildBitsIslandPropsInput): BitsEditorIslandProps => ({
   ...endpoints,
   returnHref,
@@ -274,6 +276,7 @@ const buildBitsEditorIslandProps = ({
   revision: payload.revision,
   initialFrontmatter: payload.values,
   initialBody: payload.bodyText,
+  initialArticleInfoOpen,
   defaultAuthor,
   bitsOutlineItems
 });
@@ -459,7 +462,8 @@ export const buildAdminContentEditorIslandProps = ({
       endpoints,
       returnHref,
       defaultAuthor,
-      bitsOutlineItems: outlines.bitsOutlineItems
+      bitsOutlineItems: outlines.bitsOutlineItems,
+      initialArticleInfoOpen
     });
   }
 

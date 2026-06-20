@@ -11,7 +11,7 @@ import {
   type AdminContentIssue,
   type AdminContentWriteResult
 } from '../shared/content-editor-client';
-import type { AdminAboutEditorValues } from '../../../../lib/admin-console/content-about-contract';
+import type { AdminAboutEditorValues } from '../../../../lib/admin-console/content-about-shared';
 import type { AboutEditorIslandProps } from './about-editor-island-props';
 
 const PAGE_ACTIONS_HOST_SELECTOR = '[data-admin-editor-page-actions-host]';
