@@ -60,11 +60,21 @@ const readingStatsMetaText = [
   articleMetaSettings.showWordCount ? `共 ${numberFormatter.format(articleReadingStats.wordCount)} 字` : '',
   articleMetaSettings.showReadingTime ? `约 ${numberFormatter.format(articleReadingStats.readingMinutes)} 分钟` : ''
 ].filter(Boolean).join('，');
+const publishedDateText = formatISODateUtc(entry.data.date);
+const updatedAt = entry.data.updatedAt instanceof Date && Number.isFinite(entry.data.updatedAt.valueOf())
+  ? entry.data.updatedAt
+  : null;
+const updatedDateText = updatedAt ? formatISODateUtc(updatedAt) : '';
+const shouldShowUpdatedDate = articleMetaSettings.showDate
+  && updatedAt !== null
+  && updatedDateText !== publishedDateText;
 const withBase = createWithBase(import.meta.env.BASE_URL ?? '/');
 const { settings } = getThemeSettings();
 const { authors: articleAuthors, translator: translatorPerson } = getLongformArticlePeople(entry, settings, withBase);
-const shouldShowPeopleMeta = articleAuthors.length > 0 || Boolean(translatorPerson);
-const shouldShowMetaLine = shouldShowPeopleMeta
+const shouldShowAuthorMeta = articleAuthors.length > 0;
+const shouldShowTranslatorMeta = Boolean(translatorPerson);
+const shouldShowMetaLine = shouldShowAuthorMeta
+  || shouldShowTranslatorMeta
   || articleMetaSettings.showDate
   || (articleMetaSettings.showTags && visibleTags.length > 0)
   || articleMetaSettings.showWordCount
@@ -86,6 +96,7 @@ const translationSourceLabel = translationSource || (translationSourceUrl ? '原
 >
   <Fragment slot="head">
     <meta property="article:published_time" content={entry.data.date.toISOString()} />
+    {updatedAt ? <meta property="article:modified_time" content={updatedAt.toISOString()} /> : null}
     {articleAuthors.map((author) => (
       <meta property="article:author" content={author.name} />
     ))}
@@ -116,47 +127,16 @@ const translationSourceLabel = translationSource || (translationSourceUrl ? '原
     </button>
     {shouldShowMetaLine ? (
       <div class="meta-line meta-line--items">
-        {shouldShowPeopleMeta ? (
-          <span class="meta-line__item meta-line__item--people article-meta-people">
-            {articleAuthors.length ? (
-              <>
-                <span class="article-byline__label">作者</span>
-                <span class="article-author-list">
-                  {articleAuthors.map((author) => (
-                    <span class="article-author">
-                      {author.showAvatar ? (
-                        <span class="article-author-avatar article-author-avatar--image" aria-hidden="true">
-                          <img
-                            src={author.avatar}
-                            alt=""
-                            width="32"
-                            height="32"
-                            loading="lazy"
-                            decoding="async"
-                            onerror="this.parentElement?.remove();"
-                          />
-                        </span>
-                      ) : null}
-                      <a
-                        class="article-byline__name article-byline__name--link"
-                        href={getArchiveAuthorHref(author.name, withBase)}
-                        aria-label={`查看 ${author.name} 的所有文章`}
-                      >
-                        {author.name}
-                      </a>
-                    </span>
-                  ))}
-                </span>
-              </>
-            ) : null}
-            {translatorPerson ? (
-              <span class="article-translator">
-                <span class="article-byline__label">翻译</span>
+        {shouldShowAuthorMeta ? (
+          <span class="meta-line__item meta-line__item--person article-meta-person article-meta-person--authors">
+            <span class="article-byline__label">作者</span>
+            <span class="article-author-list">
+              {articleAuthors.map((author) => (
                 <span class="article-author">
-                  {translatorPerson.showAvatar ? (
+                  {author.showAvatar ? (
                     <span class="article-author-avatar article-author-avatar--image" aria-hidden="true">
                       <img
-                        src={translatorPerson.avatar}
+                        src={author.avatar}
                         alt=""
                         width="32"
                         height="32"
@@ -166,15 +146,47 @@ const translationSourceLabel = translationSource || (translationSourceUrl ? '原
                       />
                     </span>
                   ) : null}
-                  <span class="article-byline__name">{translatorPerson.name}</span>
+                  <a
+                    class="article-byline__name article-byline__name--link"
+                    href={getArchiveAuthorHref(author.name, withBase)}
+                    aria-label={`查看 ${author.name} 的所有文章`}
+                  >
+                    {author.name}
+                  </a>
                 </span>
-              </span>
-            ) : null}
+              ))}
+            </span>
+          </span>
+        ) : null}
+        {translatorPerson ? (
+          <span class="meta-line__item meta-line__item--person article-meta-person article-meta-person--translator">
+            <span class="article-byline__label">翻译</span>
+            <span class="article-author">
+              {translatorPerson.showAvatar ? (
+                <span class="article-author-avatar article-author-avatar--image" aria-hidden="true">
+                  <img
+                    src={translatorPerson.avatar}
+                    alt=""
+                    width="32"
+                    height="32"
+                    loading="lazy"
+                    decoding="async"
+                    onerror="this.parentElement?.remove();"
+                  />
+                </span>
+              ) : null}
+              <span class="article-byline__name">{translatorPerson.name}</span>
+            </span>
           </span>
         ) : null}
         {articleMetaSettings.showDate ? (
           <span class="meta-line__item">
-            {articleMetaSettings.dateLabel ? `${articleMetaSettings.dateLabel}` : ''}{formatISODateUtc(entry.data.date)}
+            {articleMetaSettings.dateLabel ? `${articleMetaSettings.dateLabel}` : ''}{publishedDateText}
+          </span>
+        ) : null}
+        {shouldShowUpdatedDate ? (
+          <span class="meta-line__item">
+            更新于：{updatedDateText}
           </span>
         ) : null}
         {readingStatsMetaText ? (

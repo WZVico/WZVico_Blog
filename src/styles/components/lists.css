@@ -592,13 +592,16 @@
 }
 
 .meta-line--items {
+  --meta-line-separator-gap: 1.45em;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  column-gap: var(--meta-line-separator-gap);
   row-gap: 6px;
 }
 
 .meta-line__item {
+  position: relative;
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
@@ -636,8 +639,13 @@
 
 .meta-line__item + .meta-line__item::before {
   content: "·";
-  margin: 0 0.45em;
+  position: absolute;
+  inset-inline-start: calc(var(--meta-line-separator-gap) / -2);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
   color: var(--faint);
+  pointer-events: none;
 }
 
 .meta-line__item.is-line-start::before {

@@ -17,6 +17,7 @@ const longformBaseFields = {
   draft: z.boolean().default(false),
   archive: z.boolean().default(true),
   publishedAt: z.unknown().optional(),
+  updatedAt: z.unknown().optional(),
   // Optional custom permalink. If present, it overrides the default public slug
   // derived from the entry id / path.
   slug: slugRule.optional()
@@ -97,13 +98,39 @@ const longformSchema = z.object(longformShape).transform((data, ctx) => {
     return z.NEVER;
   }
 
+  const updatedAtInput = data.updatedAt;
+  const hasExplicitUpdatedAt =
+    updatedAtInput != null &&
+    !(typeof updatedAtInput === 'string' && updatedAtInput.trim() === '');
+  const updatedAtResult = hasExplicitUpdatedAt ? parseLongformDateInput(updatedAtInput) : null;
+
+  if (hasExplicitUpdatedAt && !updatedAtResult) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['updatedAt'],
+      message: 'updatedAt must be a valid YYYY-MM-DD date or ISO 8601 datetime'
+    });
+    return z.NEVER;
+  }
+
+  if (updatedAtResult && updatedAtResult.date.valueOf() < dateResult.date.valueOf()) {
+    ctx.addIssue({
+      code: 'custom',
+      path: ['updatedAt'],
+      message: 'updatedAt cannot be earlier than date'
+    });
+    return z.NEVER;
+  }
+
   const normalizedData = { ...data };
   delete normalizedData.publishedAt;
+  delete normalizedData.updatedAt;
 
   return {
     ...normalizedData,
     date: dateResult.date,
-    ...(publishedAt ? { publishedAt } : {})
+    ...(publishedAt ? { publishedAt } : {}),
+    ...(updatedAtResult ? { updatedAt: updatedAtResult.date } : {})
   };
 });
 
