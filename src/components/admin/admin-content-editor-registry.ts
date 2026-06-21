@@ -346,7 +346,7 @@ const CONTENT_EDITOR_PAGE_REGISTRY = {
       panelId: 'admin-editor-frontmatter-panel'
     },
     usesImagePicker: getAdminContentCollectionCapability('longform').imagePicker,
-    resolveReturnHref: ({ withBase }) => withBase('/admin/content/'),
+    resolveReturnHref: ({ collectionHref }) => collectionHref,
     buildIslandProps: buildEssayEditorIslandProps
   },
   bits: {

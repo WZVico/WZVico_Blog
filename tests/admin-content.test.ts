@@ -285,4 +285,18 @@ describe('admin-console/content', () => {
       initialArticleInfoOpen: true
     });
   });
+
+  it('returns from the longform editor to the scoped longform content list', async () => {
+    const { getAdminContentEditorPageRegistration } = await import('../src/components/admin/admin-content-editor-registry');
+    const { getAdminContentEntryListHref } = await import('../src/lib/admin-console/content-routes');
+
+    const collectionHref = getAdminContentEntryListHref('longform');
+    const registration = getAdminContentEditorPageRegistration('longform');
+
+    expect(registration.resolveReturnHref({
+      withBase: (path: string) => path,
+      collectionHref
+    })).toBe(collectionHref);
+    expect(collectionHref).toBe('/admin/content/?collection=longform');
+  });
 });
