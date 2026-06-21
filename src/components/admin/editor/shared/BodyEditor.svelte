@@ -110,6 +110,9 @@ const dispatchMarkdownEdit = (edit: MarkdownTextEdit) => {
     },
     scrollIntoView: true
   });
+  if (edit.clipboardText) {
+    void navigator.clipboard?.writeText(edit.clipboardText).catch(() => {});
+  }
   view.focus();
 };
 

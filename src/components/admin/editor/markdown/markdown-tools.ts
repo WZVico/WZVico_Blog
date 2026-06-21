@@ -1,4 +1,4 @@
-export type MarkdownHeadingLevel = 2 | 3 | 4 | 5;
+export type MarkdownHeadingLevel = 2 | 3 | 4 | 5 | 6;
 export type MarkdownCalloutType = 'note' | 'tip' | 'info' | 'warning';
 export type MarkdownInsertPlacement = 'inline' | 'block';
 
@@ -6,8 +6,12 @@ export type MarkdownToolId =
   | 'bold'
   | 'italic'
   | 'strikethrough'
+  | 'superscript'
+  | 'subscript'
   | 'quote'
+  | 'pullquote'
   | 'link'
+  | 'pageAnchor'
   | 'image'
   | 'code'
   | 'codeBlock'

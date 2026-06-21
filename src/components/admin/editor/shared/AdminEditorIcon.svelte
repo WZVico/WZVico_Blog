@@ -2,6 +2,7 @@
 import Bold from '@lucide/svelte/icons/bold';
 import BookOpenText from '@lucide/svelte/icons/book-open-text';
 import Braces from '@lucide/svelte/icons/braces';
+import Anchor from '@lucide/svelte/icons/anchor';
 import ArrowDown from '@lucide/svelte/icons/arrow-down';
 import ArrowUp from '@lucide/svelte/icons/arrow-up';
 import ArrowUpToLine from '@lucide/svelte/icons/arrow-up-to-line';
@@ -50,6 +51,8 @@ import SquareSigma from '@lucide/svelte/icons/square-sigma';
 import SquareUserRound from '@lucide/svelte/icons/square-user-round';
 import Smile from '@lucide/svelte/icons/smile';
 import Strikethrough from '@lucide/svelte/icons/strikethrough';
+import Subscript from '@lucide/svelte/icons/subscript';
+import Superscript from '@lucide/svelte/icons/superscript';
 import Tag from '@lucide/svelte/icons/tag';
 import Table2 from '@lucide/svelte/icons/table-2';
 import Trash2 from '@lucide/svelte/icons/trash-2';
@@ -61,6 +64,7 @@ import Upload from '@lucide/svelte/icons/upload';
 import X from '@lucide/svelte/icons/x';
 
 const icons = {
+  anchor: Anchor,
   'arrow-up-to-line': ArrowUpToLine,
   'arrow-down': ArrowDown,
   'arrow-up': ArrowUp,
@@ -112,6 +116,8 @@ const icons = {
   'square-user-round': SquareUserRound,
   smile: Smile,
   strikethrough: Strikethrough,
+  subscript: Subscript,
+  superscript: Superscript,
   tag: Tag,
   table: Table2,
   'task-list': ListCheck,

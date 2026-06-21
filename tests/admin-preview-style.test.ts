@@ -33,4 +33,12 @@ describe('admin preview styles', () => {
     expect(paneCss).toContain('line-height: 1.75;');
     expect(paneCss).toContain(".admin-editor-shell[data-effective-view='preview'] .admin-editor-shell__workspace");
   });
+
+  it('keeps Markdown emphasis italic inside Heti prose', () => {
+    const proseCss = readProjectFile('src/styles/components/prose.css');
+
+    expect(proseCss).toContain('.prose.heti em {');
+    expect(proseCss).toContain('font-style: italic;');
+    expect(proseCss).toContain('font-weight: inherit;');
+  });
 });

@@ -8,7 +8,7 @@ describe('admin markdown preview', () => {
       source: [
         '## 编辑器正文标题',
         '',
-        '这段文字来自编辑器，包含 **加粗** 和 [链接](https://example.com)。',
+        '这段文字来自编辑器，包含 *斜体*、**加粗** 和 [链接](https://example.com)。',
         '',
         ':::tip[一个提示]',
         '这里是 callout 内容。',
@@ -23,6 +23,7 @@ describe('admin markdown preview', () => {
     expect(result.collection).toBe('longform');
     expect(result.html).toContain('<h2 data-admin-outline-key');
     expect(result.html).toContain('编辑器正文标题');
+    expect(result.html).toContain('<em>斜体</em>');
     expect(result.html).toContain('<strong>加粗</strong>');
     expect(result.html).toContain('class="callout tip"');
     expect(result.html).toContain('class="shiki');
@@ -31,6 +32,7 @@ describe('admin markdown preview', () => {
     expect(result.html).not.toContain('class="article-source-line"');
     expect(result.html).not.toContain('class="prose heti"');
     expect(result.html).not.toContain('编辑器里的长文标题');
+    expect(result.html).not.toContain('*斜体*');
     expect(result.html).not.toContain('**加粗**');
     expect(result.html).not.toContain(':::tip');
   });

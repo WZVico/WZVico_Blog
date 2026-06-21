@@ -20,6 +20,7 @@ export type MarkdownTextEdit = {
   to: number;
   insert: string;
   selection: EditorTextSelection;
+  clipboardText?: string;
 };
 
 const clampOffset = (value: string, offset: number): number =>
@@ -215,6 +216,66 @@ const getMarkdownBlockTrail = (after: string): string => {
 const trimMarkdownBoundaryNewlines = (value: string): string =>
   value.replace(/^\n+|\n+$/g, '');
 
+const escapeMarkdownLinkText = (value: string): string =>
+  value.replace(/\\/g, '\\\\').replace(/\[/g, '\\[').replace(/\]/g, '\\]');
+
+const escapeHtmlText = (value: string): string =>
+  value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+
+const slugifyAscii = (value: string): string =>
+  value
+    .trim()
+    .toLowerCase()
+    .replace(/['’]/g, '')
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+
+const createPageAnchorId = (label: string): string => {
+  const readablePrefix = slugifyAscii(label).slice(0, 36).replace(/-+$/g, '') || 'anchor';
+  const timestamp = Date.now().toString(36);
+  const random = Math.random().toString(36).slice(2, 7);
+  return `${readablePrefix}-${timestamp}-${random}`;
+};
+
+const createPageAnchorEdit = (
+  value: string,
+  selection: EditorTextSelection
+): MarkdownTextEdit => {
+  const boundedSelection = getBoundedSelection(value, selection);
+  const selected = value.slice(boundedSelection.from, boundedSelection.to);
+  const label = selected.replace(/\s+/g, ' ').trim() || '可点击的词';
+  const anchorId = createPageAnchorId(label);
+  const linkText = `[${escapeMarkdownLinkText(label)}](#user-content-${anchorId})`;
+  const anchorSnippet = `<span id="${anchorId}" class="page-anchor"></span>`;
+
+  return {
+    ...replaceRange(boundedSelection.from, boundedSelection.to, linkText, {
+      from: boundedSelection.from,
+      to: boundedSelection.from + linkText.length
+    }),
+    clipboardText: anchorSnippet
+  };
+};
+
+const createPullquoteEdit = (
+  value: string,
+  selection: EditorTextSelection
+): MarkdownTextEdit => {
+  const boundedSelection = getBoundedSelection(value, selection);
+  const selected = trimMarkdownBoundaryNewlines(
+    normalizeMarkdownInsert(value.slice(boundedSelection.from, boundedSelection.to))
+  );
+  const quoteText = selected || '这里写需要被突出展示的句子。';
+  return insertMarkdownBlock(
+    value,
+    boundedSelection,
+    `<blockquote class="pullquote">\n  ${escapeHtmlText(quoteText)}\n  <cite>— 来源</cite>\n</blockquote>`
+  );
+};
+
 export const insertMarkdownBlock = (
   value: string,
   selection: EditorTextSelection,
@@ -286,12 +347,20 @@ export const applyMarkdownToolToText = (
       return wrapSelection(value, selection, '*', '*', 'text');
     case 'strikethrough':
       return wrapSelection(value, selection, '~~', '~~', 'text');
+    case 'superscript':
+      return wrapSelection(value, selection, '<sup>', '</sup>', 'text');
+    case 'subscript':
+      return wrapSelection(value, selection, '<sub>', '</sub>', 'text');
     case 'code':
       return wrapSelection(value, selection, '`', '`', 'code');
     case 'quote':
       return toggleLinePrefix(value, selection, '> ');
+    case 'pullquote':
+      return createPullquoteEdit(value, selection);
     case 'link':
       return wrapSelection(value, selection, '[', '](url)', 'text');
+    case 'pageAnchor':
+      return createPageAnchorEdit(value, selection);
     case 'image':
       return createNoopEdit(value, selection);
     case 'codeBlock':

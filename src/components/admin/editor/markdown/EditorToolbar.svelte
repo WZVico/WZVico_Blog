@@ -36,7 +36,8 @@ const headingLevelItems: readonly { level: MarkdownHeadingLevel; label: string; 
   { level: 2, label: 'H2', description: '小节标题' },
   { level: 3, label: 'H3', description: '三级标题' },
   { level: 4, label: 'H4', description: '四级标题' },
-  { level: 5, label: 'H5', description: '五级标题' }
+  { level: 5, label: 'H5', description: '五级标题' },
+  { level: 6, label: 'H6', description: '六级标题' }
 ];
 const calloutItems = [
   { type: 'note' },
@@ -55,13 +56,17 @@ const listTool = { label: '列表', icon: 'list' } as const;
 const markdownTextTools = [
   { id: 'bold', label: '加粗', icon: 'bold' },
   { id: 'italic', label: '斜体', icon: 'italic' },
-  { id: 'strikethrough', label: '删除线', icon: 'strikethrough' }
+  { id: 'strikethrough', label: '删除线', icon: 'strikethrough' },
+  { id: 'superscript', label: '上角标', icon: 'superscript' },
+  { id: 'subscript', label: '下角标', icon: 'subscript' }
 ] as const;
 const markdownParagraphTools = [
-  { id: 'quote', label: '引用', icon: 'quote' }
+  { id: 'quote', label: '引用', icon: 'quote' },
+  { id: 'pullquote', label: '来源引用', icon: 'quote' }
 ] as const;
 const markdownInlineMediaTools = [
   { id: 'link', label: '链接', icon: 'link' },
+  { id: 'pageAnchor', label: '页内锚点', icon: 'anchor' },
   { id: 'code', label: '行内代码', icon: 'code' },
   { id: 'image', label: '图片', icon: 'image' }
 ] as const;
