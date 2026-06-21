@@ -12,6 +12,9 @@ import {
   markdownMathOptions,
   markdownRenderingDifferences,
   markdownShikiThemes,
+  markdownSmartypantsOptions,
+  previewMarkdownRehypeSegments,
+  previewMarkdownRemarkSegments,
   publicMarkdownRehypeSegments,
   publicMarkdownRemarkSegments
 } from '../src/plugins/markdown-pipeline.mjs';
@@ -41,9 +44,18 @@ describe('markdown pipeline contract', () => {
     expect(markdownFeatureContract.find((feature) => feature.id === 'math')?.options).toEqual({
       singleDollarTextMath: false
     });
-    expect(markdownFeatureContract.find((feature) => feature.id === 'code-block')?.shikiThemes).toEqual({
-      light: 'github-light',
-      dark: 'github-dark'
+    expect(markdownFeatureContract.find((feature) => feature.id === 'code-block')).toMatchObject({
+      public: { highlighter: 'Astro markdown.shikiConfig' },
+      preview: { highlighter: '@shikijs/rehype' },
+      shikiThemes: {
+        light: 'github-light',
+        dark: 'github-dark'
+      }
+    });
+    expect(markdownFeatureContract.find((feature) => feature.id === 'smartypants')?.preview).toEqual({
+      provider: 'remark-smartypants',
+      beforeProjectRemarkPlugins: true,
+      options: markdownSmartypantsOptions
     });
     expect(markdownFeatureContract.find((feature) => feature.id === 'raw-html-sanitize')).toMatchObject({
       sanitizeSource: 'src/plugins/sanitize-schema.mjs',
@@ -72,6 +84,24 @@ describe('markdown pipeline contract', () => {
     expect(publicRemarkPlugins).toHaveLength(3);
   });
 
+  it('documents preview remark order explicitly instead of inheriting Astro built-ins', () => {
+    expect(previewMarkdownRemarkSegments).toEqual([
+      {
+        id: 'preview-parser',
+        plugins: ['remark-parse']
+      },
+      {
+        id: 'preview-astro-built-in-parity',
+        plugins: ['remark-gfm', 'remark-smartypants'],
+        before: 'project-remark'
+      },
+      {
+        id: 'project-remark',
+        plugins: ['remark-math', 'remark-directive', 'remark-callout']
+      }
+    ]);
+  });
+
   it('documents Astro public rehype order without pretending Shiki is a project rehype plugin', () => {
     expect(publicSegmentIndex('astro-code-highlighting')).toBeLessThan(publicSegmentIndex('project-rehype'));
     expect(publicMarkdownRehypeSegments.find((segment) => segment.id === 'astro-code-highlighting')).toMatchObject({
@@ -86,6 +116,23 @@ describe('markdown pipeline contract', () => {
         'rehype-sanitize',
         'rehype-katex'
       ]
+    });
+  });
+
+  it('documents preview rehype order and adapter-only differences', () => {
+    const previewSegmentIndex = (id: string) =>
+      previewMarkdownRehypeSegments.findIndex((segment) => segment.id === id);
+
+    expect(previewSegmentIndex('math-boundary-protect')).toBeLessThan(previewSegmentIndex('code-highlighting'));
+    expect(previewSegmentIndex('code-highlighting')).toBeLessThan(previewSegmentIndex('raw-html'));
+    expect(previewSegmentIndex('raw-html')).toBeLessThan(previewSegmentIndex('sanitize'));
+    expect(previewMarkdownRehypeSegments.find((segment) => segment.id === 'preview-outline')).toMatchObject({
+      previewOnly: true,
+      plugins: ['createPreviewOutlineAnchorPlugin']
+    });
+    expect(previewMarkdownRehypeSegments.find((segment) => segment.id === 'preview-local-image-src')).toMatchObject({
+      previewOnly: true,
+      plugins: ['createPreviewImageSrcPlugin']
     });
   });
 
@@ -117,11 +164,13 @@ describe('markdown pipeline contract', () => {
     expect(markdownRenderingDifferences.sanitize).toEqual({
       source: 'src/plugins/sanitize-schema.mjs',
       strategy: 'shared-schema',
-      perFeatureSchemaMerge: false
+      perFeatureSchemaMerge: false,
+      previewOnlyAllowedAttributes: ['data-admin-outline-key']
     });
     expect(markdownRenderingDifferences.headingId).toEqual({
       acceptedDifference: true,
-      public: 'Astro generated heading id'
+      public: 'Astro generated heading id',
+      preview: 'data-admin-outline-key'
     });
   });
 });

@@ -17,7 +17,8 @@ import {
   createMarkdownShikiTransformers,
   createProjectMarkdownRehypePlugins,
   createProjectMarkdownRemarkPlugins,
-  markdownShikiThemes
+  markdownShikiThemes,
+  markdownSmartypantsOptions
 } from '../../plugins/markdown-pipeline.mjs';
 import {
   resolveAdminContentEntrySourcePath
@@ -186,7 +187,7 @@ const createPreviewProcessor = (_collection: AdminContentCollectionKey, sourceFi
     .use(remarkParse)
     // 后台预览是手写 pipeline，不继承 Astro Markdown 默认 GFM / smartypants。
     .use(remarkGfm)
-    .use(remarkSmartypants);
+    .use(remarkSmartypants, markdownSmartypantsOptions);
 
   projectRemarkPlugins.forEach((pluginEntry) => useProcessorPlugin(processor, pluginEntry));
 
@@ -225,5 +226,3 @@ export const renderAdminMarkdownPreview = async ({
     warnings: file.messages.map((message) => String(message))
   };
 };
-
-

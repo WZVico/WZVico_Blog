@@ -52,6 +52,7 @@ type Props = {
   previewHtml: string;
   previewBusy: boolean;
   previewArticleClass?: string;
+  previewIncludeProseClass?: boolean;
   sidePanelsVisible: boolean;
   sidePanelLayout: EditorSidePanelLayout;
   outlinePanelId: string;
@@ -111,6 +112,7 @@ let {
   previewHtml,
   previewBusy,
   previewArticleClass = '',
+  previewIncludeProseClass = true,
   sidePanelsVisible,
   sidePanelLayout,
   outlinePanelId,
@@ -202,6 +204,7 @@ let {
           loading={previewBusy}
           error={previewError}
           articleClass={previewArticleClass}
+          includeProseClass={previewIncludeProseClass}
           onScrollElementChange={onPreviewScrollElementChange}
           onArticleElementChange={onPreviewArticleElementChange}
         />

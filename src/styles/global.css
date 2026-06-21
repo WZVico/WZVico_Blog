@@ -123,9 +123,21 @@
   --panel: var(--code-header-bg);
   --font-mono: "Sarasa Mono SC", "Noto Sans Mono CJK SC", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
   --max: 900px;
-  --sidebar: 320px;
+  --layout-shell-max-inline-size: 1100px;
+  --layout-divider-inline-size: 1px;
+  --public-sidebar-inline-size: 320px;
+  --public-content-padding-inline: 48px;
+  --article-readable-inline-size: min(
+    var(--max),
+    calc(
+      var(--layout-shell-max-inline-size) - var(--public-sidebar-inline-size) -
+        var(--layout-divider-inline-size) - var(--public-content-padding-inline) -
+        var(--public-content-padding-inline)
+    )
+  );
+  --sidebar: var(--public-sidebar-inline-size);
   --tap-min-h: 44px;
-  --pad-x: 48px;
+  --pad-x: var(--public-content-padding-inline);
   --card-hover-outset: 14px;
   --card-pad: 12px var(--card-hover-outset);
   --quote-pad: 1rem;

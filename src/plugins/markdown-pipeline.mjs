@@ -16,6 +16,8 @@ export const markdownMathOptions = Object.freeze({
   singleDollarTextMath: false
 });
 
+export const markdownSmartypantsOptions = Object.freeze({});
+
 export const markdownShikiThemes = Object.freeze({
   light: 'github-light',
   dark: 'github-dark'
@@ -25,7 +27,8 @@ export const markdownFeatureContract = Object.freeze([
   {
     id: 'callout',
     syntax: 'containerDirective',
-    projectPlugins: ['remark-directive', 'remark-callout']
+    projectPlugins: ['remark-directive', 'remark-callout'],
+    editorAffordance: 'src/components/admin/editor/markdown'
   },
   {
     id: 'math',
@@ -42,13 +45,19 @@ export const markdownFeatureContract = Object.freeze([
     id: 'code-block',
     syntax: 'fenced-code',
     public: { highlighter: 'Astro markdown.shikiConfig' },
+    preview: { highlighter: '@shikijs/rehype' },
     shikiThemes: markdownShikiThemes,
-    toolbarTransformer: 'astro-whono-code-toolbar'
+    toolbarTransformer: 'astro-whono-code-toolbar',
+    editorAffordance: 'src/components/admin/editor/markdown'
   },
   {
     id: 'gfm',
     public: {
       provider: 'astro-built-in',
+      beforeProjectRemarkPlugins: true
+    },
+    preview: {
+      provider: 'remark-gfm',
       beforeProjectRemarkPlugins: true
     }
   },
@@ -57,6 +66,11 @@ export const markdownFeatureContract = Object.freeze([
     public: {
       provider: 'astro-built-in',
       beforeProjectRemarkPlugins: true
+    },
+    preview: {
+      provider: 'remark-smartypants',
+      beforeProjectRemarkPlugins: true,
+      options: markdownSmartypantsOptions
     }
   },
   {
@@ -72,6 +86,22 @@ export const publicMarkdownRemarkSegments = Object.freeze([
   {
     id: 'astro-built-in-remark',
     plugins: ['astro-gfm', 'astro-smartypants'],
+    before: 'project-remark'
+  },
+  {
+    id: 'project-remark',
+    plugins: ['remark-math', 'remark-directive', 'remark-callout']
+  }
+]);
+
+export const previewMarkdownRemarkSegments = Object.freeze([
+  {
+    id: 'preview-parser',
+    plugins: ['remark-parse']
+  },
+  {
+    id: 'preview-astro-built-in-parity',
+    plugins: ['remark-gfm', 'remark-smartypants'],
     before: 'project-remark'
   },
   {
@@ -123,15 +153,70 @@ export const publicMarkdownRehypeSegments = Object.freeze([
   }
 ]);
 
+export const previewMarkdownRehypeSegments = Object.freeze([
+  {
+    id: 'mdast-to-hast',
+    previewOnly: true,
+    plugins: ['remark-rehype']
+  },
+  {
+    id: 'preview-outline',
+    previewOnly: true,
+    plugins: ['createPreviewOutlineAnchorPlugin'],
+    before: 'math-boundary-protect'
+  },
+  {
+    id: 'math-boundary-protect',
+    plugins: ['rehypeProtectMarkdownMath']
+  },
+  {
+    id: 'code-highlighting',
+    public: { provider: 'Astro markdown.shikiConfig' },
+    preview: { provider: '@shikijs/rehype' },
+    after: 'math-boundary-protect',
+    before: 'raw-html'
+  },
+  {
+    id: 'raw-html',
+    plugins: ['rehype-raw', 'rehypeRestoreMarkdownMathBoundary'],
+    after: 'code-highlighting',
+    before: 'sanitize'
+  },
+  {
+    id: 'preview-local-image-src',
+    previewOnly: true,
+    plugins: ['createPreviewImageSrcPlugin'],
+    before: 'sanitize'
+  },
+  {
+    id: 'sanitize',
+    plugins: ['rehype-sanitize'],
+    schemaSource: 'src/plugins/sanitize-schema.mjs',
+    strategy: 'shared-schema'
+  },
+  {
+    id: 'katex',
+    plugins: ['rehype-katex'],
+    after: 'sanitize'
+  },
+  {
+    id: 'preview-stringify',
+    previewOnly: true,
+    plugins: ['rehype-stringify']
+  }
+]);
+
 export const markdownRenderingDifferences = Object.freeze({
   headingId: {
     acceptedDifference: true,
-    public: 'Astro generated heading id'
+    public: 'Astro generated heading id',
+    preview: 'data-admin-outline-key'
   },
   sanitize: {
     source: 'src/plugins/sanitize-schema.mjs',
     strategy: 'shared-schema',
-    perFeatureSchemaMerge: false
+    perFeatureSchemaMerge: false,
+    previewOnlyAllowedAttributes: ['data-admin-outline-key']
   }
 });
 

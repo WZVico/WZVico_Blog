@@ -497,15 +497,14 @@ const createLightboxController = (options: LightboxOptions): LightboxController 
 };
 
 export const initCodeCopyButtons = () => {
-  if (codeCopyInitialized) return;
-
   const buttons = document.querySelectorAll<HTMLButtonElement>('.code-copy');
-  if (!buttons.length) return;
-
-  codeCopyInitialized = true;
   buttons.forEach((button) => {
     button.disabled = false;
   });
+
+  if (codeCopyInitialized || !buttons.length) return;
+
+  codeCopyInitialized = true;
 
   const legacyCopy = (value: string) => {
     const helper = document.createElement('textarea');

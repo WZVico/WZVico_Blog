@@ -1,5 +1,7 @@
 <script lang="ts">
 import { tick } from 'svelte';
+import { initHeti } from '../../../../scripts/heti';
+import { initCodeCopyButtons } from '../../../../scripts/lightbox';
 import { containsMarkdownMath } from '../../../../lib/markdown-math';
 import { ensureMarkdownMathStylesheet } from '../../../../lib/markdown-math-styles';
 import {
@@ -158,6 +160,7 @@ let editorShellEl = $state<HTMLElement | null>(null);
 let topActionsEl = $state<HTMLDivElement | null>(null);
 let bodyScrollElement = $state<HTMLElement | null>(null);
 let previewScrollElement = $state<HTMLElement | null>(null);
+let previewArticleElement = $state<HTMLElement | null>(null);
 let syncScrollEnabled = $state(true);
 let writeFeedbackRestored = false;
 let pendingPreviewOutlineKey = $state<string | null>(null);
@@ -266,6 +269,10 @@ const setBodyScrollElement = (element: HTMLElement | null) => {
 
 const setPreviewScrollElement = (element: HTMLElement | null) => {
   previewScrollElement = element;
+};
+
+const setPreviewArticleElement = (element: HTMLElement | null) => {
+  previewArticleElement = element;
 };
 
 const getScrollElement = (source: EditorScrollSource): HTMLElement | null =>
@@ -540,6 +547,27 @@ const requestPreview = async () => {
   }
 };
 
+const refreshLongformPreviewEnhancements = async () => {
+  const articleElement = previewArticleElement;
+  const htmlSnapshot = previewHtml;
+  if (!articleElement || !htmlSnapshot || shell.effectiveViewMode === 'edit') return;
+
+  await tick();
+  await waitForAnimationFrame();
+
+  if (articleElement !== previewArticleElement || htmlSnapshot !== previewHtml) return;
+
+  if (articleElement.matches('.heti[data-heti-spaced]')) {
+    articleElement.removeAttribute('data-heti-spaced');
+  }
+  articleElement.querySelectorAll('.heti[data-heti-spaced]').forEach((element) => {
+    element.removeAttribute('data-heti-spaced');
+  });
+  initHeti('.admin-editor-preview__article--longform-detail.heti');
+  initCodeCopyButtons();
+  window.dispatchEvent(new Event('resize'));
+};
+
 const resetToBaseline = () => {
   frontmatter = editorAdapter.cloneValues(baselineFrontmatter);
   body = baselineBody;
@@ -750,6 +778,12 @@ $effect(() => {
 });
 
 $effect(() => {
+  if (!previewEnabled || previewBusy || !previewHtml) return;
+
+  void refreshLongformPreviewEnhancements();
+});
+
+$effect(() => {
   if (!previewEnabled) return;
 
   const currentBody = body;
@@ -857,6 +891,7 @@ $effect(() => {
       galleryEditEnabled={galleryInsertEnabled}
       {previewHtml}
       previewBusy={previewBusy}
+      previewArticleClass="heti article-page immersive-page admin-editor-preview__article--longform-detail"
       sidePanelsVisible={shell.sidePanelsVisible}
       sidePanelLayout={shell.sidePanelLayout}
       outlinePanelId={OUTLINE_PANEL_ID}
@@ -869,6 +904,7 @@ $effect(() => {
       onImageToolRequest={handleImageToolRequest}
       onGalleryEditRequest={handleGalleryEditRequest}
       onPreviewScrollElementChange={setPreviewScrollElement}
+      onPreviewArticleElementChange={setPreviewArticleElement}
       onShortcutTool={markdownCommandDispatcher.applyTool}
       onToggleScrollSync={toggleScrollSync}
       onScrollToTop={scrollEditorPanesToTop}

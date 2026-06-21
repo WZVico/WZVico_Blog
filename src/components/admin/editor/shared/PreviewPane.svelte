@@ -4,6 +4,7 @@ type Props = {
   loading?: boolean;
   error?: string;
   articleClass?: string;
+  includeProseClass?: boolean;
   onScrollElementChange?: (element: HTMLElement | null) => void;
   onArticleElementChange?: (element: HTMLElement | null) => void;
 };
@@ -13,6 +14,7 @@ let {
   loading = false,
   error = '',
   articleClass = '',
+  includeProseClass = true,
   onScrollElementChange,
   onArticleElementChange
 }: Props = $props();
@@ -20,7 +22,7 @@ let {
 let previewScrollElement = $state<HTMLElement | null>(null);
 let previewArticleElement = $state<HTMLElement | null>(null);
 const previewArticleClass = $derived(
-  ['admin-editor-preview__article', 'prose', articleClass].filter(Boolean).join(' ')
+  ['admin-editor-preview__article', includeProseClass ? 'prose' : '', articleClass].filter(Boolean).join(' ')
 );
 
 $effect(() => {

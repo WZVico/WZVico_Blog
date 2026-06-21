@@ -563,6 +563,19 @@
   margin-inline: auto;
 }
 
+.admin-editor-shell .admin-editor-preview__article--longform-detail {
+  max-inline-size: var(--article-readable-inline-size);
+  font-family: "Noto Serif SC", ui-serif, Georgia, "Times New Roman", "Songti SC", serif;
+  line-height: 1.75;
+}
+
+.admin-editor-shell[data-effective-view='preview'] .admin-editor-shell__workspace {
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, min(100%, var(--admin-editor-stacked-pane-max-inline-size)))
+    minmax(0, 1fr);
+}
+
 .admin-editor-preview__article:not(.memo-content) > :first-child {
   margin-top: 0;
 }
