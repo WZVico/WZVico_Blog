@@ -203,16 +203,46 @@ const getEssayDateText = (value: unknown): string => {
   return parsed?.dateText ?? normalizeOptionalText(value);
 };
 
+type EssayEditorPerson = {
+  name: string;
+  avatar: string;
+  showAvatar: boolean;
+};
+
+const toEssayEditorPerson = (value: unknown): EssayEditorPerson | null => {
+  if (isRecord(value)) {
+    const name = normalizeOptionalText(value.name);
+    const avatar = normalizeOptionalText(value.avatar);
+    const showAvatar = value.showAvatar !== false;
+    return name || avatar || !showAvatar
+      ? { name, avatar, showAvatar }
+      : null;
+  }
+
+  const name = normalizeOptionalText(value);
+  return name ? { name, avatar: '', showAvatar: true } : null;
+};
+
+const getEssayEditorAuthorPeople = (frontmatter: Record<string, unknown>): EssayEditorPerson[] => {
+  const authors = Array.isArray(frontmatter.authors)
+    ? frontmatter.authors
+      .map(toEssayEditorPerson)
+      .filter((person): person is EssayEditorPerson => person !== null)
+    : [];
+  if (authors.length > 0) return authors;
+
+  const author = toEssayEditorPerson(frontmatter.author);
+  return author ? [author] : [];
+};
+
 const toEssayEditorValues = (state: AdminContentSourceState): AdminEssayEditorValues => {
   const frontmatter = state.rawFrontmatter;
   const rawDate = getDateString(frontmatter, 'date', '');
   const rawPublishedAt = normalizeOptionalText(frontmatter.publishedAt);
   const dateResult = parseEssayDateInput(rawDate);
-  const author = isRecord(frontmatter.author) ? frontmatter.author : null;
-  const authors = Array.isArray(frontmatter.authors) ? frontmatter.authors.filter(isRecord) : [];
-  const firstAuthor = authors[0] ?? author;
-  const authorPeople = authors.length > 0 ? authors : firstAuthor ? [firstAuthor] : [];
-  const authorAvatarTexts = authorPeople.map((item) => normalizeOptionalText(item.avatar));
+  const authorPeople = getEssayEditorAuthorPeople(frontmatter);
+  const firstAuthor = authorPeople[0] ?? null;
+  const authorAvatarTexts = authorPeople.map((item) => item.avatar);
   const translation = isRecord(frontmatter.translation) ? frontmatter.translation : null;
 
   return {
@@ -228,11 +258,11 @@ const toEssayEditorValues = (state: AdminContentSourceState): AdminEssayEditorVa
     cover: normalizeOptionalText(frontmatter.cover),
     badge: normalizeOptionalText(frontmatter.badge),
     authorsText: authorPeople
-      .map((item) => normalizeOptionalText(item.name))
+      .map((item) => item.name)
       .filter(Boolean)
       .join('\n'),
-    authorName: normalizeOptionalText(firstAuthor?.name),
-    authorAvatar: normalizeOptionalText(firstAuthor?.avatar),
+    authorName: firstAuthor?.name ?? '',
+    authorAvatar: firstAuthor?.avatar ?? '',
     authorAvatarsText: authorAvatarTexts.some(Boolean) ? authorAvatarTexts.join('\n') : '',
     authorShowAvatar: firstAuthor?.showAvatar !== false,
     translationTranslator: normalizeOptionalText(translation?.translator),

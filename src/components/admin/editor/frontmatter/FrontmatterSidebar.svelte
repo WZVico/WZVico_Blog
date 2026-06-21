@@ -167,16 +167,11 @@ const syncEssayAuthorFields = (names: string[], avatars: string[]) => {
 const handleAuthorsTextInput = () => {
   if (!isEssayEditorValues(value)) return;
   const names = splitPersonNames(value.authorsText);
-  value.authorName = names[0] ?? '';
-  if (value.authorAvatarsText.trim()) {
-    value.authorAvatarsText = trimTrailingBlankItems(getCurrentEssayAuthorAvatars().slice(0, names.length)).join('\n');
-    value.authorAvatar = splitPersonAvatarLines(value.authorAvatarsText)[0] ?? '';
-  }
-};
-
-const handleAuthorAvatarsTextInput = () => {
-  if (!isEssayEditorValues(value)) return;
-  value.authorAvatar = splitPersonAvatarLines(value.authorAvatarsText)[0] ?? '';
+  const currentAvatars = getCurrentEssayAuthorAvatars();
+  const nextAvatars = names.map((name, index) =>
+    getAuthorProfileByName(name)?.avatar || currentAvatars[index] || ''
+  );
+  syncEssayAuthorFields(names, nextAvatars);
 };
 
 const applyAuthorProfile = (profile: AuthorLibraryProfile) => {
@@ -531,20 +526,6 @@ const bitsAuthorAvatarFallback = $derived(
         <p id={getFieldIssueId('slug')} class="admin-content-editor__error" hidden={!getIssue('slug')}>{getIssue('slug')}</p>
       </div>
 
-      <label class="admin-field admin-content-editor__field" class:is-invalid={Boolean(getIssue('cover'))}>
-        <span class="admin-field__label">封面图</span>
-        <input
-          class="admin-field__control"
-          name="cover"
-          type="text"
-          bind:value={value.cover}
-          spellcheck="false"
-          aria-invalid={getIssue('cover') ? 'true' : undefined}
-          aria-describedby={getFieldDescribedBy('cover')}
-          {disabled}
-        />
-        <p id={getFieldIssueId('cover')} class="admin-content-editor__error" hidden={!getIssue('cover')}>{getIssue('cover')}</p>
-      </label>
 
       <div class="admin-field admin-content-editor__field" class:is-invalid={Boolean(essayAuthorIssue)}>
         <label class="admin-field__label" for="admin-essay-authors">作者</label>
@@ -593,34 +574,20 @@ const bitsAuthorAvatarFallback = $derived(
       </div>
 
       <div class="admin-field admin-content-editor__field admin-editor-frontmatter__author-avatar-field" class:is-invalid={Boolean(essayAuthorAvatarIssue)}>
-        <label class="admin-field__label" for="admin-essay-author-avatars">作者头像</label>
+        <div class="admin-editor-frontmatter__author-display-heading">
+          <span class="admin-field__label">作者显示</span>
+          <label class="admin-editor-frontmatter__inline-checkbox admin-editor-frontmatter__author-avatar-toggle">
+            <span>显示作者头像</span>
+            <input type="checkbox" bind:checked={value.authorShowAvatar} {disabled} />
+          </label>
+        </div>
         <div class="admin-editor-frontmatter__author-avatar-layout" class:has-preview={essayAuthorPreviewItems.length > 0}>
-          <div class="admin-editor-frontmatter__author-avatar-main">
-            <textarea
-              id="admin-essay-author-avatars"
-              class="admin-field__control"
-              name="authorAvatarsText"
-              bind:value={value.authorAvatarsText}
-              rows="3"
-              placeholder="每行对应一位作者"
-              spellcheck="false"
-              aria-invalid={essayAuthorAvatarIssue ? 'true' : undefined}
-              aria-describedby={getFieldDescribedBy('authorAvatarsText', essayAuthorAvatarIssue)}
-              oninput={handleAuthorAvatarsTextInput}
-              {disabled}
-            ></textarea>
-            <label class="admin-editor-frontmatter__inline-checkbox admin-editor-frontmatter__author-avatar-toggle">
-              <span>显示作者头像</span>
-              <input type="checkbox" bind:checked={value.authorShowAvatar} {disabled} />
-            </label>
-            <p id={getFieldIssueId('authorAvatarsText')} class="admin-content-editor__error" hidden={!essayAuthorAvatarIssue}>{essayAuthorAvatarIssue}</p>
-          </div>
           {#if essayAuthorPreviewItems.length > 0}
-            <div class="admin-editor-frontmatter__author-preview" role="list" aria-label="作者头像">
+            <div class="admin-editor-frontmatter__author-preview" role="list" aria-label="作者显示预览">
               {#each essayAuthorPreviewItems as item (item.name)}
-                <span class="admin-editor-frontmatter__author-preview-item" role="listitem" title={item.avatar ? `${item.name} / ${item.avatar}` : item.name}>
+                <span class="admin-editor-frontmatter__author-preview-item" role="listitem" title={item.name}>
                   <span class="admin-editor-frontmatter__author-preview-avatar" aria-hidden="true">
-                    {#if item.previewSrc}
+                    {#if value.authorShowAvatar && item.previewSrc}
                       <img src={item.previewSrc} alt="" loading="lazy" decoding="async" />
                     {:else}
                       <span>{item.fallback}</span>
@@ -631,6 +598,7 @@ const bitsAuthorAvatarFallback = $derived(
               {/each}
             </div>
           {/if}
+          <p id={getFieldIssueId('authorAvatarsText')} class="admin-content-editor__error" hidden={!essayAuthorAvatarIssue}>{essayAuthorAvatarIssue}</p>
         </div>
       </div>
 

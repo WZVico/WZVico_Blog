@@ -239,6 +239,53 @@ describe('admin content write api', () => {
     }
   });
 
+  it('loads legacy longform string authors into editable payloads', async () => {
+    await writeFile(
+      path.join(tempRoot, 'src', 'content', 'longform', 'legacy-author.md'),
+      [
+        '---',
+        'title: Legacy Author',
+        'date: 2026-03-19',
+        'author: Alice',
+        '---',
+        '',
+        'legacy author body',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+    await writeFile(
+      path.join(tempRoot, 'src', 'content', 'longform', 'legacy-authors.md'),
+      [
+        '---',
+        'title: Legacy Authors',
+        'date: 2026-03-19',
+        'authors:',
+        '  - Alice',
+        '  - Bob',
+        '---',
+        '',
+        'legacy authors body',
+        ''
+      ].join('\n'),
+      'utf8'
+    );
+
+    const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
+    const scalarPayload = await readAdminContentEntryEditorPayload('longform', 'legacy-author');
+    const arrayPayload = await readAdminContentEntryEditorPayload('longform', 'legacy-authors');
+
+    if (scalarPayload.collection === 'longform') {
+      expect(scalarPayload.values.authorsText).toBe('Alice');
+      expect(scalarPayload.values.authorName).toBe('Alice');
+      expect(scalarPayload.values.authorAvatarsText).toBe('');
+    }
+    if (arrayPayload.collection === 'longform') {
+      expect(arrayPayload.values.authorsText).toBe('Alice\nBob');
+      expect(arrayPayload.values.authorName).toBe('Alice');
+      expect(arrayPayload.values.authorAvatarsText).toBe('');
+    }
+  });
   it('loads legacy longform datetime dates for compatibility', async () => {
     await writeFile(
       path.join(tempRoot, 'src', 'content', 'longform', 'legacy-datetime.md'),
