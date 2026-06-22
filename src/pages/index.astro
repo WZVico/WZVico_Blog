@@ -8,6 +8,11 @@ import {
   getAdminHomeIntroLinkOption
 } from '../lib/admin-console/theme-shared';
 import { getLongformDerivedText, getLongformSlug, getVisibleLongforms } from '../lib/content';
+import {
+  getLongformHomeIndexArticleMetaSettings,
+  getLongformHomeIndexDisplayDate,
+  orderByLongformHomeIndexDisplayDate
+} from '../lib/home-index';
 import { getLongformArticlePeople } from '../lib/longform-people';
 import { getThemeSettings, getVisibleArticleMetaTags } from '../lib/theme-settings';
 import { createWithBase } from '../utils/format';
@@ -33,7 +38,7 @@ const resolvedIntroMoreLinks = (introMoreLinks.length ? introMoreLinks : [...ADM
   (linkKey) => getAdminHomeIntroLinkOption(linkKey)
 );
 
-const latest = (await getVisibleLongforms()).slice(0, 11);
+const latest = (await getVisibleLongforms()).sort(orderByLongformHomeIndexDisplayDate).slice(0, 11);
 
 type HomeHeadCriticalFontFace = {
   family: 'LXGW WenKai Lite' | 'Noto Serif SC';
@@ -470,13 +475,16 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
 }
 
 .meta-line--items {
+  --meta-line-separator-gap: 1.45em;
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  column-gap: var(--meta-line-separator-gap);
   row-gap: 6px;
 }
 
 .meta-line__item {
+  position: relative;
   display: inline-flex;
   align-items: center;
   flex: 0 0 auto;
@@ -484,7 +492,7 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
   min-width: 0;
 }
 
-.meta-line__item:not(.meta-line__item--tags):not(.meta-line__item--people) {
+.meta-line__item:not(.meta-line__item--tags):not(.meta-line__item--people):not(.meta-line__item--person) {
   white-space: nowrap;
 }
 
@@ -506,7 +514,8 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
   flex-basis: 100%;
 }
 
-.meta-line__item--people {
+.meta-line__item--people,
+.meta-line__item--person {
   --article-byline-label-gap: 10px;
   gap: var(--article-byline-label-gap);
   flex-wrap: wrap;
@@ -514,8 +523,13 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
 
 .meta-line__item + .meta-line__item::before {
   content: "·";
-  margin: 0 0.45em;
+  position: absolute;
+  inset-inline-start: calc(var(--meta-line-separator-gap) / -2);
+  top: 50%;
+  transform: translate(-50%, -50%);
+  margin: 0;
   color: var(--faint);
+  pointer-events: none;
 }
 
 .meta-line__item.is-line-start::before {
@@ -828,11 +842,11 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
         <EntryListItem
           href={href}
           title={entry.data.title}
-          date={entry.data.date}
+          date={getLongformHomeIndexDisplayDate(entry)}
           visibleTags={visibleTags}
           badge={entry.data.badge}
           articlePeople={getLongformArticlePeople(entry, settings, withBase)}
-          articleMetaSettings={articleMeta}
+          articleMetaSettings={getLongformHomeIndexArticleMetaSettings(entry, articleMeta)}
           excerpt={getLongformDerivedText(entry).excerpt}
         />
       );

@@ -1166,59 +1166,8 @@ describe('admin content write api', () => {
     expect(after).toContain('description: 资料描述');
     expect(after).not.toContain('tags:');
   });
-  it('creates picks entries as monthly single-entry markdown files', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 5, 4, 17, 28, 50));
 
-    const picksPath = path.join(tempRoot, 'src', 'content', 'picks', 'index.md');
-    await writeFile(
-      picksPath,
-      [
-        '---',
-        'title: picks',
-        'date: 2026-01-10',
-        '---',
-        '',
-        '## 2025',
-        '',
-        '### 《旧书》 - 作者',
-        '',
-        '旧推荐。',
-        '',
-        '<p class="pick-tags" aria-label="标签"><span class="pick-tag">#旧</span></p>',
-        ''
-      ].join('\n'),
-      'utf8'
-    );
-
-    const { POST } = await import('../src/pages/api/admin/category/picks');
-    const response = await POST({
-      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/picks', {
-        item: {
-          year: '2026',
-          title: '新书',
-          authors: '新作者',
-          reason: '新的推荐理由。',
-          tags: '经济 阅读'
-        }
-      }),
-      url: new URL('http://127.0.0.1:4321/api/admin/category/picks')
-    } as never);
-
-    expect(response.status).toBe(200);
-    const payload = JSON.parse(await response.text());
-    expect(payload.ok).toBe(true);
-    expect(payload.result.relativePath).toBe('src/content/picks/202606/2026-06-04-172850.md');
-
-    const createdPath = path.join(tempRoot, payload.result.relativePath);
-    const after = await readFile(createdPath, 'utf8');
-    expect(after).toContain('title: 《新书》');
-    expect(after).toContain('authors:\n  - 新作者');
-    expect(after).toContain('新的推荐理由。');
-    expect(after).toContain('tags:\n  - 经济\n  - 阅读');
-  });
-
-  it('rejects duplicate picks entries in the same year', async () => {
+  it('rejects duplicate picks entries in the same year through content console create', async () => {
     const picksPath = path.join(tempRoot, 'src', 'content', 'picks', 'index.md');
     await writeFile(
       picksPath,
@@ -1238,30 +1187,28 @@ describe('admin content write api', () => {
       'utf8'
     );
 
-    const { POST } = await import('../src/pages/api/admin/category/picks');
+    const { POST } = await import('../src/pages/api/admin/content/create');
     const response = await POST({
-      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/picks', {
-        item: {
-          year: '2026',
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/create', {
+        collection: 'picks',
+        frontmatter: {
           title: '《新书》',
-          authors: '新作者',
+          status: 'shared',
+          authorsText: '新作者',
           reason: '重复推荐。',
-          tags: '阅读'
+          tagsText: '阅读'
         }
       }),
-      url: new URL('http://127.0.0.1:4321/api/admin/category/picks')
+      url: new URL('http://127.0.0.1:4321/api/admin/content/create')
     } as never);
 
-    expect(response.status).toBe(409);
+    expect(response.status).toBe(400);
     const payload = JSON.parse(await response.text());
     expect(payload.ok).toBe(false);
     expect(payload.errors[0]).toContain('已存在');
   });
 
-  it('rejects duplicate picks entries stored in a monthly folder from the same year', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 5, 4, 17, 28, 50));
-
+  it('rejects duplicate picks entries stored in a monthly folder from the same year through content console create', async () => {
     const monthlyDir = path.join(tempRoot, 'src', 'content', 'picks', '202606');
     await mkdir(monthlyDir, { recursive: true });
     await writeFile(
@@ -1281,202 +1228,65 @@ describe('admin content write api', () => {
       'utf8'
     );
 
-    const { POST } = await import('../src/pages/api/admin/category/picks');
+    const { POST } = await import('../src/pages/api/admin/content/create');
     const response = await POST({
-      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/picks', {
-        item: {
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/create', {
+        collection: 'picks',
+        frontmatter: {
           title: '《新书》',
-          authors: '新作者',
+          status: 'shared',
+          authorsText: '新作者',
           reason: '重复推荐。',
-          tags: '阅读'
+          tagsText: '阅读'
         }
       }),
-      url: new URL('http://127.0.0.1:4321/api/admin/category/picks')
+      url: new URL('http://127.0.0.1:4321/api/admin/content/create')
     } as never);
 
-    expect(response.status).toBe(409);
+    expect(response.status).toBe(400);
     const payload = JSON.parse(await response.text());
     expect(payload.ok).toBe(false);
     expect(payload.errors[0]).toContain('已存在');
   });
 
-  it('creates materials entries inside the current month folder', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 5, 4, 17, 28, 50));
-
-    const { POST } = await import('../src/pages/api/admin/category/materials');
+  it('creates bits entries through content console inside the date month folder', async () => {
+    const { POST } = await import('../src/pages/api/admin/content/create');
     const response = await POST({
-      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/materials', {
-        item: {
-          title: '年度资料',
-          href: 'example.com/material',
-          label: 'PDF',
-          description: '资料描述'
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/create', {
+        collection: 'bits',
+        frontmatter: {
+          date: '2026-05-20T12:00:00+08:00'
         }
       }),
-      url: new URL('http://127.0.0.1:4321/api/admin/category/materials')
+      url: new URL('http://127.0.0.1:4321/api/admin/content/create')
     } as never);
 
     expect(response.status).toBe(200);
     const payload = JSON.parse(await response.text());
     expect(payload.ok).toBe(true);
-    expect(payload.result.relativePath).toBe('src/content/materials/202606/年度资料-2026-06-04-172850.md');
+    expect(payload.result.relativePath).toBe('src/content/bits/202605/bits-2026-05-20-1200.md');
+    expect(payload.editHref).toBe('/admin/content/bits/_edit/202605/bits-2026-05-20-1200/');
+    expect(payload.payload.collection).toBe('bits');
 
     const after = await readFile(path.join(tempRoot, payload.result.relativePath), 'utf8');
-    expect(after).toContain('title: 年度资料');
-    expect(after).toContain('href: "https://example.com/material"');
-    expect(after).toContain('label: PDF');
-    expect(after).toMatch(/date: 2026-06-04T17:28:50(?:Z|[+-]\d{2}:\d{2})/);
-    expect(after).toContain('description: 资料描述');
-    expect(after).not.toContain('tags:');
+    expect(after).toContain('date: 2026-05-20T12:00:00+08:00');
+    expect(after).toContain('draft: true');
   });
 
-  it('creates bits entries inside the current month folder', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 5, 4, 17, 28, 50));
-
-    const markdown = ['---', 'date: 2026-05-20T12:00:00+08:00', '---', '', '新的絮语', ''].join('\n');
-    const { POST } = await import('../src/pages/api/admin/category/bits');
-    const response = await POST({
-      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/bits', {
-        markdown
-      }),
-      url: new URL('http://127.0.0.1:4321/api/admin/category/bits')
-    } as never);
-
-    expect(response.status).toBe(200);
-    const payload = JSON.parse(await response.text());
-    expect(payload.ok).toBe(true);
-    expect(payload.result.relativePath).toBe('src/content/bits/202606/bits-2026-06-04-1728.md');
-
-    const after = await readFile(path.join(tempRoot, payload.result.relativePath), 'utf8');
-    expect(after).toBe(markdown);
-  });
-
-  it('creates longform entries from the server creation date with draft off by default', async () => {
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date(2026, 5, 4, 9, 12, 13));
-
-    const { POST } = await import('../src/pages/api/admin/category/longform');
-    const response = await POST({
-      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/longform', {
-        item: {
-          title: '我的长文草稿',
-          slug: 'my-longform-draft',
-          description: '用于测试长文创建。',
-          date: '1999-01-01',
-          publishedAt: '1999-01-01T12:00:00+08:00',
-          cover: '/images/archive/legacy-cover.webp',
-          badge: '草稿',
-          tags: '写作 Markdown',
-          authors: [
-            {
-              name: 'Alice',
-              avatar: 'author/alice.webp',
-              showAvatar: false
-            },
-            {
-              name: 'Bob',
-              avatar: 'author/bob.webp'
-            }
-          ],
-          translationPerson: {
-            name: 'WZVico',
-            avatar: 'author/alice.webp',
-            showAvatar: false
-          },
-          translationSource: 'Original Essay',
-          translationSourceUrl: 'https://example.com/original',
-          body: '第一段。\n\n<!-- more -->\n\n后续正文。'
-        }
-      }),
-      url: new URL('http://127.0.0.1:4321/api/admin/category/longform')
-    } as never);
-
-    expect(response.status).toBe(200);
-    const payload = JSON.parse(await response.text());
-    expect(payload.ok).toBe(true);
-    expect(payload.result.relativePath).toBe('src/content/longform/202606/my-longform-draft.md');
-    expect(payload.result.publicHref).toBe('/archive/my-longform-draft/');
-
-    const after = await readFile(path.join(tempRoot, payload.result.relativePath), 'utf8');
-    expect(after).toContain('title: 我的长文草稿');
-    expect(after).toContain('description: 用于测试长文创建。');
-    expect(after).toContain('date: 2026-06-04');
-    expect(after).not.toContain('publishedAt:');
-    expect(after).not.toContain('cover:');
-    expect(after).toContain('slug: my-longform-draft');
-    expect(after).toContain('badge: 草稿');
-    expect(after).toContain('tags:\n  - 写作\n  - Markdown');
-    expect(after).toContain('draft: false');
-    expect(after).toContain('archive: true');
-    expect(after).toContain('authors:\n  - name: Alice\n    avatar: author/alice.webp\n    showAvatar: false\n  - name: Bob\n    avatar: author/bob.webp');
-    expect(after).toContain('translation:\n  translator: WZVico\n  avatar: author/alice.webp\n  showAvatar: false\n  source: Original Essay\n  sourceUrl: https://example.com/original');
-    expect(after).toContain('<!-- more -->');
-    expect(after.endsWith('后续正文。\n')).toBe(true);
-  });
-
-  it('preserves existing longform cover when category edits omit the cover field', async () => {
+  it('deletes content files only when the revision matches through content console', async () => {
     const sourcePath = path.join(tempRoot, 'src', 'content', 'longform', 'demo.md');
-    await writeFile(
-      sourcePath,
-      [
-        '---',
-        'title: Demo Longform',
-        'date: 2026-03-18',
-        'cover: /images/archive/existing-cover.webp',
-        'draft: false',
-        '---',
-        '',
-        '# Longform',
-        '',
-        '正文保持不变。',
-        ''
-      ].join('\n'),
-      'utf8'
-    );
-
-    const { readAdminCategoryEntryPayload } = await import('../src/lib/admin-console/category-entry');
-    const { POST } = await import('../src/pages/api/admin/category/entry');
-    const current = await readAdminCategoryEntryPayload('longform', 'demo');
-    const fieldsWithoutCover = { ...current.values };
-    delete fieldsWithoutCover.cover;
+    const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
+    const { POST } = await import('../src/pages/api/admin/content/delete');
+    const current = await readAdminContentEntryEditorPayload('longform', 'demo');
 
     const response = await POST({
-      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/entry', {
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/delete', {
         collection: 'longform',
         entryId: 'demo',
         revision: current.revision,
-        fields: {
-          ...fieldsWithoutCover,
-          title: 'Edited Without Cover Field'
-        }
+        expectedRelativePath: 'src/content/longform/demo.md'
       }),
-      url: new URL('http://127.0.0.1:4321/api/admin/category/entry')
-    } as never);
-
-    expect(response.status).toBe(200);
-    const payload = JSON.parse(await response.text());
-    expect(payload.ok).toBe(true);
-
-    const after = await readFile(sourcePath, 'utf8');
-    expect(after).toContain('title: Edited Without Cover Field');
-    expect(after).toContain('cover: /images/archive/existing-cover.webp');
-  });
-
-  it('deletes category content files only when the revision matches', async () => {
-    const sourcePath = path.join(tempRoot, 'src', 'content', 'longform', 'demo.md');
-    const { readAdminCategoryEntryPayload } = await import('../src/lib/admin-console/category-entry');
-    const { DELETE } = await import('../src/pages/api/admin/category/entry');
-    const current = await readAdminCategoryEntryPayload('longform', 'demo');
-
-    const response = await DELETE({
-      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/entry', {
-        collection: 'longform',
-        entryId: 'demo',
-        revision: current.revision
-      }, 'DELETE'),
-      url: new URL('http://127.0.0.1:4321/api/admin/category/entry')
+      url: new URL('http://127.0.0.1:4321/api/admin/content/delete')
     } as never);
 
     expect(response.status).toBe(200);
@@ -1487,11 +1297,11 @@ describe('admin content write api', () => {
     await expect(readFile(sourcePath, 'utf8')).rejects.toThrow();
   });
 
-  it('rejects stale revisions before deleting category content files', async () => {
+  it('rejects stale revisions before deleting content files through content console', async () => {
     const sourcePath = path.join(tempRoot, 'src', 'content', 'longform', 'demo.md');
-    const { readAdminCategoryEntryPayload } = await import('../src/lib/admin-console/category-entry');
-    const { DELETE } = await import('../src/pages/api/admin/category/entry');
-    const current = await readAdminCategoryEntryPayload('longform', 'demo');
+    const { readAdminContentEntryEditorPayload } = await import('../src/lib/admin-console/content-shared');
+    const { POST } = await import('../src/pages/api/admin/content/delete');
+    const current = await readAdminContentEntryEditorPayload('longform', 'demo');
 
     await writeFile(
       sourcePath,
@@ -1499,57 +1309,62 @@ describe('admin content write api', () => {
       'utf8'
     );
 
-    const response = await DELETE({
-      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/entry', {
+    const response = await POST({
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/delete', {
         collection: 'longform',
         entryId: 'demo',
-        revision: current.revision
-      }, 'DELETE'),
-      url: new URL('http://127.0.0.1:4321/api/admin/category/entry')
+        revision: current.revision,
+        expectedRelativePath: 'src/content/longform/demo.md'
+      }),
+      url: new URL('http://127.0.0.1:4321/api/admin/content/delete')
     } as never);
 
     expect(response.status).toBe(409);
     const payload = JSON.parse(await response.text());
     expect(payload.ok).toBe(false);
     expect(payload.errors[0]).toContain('外部更新');
-    expect(payload.payload.values.title).toBe('External Delete Guard');
+    expect(payload.payload.relativePath).toBe('src/content/longform/demo.md');
+    expect(payload.payload.revision).not.toBe(current.revision);
     expect(await readFile(sourcePath, 'utf8')).toContain('External Delete Guard');
   });
 
-  it('saves the managed author library for longform author and translator options', async () => {
-    const { POST } = await import('../src/pages/api/admin/category/authors');
+  it('rejects duplicate longform slugs before content console create writes files', async () => {
+    const { POST } = await import('../src/pages/api/admin/content/create');
     const response = await POST({
-      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/authors', {
-        authors: [
-          {
-            name: 'Alice',
-            avatar: 'author/alice.webp'
-          },
-          {
-            name: 'WZVico',
-            avatar: ''
-          }
-        ]
+      request: createJsonRequest('http://127.0.0.1:4321/api/admin/content/create', {
+        collection: 'longform',
+        entryId: 'duplicate-longform',
+        frontmatter: {
+          title: '重复长文',
+          description: '',
+          date: '2026-05-20',
+          publishedAt: '',
+          updatedAt: '',
+          tagsText: '',
+          draft: false,
+          archive: true,
+          slug: 'existing-longform',
+          cover: '',
+          badge: '',
+          authorsText: '',
+          authorName: '',
+          authorAvatar: '',
+          authorAvatarsText: '',
+          authorShowAvatar: true,
+          translationTranslator: '',
+          translationAvatar: '',
+          translationShowAvatar: true,
+          translationSource: '',
+          translationSourceUrl: ''
+        }
       }),
-      url: new URL('http://127.0.0.1:4321/api/admin/category/authors')
+      url: new URL('http://127.0.0.1:4321/api/admin/content/create')
     } as never);
 
-    expect(response.status).toBe(200);
+    expect(response.status).toBe(400);
     const payload = JSON.parse(await response.text());
-    expect(payload.ok).toBe(true);
-    expect(payload.result.relativePath).toBe('src/data/authors.json');
-
-    const after = JSON.parse(await readFile(path.join(tempRoot, 'src', 'data', 'authors.json'), 'utf8'));
-    expect(after).toEqual([
-      {
-        name: 'Alice',
-        avatar: 'author/alice.webp'
-      },
-      {
-        name: 'WZVico',
-        avatar: ''
-      }
-    ]);
+    expect(payload.ok).toBe(false);
+    expect(payload.errors[0]).toContain('占用');
   });
 
   it('saves the managed author library from the content console endpoint', async () => {
@@ -1578,26 +1393,6 @@ describe('admin content write api', () => {
         avatar: 'author/alice.webp'
       }
     ]);
-  });
-
-  it('rejects duplicate longform slugs before creating files', async () => {
-    const { POST } = await import('../src/pages/api/admin/category/longform');
-    const response = await POST({
-      request: createJsonRequest('http://127.0.0.1:4321/api/admin/category/longform', {
-        item: {
-          title: '重复长文',
-          slug: 'existing-longform',
-          date: '2026-05-20',
-          body: '正文。'
-        }
-      }),
-      url: new URL('http://127.0.0.1:4321/api/admin/category/longform')
-    } as never);
-
-    expect(response.status).toBe(409);
-    const payload = JSON.parse(await response.text());
-    expect(payload.ok).toBe(false);
-    expect(payload.errors[0]).toContain('已被占用');
   });
 
   it('rejects stale revisions after the source file changes externally', async () => {

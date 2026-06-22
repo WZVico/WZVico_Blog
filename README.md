@@ -199,7 +199,7 @@ Theme Console 主要面向**站点级**和**页面级**配置，支持内容：
 #### 生产环境说明
 
 - Theme Console / Data Console / Content Console 仅在本地开发环境提供写入能力；Content Console 已接入内容索引、编辑器、创建、删除与导出
-- `/admin/content/` 本地开发态可管理 longform / bits / picks / materials；旧 `/admin/category/` 暂时保留，两套内容管理入口并行
+- `/admin/content/` 本地开发态可管理 longform / bits / picks / materials；旧 `/admin/category/` 管理页已退役，不再生成旧入口或旧写入 API
 - 生产构建保持静态站点输出；`/admin/` 可按 Theme 设置显示只读公开 Overview 或关闭态文案，生产态不展示后台 tabs，其他后台子路由仅保留本地开发提示
 - `/api/admin/settings/` 仅供本地开发使用，生产环境不要依赖该接口
 - `/api/admin/content/*` 仅供本地开发管理内容文件，生产环境不要依赖这些接口

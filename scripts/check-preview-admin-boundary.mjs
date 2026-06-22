@@ -10,7 +10,6 @@ import {
   assertAdminOverviewHeader,
   assertNoAdminRouteNav,
   assertAdminSettingsStaticResponse,
-  assertStaticUnsupportedApiShell,
   expect,
   findAvailablePort,
   sleep,
@@ -161,48 +160,6 @@ const assertReadonlyAdminChecksShell = (label, response) => {
   assertNoAdminRouteNav(label, response.body);
 };
 
-const assertAdminCategoryShell = (label, response, options = {}) => {
-  const { expectBitsDraft = false, expectMaterialsCreate = false, expectCategoryTabs = false } = options;
-  expect(response.status === 200, `${label} returned ${response.status}`);
-  expect(
-    response.contentType.toLowerCase().includes('text/html'),
-    `${label} did not return HTML`
-  );
-  expect(response.body.includes('Category Console'), `${label} is missing the Category Console route heading`);
-  expect(response.body.includes('分类管理'), `${label} is missing the Category Console subtitle`);
-  if (expectBitsDraft) {
-    expect(!response.body.includes('data-admin-bits-draft-open'), `${label} should not render the old bits draft opener`);
-    expect(response.body.includes('id="bits-draft-dialog"'), `${label} is missing the bits draft dialog`);
-    expect(response.body.includes('data-bits-draft-inline="true"'), `${label} is missing the inline bits draft marker`);
-    expect(
-      response.body.includes('data-bits-draft-create-endpoint="/api/admin/category/bits/"'),
-      `${label} is missing the bits draft create endpoint`
-    );
-    expect(response.body.includes('data-bits-draft-form'), `${label} is missing the inline bits draft form`);
-    expect(response.body.includes('data-bits-draft-generate'), `${label} is missing the generate action`);
-    expect(!response.body.includes('data-bits-draft-download'), `${label} should not render the old download action`);
-  }
-  if (expectMaterialsCreate) {
-    expect(response.body.includes('data-materials-create-root'), `${label} is missing the materials create root`);
-    expect(
-      response.body.includes('data-materials-create-endpoint="/api/admin/category/materials/"'),
-      `${label} is missing the materials create endpoint`
-    );
-    expect(response.body.includes('data-material-field="title"'), `${label} is missing materials title field`);
-    expect(response.body.includes('data-material-field="href"'), `${label} is missing materials href field`);
-    expect(!response.body.includes('data-material-field="date"'), `${label} should not expose a manual materials date field`);
-    expect(!response.body.includes('data-material-field="group"'), `${label} should not expose a materials group field`);
-    expect(!response.body.includes('data-material-field="slug"'), `${label} should not expose a materials slug field`);
-    expect(!response.body.includes('data-materials-create-add'), `${label} should not expose bulk add rows`);
-    expect(response.body.includes('data-materials-create-submit'), `${label} is missing materials submit action`);
-  }
-  assertNoAdminRouteNav(label, response.body);
-  if (expectCategoryTabs) {
-    expect(response.body.includes('admin-category-tabs'), `${label} is missing the category tabs`);
-    expect(response.body.includes('长文'), `${label} is missing the default longform tab`);
-  }
-};
-
 const assertBitsPageWithoutDraftTools = (label, response) => {
   expect(response.status === 200, `${label} returned ${response.status}`);
   expect(
@@ -214,20 +171,8 @@ const assertBitsPageWithoutDraftTools = (label, response) => {
   expect(!response.body.includes('bits/draft-dialog/'), `${label} should not reference the old bits draft fragment`);
 };
 
-const assertAdminBitsCreateStaticResponse = (label, response) => {
-  expect(
-    !response.contentType.toLowerCase().includes('application/json'),
-    `${label} unexpectedly returned JSON in production preview`
-  );
-  assertStaticUnsupportedApiShell(label, response.body, '/api/admin/category/bits/');
-};
-
-const assertAdminMaterialsCreateStaticResponse = (label, response) => {
-  expect(
-    !response.contentType.toLowerCase().includes('application/json'),
-    `${label} unexpectedly returned JSON in production preview`
-  );
-  assertStaticUnsupportedApiShell(label, response.body, '/api/admin/category/materials/');
+const assertNotFoundResponse = (label, response) => {
+  expect(response.status === 404, `${label} should return 404 after retiring /admin/category/, returned ${response.status}`);
 };
 
 const assertReadonlyAdminImageShell = (label, response) => {
@@ -345,7 +290,7 @@ export const runPreviewAdminBoundaryCheck = async () => {
     const adminThemeResponse = await request(baseUrl, '/admin/theme/');
     const adminContentResponse = await request(baseUrl, '/admin/content/');
     const adminLongformContentResponse = await request(baseUrl, '/admin/content/?collection=longform');
-    const adminCategoryResponse = await request(baseUrl, '/admin/category/');
+    const legacyCategoryResponse = await request(baseUrl, '/admin/category/');
     const bitsResponse = await request(baseUrl, '/bits/');
     const adminImageResponse = await request(baseUrl, '/admin/images/');
     const adminChecksResponse = await request(baseUrl, '/admin/checks/');
@@ -361,8 +306,8 @@ export const runPreviewAdminBoundaryCheck = async () => {
     const contentBulkExportGetResponse = await request(baseUrl, '/api/admin/content/bulk-export/');
     const contentAuthorsGetResponse = await request(baseUrl, '/api/admin/content/authors/');
     const contentPreviewGetResponse = await request(baseUrl, '/api/admin/preview/');
-    const bitsCreateGetResponse = await request(baseUrl, '/api/admin/category/bits/');
-    const materialsCreateGetResponse = await request(baseUrl, '/api/admin/category/materials/');
+    const legacyBitsCreateGetResponse = await request(baseUrl, '/api/admin/category/bits/');
+    const legacyMaterialsCreateGetResponse = await request(baseUrl, '/api/admin/category/materials/');
     const imageListResponse = await request(baseUrl, '/api/admin/images/list/');
     const imageMetaResponse = await request(baseUrl, '/api/admin/images/meta/');
     const imageUploadResponse = await request(baseUrl, '/api/admin/images/upload/');
@@ -379,29 +324,6 @@ export const runPreviewAdminBoundaryCheck = async () => {
         frontmatter: {}
       })
     });
-    const bitsCreatePostResponse = await request(baseUrl, '/api/admin/category/bits/', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        origin: baseUrl
-      },
-      body: JSON.stringify({
-        markdown: '---\ndate: 2026-01-01T00:00:00+08:00\n---\n\npreview boundary'
-      })
-    });
-    const materialsCreatePostResponse = await request(baseUrl, '/api/admin/category/materials/', {
-      method: 'POST',
-      headers: {
-        'content-type': 'application/json',
-        origin: baseUrl
-      },
-      body: JSON.stringify({
-        item: {
-          title: 'Preview boundary material',
-          href: 'https://example.com/material'
-        }
-      })
-    });
     const postResponse = await request(baseUrl, '/api/admin/settings/', {
       method: 'POST',
       headers: {
@@ -415,7 +337,7 @@ export const runPreviewAdminBoundaryCheck = async () => {
     assertReadonlyAdminThemeShell('Preview GET /admin/theme/', adminThemeResponse);
     assertReadonlyAdminContentShell('Preview GET /admin/content/', adminContentResponse);
     assertReadonlyAdminContentShell('Preview GET /admin/content/?collection=longform', adminLongformContentResponse);
-    assertAdminCategoryShell('Preview GET /admin/category/', adminCategoryResponse);
+    assertNotFoundResponse('Preview GET /admin/category/', legacyCategoryResponse);
     assertBitsPageWithoutDraftTools('Preview GET /bits/', bitsResponse);
     assertReadonlyAdminImageShell('Preview GET /admin/images/', adminImageResponse);
     assertReadonlyAdminChecksShell('Preview GET /admin/checks/', adminChecksResponse);
@@ -431,14 +353,12 @@ export const runPreviewAdminBoundaryCheck = async () => {
     assertAdminContentStaticResponse('GET /api/admin/content/bulk-export/', contentBulkExportGetResponse, '/api/admin/content/bulk-export/');
     assertAdminContentStaticResponse('GET /api/admin/content/authors/', contentAuthorsGetResponse, '/api/admin/content/authors/');
     assertAdminContentStaticResponse('GET /api/admin/preview/', contentPreviewGetResponse, '/api/admin/preview/');
-    assertAdminBitsCreateStaticResponse('GET /api/admin/category/bits/', bitsCreateGetResponse);
-    assertAdminMaterialsCreateStaticResponse('GET /api/admin/category/materials/', materialsCreateGetResponse);
+    assertNotFoundResponse('GET /api/admin/category/bits/', legacyBitsCreateGetResponse);
+    assertNotFoundResponse('GET /api/admin/category/materials/', legacyMaterialsCreateGetResponse);
     assertAdminImageStaticResponse('GET /api/admin/images/list/', imageListResponse, '/api/admin/images/list/');
     assertAdminImageStaticResponse('GET /api/admin/images/meta/', imageMetaResponse, '/api/admin/images/meta/');
     assertAdminImageStaticResponse('GET /api/admin/images/upload/', imageUploadResponse, '/api/admin/images/upload/');
     assertAdminContentStaticResponse('POST /api/admin/content/entry/', contentPostResponse);
-    assertAdminBitsCreateStaticResponse('POST /api/admin/category/bits/', bitsCreatePostResponse);
-    assertAdminMaterialsCreateStaticResponse('POST /api/admin/category/materials/', materialsCreatePostResponse);
     assertAdminSettingsStaticResponse('POST /api/admin/settings/', postResponse);
     console.log('Preview admin boundary check passed.');
   } finally {
@@ -489,23 +409,13 @@ export const runDevAdminSettingsSmokeCheck = async () => {
 
     const contentOverviewResponse = await request(baseUrl, '/admin/content/');
     const contentLongformResponse = await request(baseUrl, '/admin/content/?collection=longform');
-    const categoryResponse = await request(baseUrl, '/admin/category/');
-    const categoryBitsResponse = await request(baseUrl, '/admin/category/?tab=bits');
-    const categoryMaterialsResponse = await request(baseUrl, '/admin/category/?tab=materials');
+    const legacyCategoryDevResponse = await request(baseUrl, '/admin/category/');
     const bitsResponse = await request(baseUrl, '/bits/');
     assertDevAdminContentConsoleShell('Dev GET /admin/content/', contentOverviewResponse, {
       expectAuthorLibrary: true
     });
     assertDevAdminContentConsoleShell('Dev GET /admin/content/?collection=longform', contentLongformResponse);
-    assertAdminCategoryShell('Dev GET /admin/category/', categoryResponse, { expectCategoryTabs: true });
-    assertAdminCategoryShell('Dev GET /admin/category/?tab=bits', categoryBitsResponse, {
-      expectBitsDraft: true,
-      expectCategoryTabs: true
-    });
-    assertAdminCategoryShell('Dev GET /admin/category/?tab=materials', categoryMaterialsResponse, {
-      expectMaterialsCreate: true,
-      expectCategoryTabs: true
-    });
+    assertNotFoundResponse('Dev GET /admin/category/', legacyCategoryDevResponse);
     assertBitsPageWithoutDraftTools('Dev GET /bits/', bitsResponse);
 
     const uiSettingsPath = path.join(fixture.settingsDir, 'ui.json');

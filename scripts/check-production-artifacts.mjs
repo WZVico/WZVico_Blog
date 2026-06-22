@@ -39,15 +39,12 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/index.html',
     'dist/about/index.html',
     'dist/admin/index.html',
-    'dist/admin/category/index.html',
     'dist/admin/content/index.html',
     'dist/admin/images/index.html',
     'dist/admin/checks/index.html',
     'dist/bits/index.html',
     'dist/admin/data/index.html',
     'dist/admin/theme/index.html',
-    'dist/api/admin/category/bits',
-    'dist/api/admin/category/materials',
     'dist/api/admin/settings',
     'dist/api/admin/data/settings',
     'dist/api/admin/content/entry',
@@ -66,6 +63,14 @@ export const runProductionArtifactCheck = async (options = {}) => {
 
   for (const artifactPath of requiredArtifacts) {
     expect(existsSync(artifactPath), `Expected build artifact is missing: ${artifactPath}`);
+  }
+
+  for (const removedArtifactPath of [
+    'dist/admin/category/index.html',
+    'dist/api/admin/category/bits',
+    'dist/api/admin/category/materials'
+  ]) {
+    expect(!existsSync(removedArtifactPath), `${removedArtifactPath} should not be generated after retiring /admin/category/`);
   }
 
   const robotsTxt = readText('dist/robots.txt');
@@ -111,14 +116,12 @@ export const runProductionArtifactCheck = async (options = {}) => {
   expect(!/--admin-status-/.test(aboutHtml), 'Public about page still contains admin CSS tokens');
 
   const adminHtml = readText('dist/admin/index.html');
-  const adminCategoryHtml = readText('dist/admin/category/index.html');
   const adminContentHtml = readText('dist/admin/content/index.html');
   const adminImageHtml = readText('dist/admin/images/index.html');
   const adminChecksHtml = readText('dist/admin/checks/index.html');
   const adminThemeHtml = readText('dist/admin/theme/index.html');
   const adminDataHtml = readText('dist/admin/data/index.html');
   const readonlyAdminHtmlChecks = [
-    ['dist/admin/category/index.html', adminCategoryHtml, 'Category Console'],
     ['dist/admin/content/index.html', adminContentHtml, 'Content Console'],
     ['dist/admin/images/index.html', adminImageHtml, 'Images Console'],
     ['dist/admin/checks/index.html', adminChecksHtml, 'Checks Console'],
@@ -304,18 +307,6 @@ export const runProductionArtifactCheck = async (options = {}) => {
 
   const adminSettingsArtifact = readText('dist/api/admin/settings');
   assertAdminSettingsStaticShell('dist/api/admin/settings', adminSettingsArtifact);
-  const adminBitsCreateArtifact = readText('dist/api/admin/category/bits');
-  assertAdminSettingsStaticShell(
-    'dist/api/admin/category/bits',
-    adminBitsCreateArtifact,
-    '/api/admin/category/bits/'
-  );
-  const adminMaterialsCreateArtifact = readText('dist/api/admin/category/materials');
-  assertAdminSettingsStaticShell(
-    'dist/api/admin/category/materials',
-    adminMaterialsCreateArtifact,
-    '/api/admin/category/materials/'
-  );
   const adminDataSettingsArtifact = readText('dist/api/admin/data/settings');
   assertAdminSettingsStaticShell('dist/api/admin/data/settings', adminDataSettingsArtifact, '/api/admin/data/settings/');
   const contentApiArtifacts = [

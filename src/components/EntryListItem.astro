@@ -46,47 +46,16 @@ const shouldShowMetaLine =
   {excerpt ? <p class="list-item__excerpt">{excerpt}</p> : null}
   {shouldShowMetaLine ? (
     <div class="meta-line meta-line--items">
-      {shouldShowPeople ? (
-        <span class="meta-line__item meta-line__item--people longform-card__people">
-          {articlePeople.authors.length ? (
-            <>
-              <span class="article-byline__label">作者</span>
-              <span class="article-author-list">
-                {articlePeople.authors.map((author) => (
-                  <span class="article-author">
-                    {author.showAvatar ? (
-                      <span class="article-author-avatar article-author-avatar--image" aria-hidden="true">
-                        <img
-                          src={author.avatar}
-                          alt=""
-                          width="32"
-                          height="32"
-                          loading="lazy"
-                          decoding="async"
-                          onerror="this.parentElement?.remove();"
-                        />
-                      </span>
-                    ) : null}
-                    <a
-                      class="article-byline__name article-byline__name--link"
-                      href={getArchiveAuthorHref(author.name, withBase)}
-                      aria-label={`查看 ${author.name} 的所有文章`}
-                    >
-                      {author.name}
-                    </a>
-                  </span>
-                ))}
-              </span>
-            </>
-          ) : null}
-          {articlePeople.translator ? (
-            <span class="article-translator">
-              <span class="article-byline__label">翻译</span>
+      {articlePeople.authors.length ? (
+        <span class="meta-line__item meta-line__item--person article-meta-person article-meta-person--authors">
+          <span class="article-byline__label">作者</span>
+          <span class="article-author-list">
+            {articlePeople.authors.map((author) => (
               <span class="article-author">
-                {articlePeople.translator.showAvatar ? (
+                {author.showAvatar ? (
                   <span class="article-author-avatar article-author-avatar--image" aria-hidden="true">
                     <img
-                      src={articlePeople.translator.avatar}
+                      src={author.avatar}
                       alt=""
                       width="32"
                       height="32"
@@ -96,10 +65,37 @@ const shouldShowMetaLine =
                     />
                   </span>
                 ) : null}
-                <span class="article-byline__name">{articlePeople.translator.name}</span>
+                <a
+                  class="article-byline__name article-byline__name--link"
+                  href={getArchiveAuthorHref(author.name, withBase)}
+                  aria-label={`查看 ${author.name} 的所有文章`}
+                >
+                  {author.name}
+                </a>
               </span>
-            </span>
-          ) : null}
+            ))}
+          </span>
+        </span>
+      ) : null}
+      {articlePeople.translator ? (
+        <span class="meta-line__item meta-line__item--person article-meta-person article-meta-person--translator">
+          <span class="article-byline__label">翻译</span>
+          <span class="article-author">
+            {articlePeople.translator.showAvatar ? (
+              <span class="article-author-avatar article-author-avatar--image" aria-hidden="true">
+                <img
+                  src={articlePeople.translator.avatar}
+                  alt=""
+                  width="32"
+                  height="32"
+                  loading="lazy"
+                  decoding="async"
+                  onerror="this.parentElement?.remove();"
+                />
+              </span>
+            ) : null}
+            <span class="article-byline__name">{articlePeople.translator.name}</span>
+          </span>
         </span>
       ) : null}
       {articleMetaSettings.showDate ? (

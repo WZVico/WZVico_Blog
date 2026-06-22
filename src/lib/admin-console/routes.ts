@@ -1,4 +1,4 @@
-export type AdminRouteId = 'overview' | 'theme' | 'content' | 'category' | 'images' | 'checks' | 'data';
+export type AdminRouteId = 'overview' | 'theme' | 'content' | 'images' | 'checks' | 'data';
 
 export type AdminRouteActiveMatch = 'exact' | 'prefix';
 
@@ -8,7 +8,6 @@ export type AdminRouteDefinition = {
     | '/admin/'
     | '/admin/theme/'
     | '/admin/content/'
-    | '/admin/category/'
     | '/admin/images/'
     | '/admin/checks/'
     | '/admin/data/';

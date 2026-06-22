@@ -199,7 +199,7 @@ For more details, see the [Theme Console configuration guide](https://astro.whon
 #### Production behavior
 
 - Theme Console / Data Console / Content Console provide write capabilities only in local development; Content Console now includes content indexing, editors, create, delete, and export.
-- `/admin/content/` can manage longform / bits / picks / materials in local development. The existing `/admin/category/` entry is intentionally kept for the migration period, so both content-management systems coexist.
+- `/admin/content/` can manage longform / bits / picks / materials in local development. The legacy `/admin/category/` management page has been retired and no longer generates the old entry or write APIs.
 - Production builds remain static output. `/admin/` can show a read-only public Overview or a hidden-state message based on Theme settings; production does not show Admin tabs, and other Admin subroutes only keep a local-development notice.
 - `/api/admin/settings/` is for local development only and should not be treated as a production API
 - `/api/admin/content/*` is for local development content-file management only and should not be treated as a production API
