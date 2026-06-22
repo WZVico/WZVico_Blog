@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { readdir, readFile, stat } from 'node:fs/promises';
+import { lstat, readdir, readFile, stat, unlink } from 'node:fs/promises';
 import path from 'node:path';
 import {
   ADMIN_IMAGE_BROWSE_GROUP_LABELS,
@@ -134,6 +134,16 @@ export type AdminImageMetaResult = {
   previewSrc: string | null;
 };
 
+export type AdminImageDeleteFailure = {
+  path: string;
+  error: string;
+};
+
+export type AdminImageDeleteResult = {
+  deleted: string[];
+  failed: AdminImageDeleteFailure[];
+};
+
 type AdminImageAssetRecord = {
   path: string;
   origin: AdminImageOrigin;
@@ -168,6 +178,10 @@ type LocalImageTarget = {
   previewSrc: string | null;
 };
 
+type DeletableLocalImageTarget = LocalImageTarget & {
+  absolutePath: string;
+};
+
 type FieldImageTarget =
   | { kind: 'local'; target: LocalImageTarget }
   | { kind: 'remote'; url: string };
@@ -181,6 +195,7 @@ type AdminImageShortCacheEntry<T> = {
 
 export const ADMIN_IMAGE_LIST_API_PATH = '/api/admin/images/list/' as const;
 export const ADMIN_IMAGE_META_API_PATH = '/api/admin/images/meta/' as const;
+export const ADMIN_IMAGE_DELETE_API_PATH = '/api/admin/images/delete/' as const;
 
 const IMAGE_LOCAL_EXT_RE = /\.(?:avif|gif|ico|jpe?g|png|svg|webp)$/i;
 const MARKDOWN_EXT_RE = /\.(?:md|mdx)$/i;
@@ -307,6 +322,13 @@ const withAdminImageShortCache = async <T>(
 
 const toDevFsPreviewSrc = (assetPath: string): string =>
   `/@fs/${encodeURI(toAbsoluteAssetPath(assetPath).replace(/\\/g, '/'))}`;
+
+const isPathInsideDirectory = (parentPath: string, childPath: string): boolean => {
+  const relativePath = path.relative(parentPath, childPath);
+  return Boolean(relativePath)
+    && !relativePath.startsWith('..')
+    && !path.isAbsolute(relativePath);
+};
 
 const getPreviewSrcFromPath = (assetPath: string): string | null => {
   if (assetPath.startsWith('public/')) return `/${assetPath.slice('public/'.length)}`;
@@ -1100,6 +1122,53 @@ const resolveLocalTargetFromPath = (assetPath: string): LocalImageTarget => {
   throw new AdminImageError('图片路径必须是 public/**、src/assets/** 或 src/content/** 下的规范仓库相对图片路径');
 };
 
+const resolveDeletableLocalImageTarget = async (assetPath: string): Promise<DeletableLocalImageTarget> => {
+  const target = resolveLocalTargetFromPath(assetPath);
+  const browseMeta = resolveBrowseMeta({
+    path: target.path,
+    origin: target.origin,
+    fileName: path.posix.basename(target.path),
+    owner: null,
+    ownerLabel: null
+  });
+
+  if (browseMeta.hiddenFromBrowse) {
+    throw new AdminImageError('系统保留图片不允许从 Images Console 删除');
+  }
+
+  const projectRoot = path.resolve(getProjectRoot());
+  const absolutePath = path.resolve(projectRoot, ...target.path.split('/'));
+  if (!isPathInsideDirectory(projectRoot, absolutePath)) {
+    throw new AdminImageError('拒绝删除项目根目录外的图片文件');
+  }
+
+  const matchedRoot = ADMIN_IMAGE_SCAN_ROOTS.find((root) => target.path.startsWith(`${root.prefix}/`));
+  if (!matchedRoot) {
+    throw new AdminImageError('图片路径不在可管理的图片目录内');
+  }
+
+  const absoluteRootPath = path.resolve(projectRoot, ...matchedRoot.pathSegments);
+  if (!isPathInsideDirectory(absoluteRootPath, absolutePath)) {
+    throw new AdminImageError('拒绝删除图片目录外的文件');
+  }
+
+  let fileStat;
+  try {
+    fileStat = await lstat(absolutePath);
+  } catch {
+    throw new AdminImageError(`图片文件不存在：${target.path}`, 404);
+  }
+
+  if (!fileStat.isFile()) {
+    throw new AdminImageError('只能删除图片文件，不能删除目录或特殊文件');
+  }
+
+  return {
+    ...target,
+    absolutePath
+  };
+};
+
 export const getAdminImageMeta = async (input: AdminImageMetaInput): Promise<AdminImageMetaResult> => {
   const rawPath = 'path' in input && typeof input.path === 'string' ? input.path.trim() : '';
   if (rawPath) {
@@ -1131,6 +1200,36 @@ export const getAdminImageMeta = async (input: AdminImageMetaInput): Promise<Adm
   }
 
   return readLocalImageMeta(fieldTarget.target);
+};
+
+export const deleteAdminImageItems = async (paths: readonly string[]): Promise<AdminImageDeleteResult> => {
+  const deleted: string[] = [];
+  const failed: AdminImageDeleteFailure[] = [];
+  const uniquePaths = Array.from(
+    new Set(paths.map((item) => item.trim()).filter((item) => item.length > 0))
+  );
+
+  for (const rawPath of uniquePaths) {
+    try {
+      const target = await resolveDeletableLocalImageTarget(rawPath);
+      await unlink(target.absolutePath);
+      deleted.push(target.path);
+    } catch (error) {
+      failed.push({
+        path: rawPath,
+        error: error instanceof Error ? error.message : '图片删除失败'
+      });
+    }
+  }
+
+  if (deleted.length > 0) {
+    invalidateAdminImageCaches();
+  }
+
+  return {
+    deleted,
+    failed
+  };
 };
 
 export const listAdminImageItems = async ({

@@ -19,6 +19,8 @@ import {
   DEFAULT_SCOPE,
   type AdminImageBootstrap,
   type AdminImageBrowseItem,
+  type AdminImageDeleteFailure,
+  type AdminImageDeleteResponse,
   type AdminImageFilterOption,
   type AdminImageListItem,
   type AdminImageListResponse,
@@ -180,6 +182,7 @@ export const parseBootstrap = (text: string): AdminImageBootstrap | null => {
       !isRecord(payload)
       || typeof payload.listEndpoint !== 'string'
       || typeof payload.metaEndpoint !== 'string'
+      || typeof payload.deleteEndpoint !== 'string'
       || !isRecord(payload.initialState)
     ) {
       return null;
@@ -200,6 +203,7 @@ export const parseBootstrap = (text: string): AdminImageBootstrap | null => {
     return {
       listEndpoint: payload.listEndpoint,
       metaEndpoint: payload.metaEndpoint,
+      deleteEndpoint: payload.deleteEndpoint,
       initialState: {
         scope: initialScope,
         group: isAdminImageBrowseGroup(normalizedGroup) ? normalizedGroup : DEFAULT_GROUP,
@@ -221,6 +225,33 @@ const parseListResponse = (payload: unknown): AdminImageListResponse => {
   }
 
   return parseListResult(payload.result);
+};
+
+const DELETE_RESPONSE_FORMAT_ERROR = '图片删除响应格式无效';
+
+const isDeleteFailure = (item: unknown): item is AdminImageDeleteFailure =>
+  isRecord(item)
+  && typeof item.path === 'string'
+  && typeof item.error === 'string';
+
+const parseDeleteResponse = (payload: unknown): AdminImageDeleteResponse => {
+  if (!isRecord(payload) || payload.ok !== true || !isRecord(payload.result)) {
+    throw new Error(DELETE_RESPONSE_FORMAT_ERROR);
+  }
+
+  const { deleted, failed } = payload.result;
+  if (!Array.isArray(deleted) || !Array.isArray(failed)) {
+    throw new Error(DELETE_RESPONSE_FORMAT_ERROR);
+  }
+
+  if (!deleted.every((item): item is string => typeof item === 'string') || !failed.every(isDeleteFailure)) {
+    throw new Error(DELETE_RESPONSE_FORMAT_ERROR);
+  }
+
+  return {
+    deleted,
+    failed
+  };
 };
 
 export const fetchList = async (
@@ -256,6 +287,17 @@ export const fetchMetaByPath = async (endpoint: string, assetPath: string): Prom
     '图片元数据请求失败'
   );
   return parseAdminImageMetaResponse(payload);
+};
+
+export const deleteImages = async (endpoint: string, paths: readonly string[]): Promise<AdminImageDeleteResponse> => {
+  const payload = await fetchAdminImageJson(endpoint, '图片删除请求失败', {
+    method: 'POST',
+    headers: {
+      'content-type': 'application/json'
+    },
+    body: JSON.stringify({ paths })
+  });
+  return parseDeleteResponse(payload);
 };
 
 export const updateUrl = (state: AdminImageState) => {

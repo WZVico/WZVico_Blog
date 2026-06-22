@@ -4,6 +4,7 @@ import AdminLayout from '../../../components/admin/AdminLayout.astro';
 import AdminReadonlyNotice from '../../../components/admin/AdminReadonlyNotice.astro';
 import AdminShell from '../../../components/admin/AdminShell.astro';
 import {
+  ADMIN_IMAGE_DELETE_API_PATH,
   ADMIN_IMAGE_LIST_API_PATH,
   ADMIN_IMAGE_META_API_PATH,
   invalidateAdminImageCaches,
@@ -63,6 +64,7 @@ const bootstrapText = imagesDevState
   ? JSON.stringify({
       listEndpoint: withBase(ADMIN_IMAGE_LIST_API_PATH),
       metaEndpoint: withBase(ADMIN_IMAGE_META_API_PATH),
+      deleteEndpoint: withBase(ADMIN_IMAGE_DELETE_API_PATH),
       initialState: {
         scope: selectedScope,
         group: selectedGroup,
@@ -179,6 +181,14 @@ const bootstrapText = imagesDevState
                 </div>
 
                 <button
+                  id="admin-images-select-page"
+                  class="admin-btn admin-btn--tool admin-btn--compact admin-images-browser__select-page"
+                  type="button"
+                >
+                  选择本页
+                </button>
+
+                <button
                   id="admin-images-recent"
                   class="admin-btn admin-btn--tool admin-btn--compact admin-images-browser__recent-link"
                   type="button"
@@ -225,6 +235,27 @@ const bootstrapText = imagesDevState
             </div>
           </form>
 
+          <div id="admin-images-selection-bar" class="admin-images-browser__selection-bar" hidden>
+            <p id="admin-images-selection-summary" class="admin-images-browser__selection-summary">已选择 0 张图片</p>
+            <div class="admin-images-browser__selection-actions">
+              <button
+                id="admin-images-clear-selection"
+                class="admin-btn admin-btn--ghost admin-btn--compact"
+                type="button"
+              >
+                清除选择
+              </button>
+              <button
+                id="admin-images-delete-selected"
+                class="admin-btn admin-btn--danger admin-btn--compact"
+                type="button"
+              >
+                <AdminIcon name="trash" size={14} />
+                删除所选
+              </button>
+            </div>
+          </div>
+
           <article class="admin-images-browser__results">
             <ul id="admin-images-result-list" class="admin-images-browser__items" data-view="grid"></ul>
             <p id="admin-images-empty" class="admin-content-empty" hidden>没有找到符合条件的图片。</p>
@@ -260,6 +291,7 @@ const bootstrapText = imagesDevState
             <span data-icon="copy"><AdminIcon name="copy" size={15} /></span>
             <span data-icon="link"><AdminIcon name="link" size={15} /></span>
             <span data-icon="eye"><AdminIcon name="eye" size={15} /></span>
+            <span data-icon="trash"><AdminIcon name="trash" size={15} /></span>
           </div>
 
           <div id="admin-images-bootstrap" hidden>{bootstrapText}</div>

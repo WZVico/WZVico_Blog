@@ -28,6 +28,7 @@ export type AdminImageListItem = AdminImageBrowseItem & {
 export type AdminImageBootstrap = {
   listEndpoint: string;
   metaEndpoint: string;
+  deleteEndpoint: string;
   initialState: {
     scope: AdminImageScope;
     group: string;
@@ -49,6 +50,16 @@ export type AdminImageListResponse = {
   page: number;
   totalPages: number;
   totalCount: number;
+};
+
+export type AdminImageDeleteFailure = {
+  path: string;
+  error: string;
+};
+
+export type AdminImageDeleteResponse = {
+  deleted: string[];
+  failed: AdminImageDeleteFailure[];
 };
 
 export type AdminImageState = {

@@ -310,6 +310,7 @@ export const runPreviewAdminBoundaryCheck = async () => {
     const legacyMaterialsCreateGetResponse = await request(baseUrl, '/api/admin/category/materials/');
     const imageListResponse = await request(baseUrl, '/api/admin/images/list/');
     const imageMetaResponse = await request(baseUrl, '/api/admin/images/meta/');
+    const imageDeleteResponse = await request(baseUrl, '/api/admin/images/delete/');
     const imageUploadResponse = await request(baseUrl, '/api/admin/images/upload/');
     const contentPostResponse = await request(baseUrl, '/api/admin/content/entry/', {
       method: 'POST',
@@ -357,6 +358,7 @@ export const runPreviewAdminBoundaryCheck = async () => {
     assertNotFoundResponse('GET /api/admin/category/materials/', legacyMaterialsCreateGetResponse);
     assertAdminImageStaticResponse('GET /api/admin/images/list/', imageListResponse, '/api/admin/images/list/');
     assertAdminImageStaticResponse('GET /api/admin/images/meta/', imageMetaResponse, '/api/admin/images/meta/');
+    assertAdminImageStaticResponse('GET /api/admin/images/delete/', imageDeleteResponse, '/api/admin/images/delete/');
     assertAdminImageStaticResponse('GET /api/admin/images/upload/', imageUploadResponse, '/api/admin/images/upload/');
     assertAdminContentStaticResponse('POST /api/admin/content/entry/', contentPostResponse);
     assertAdminSettingsStaticResponse('POST /api/admin/settings/', postResponse);

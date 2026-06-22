@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { fetchList } from '../src/scripts/admin-images/data';
+import { deleteImages, fetchList } from '../src/scripts/admin-images/data';
 import {
   parseAdminImageListResponse,
   parseAdminImageMetaResponse
@@ -146,6 +146,38 @@ describe('admin-images/data', () => {
       .rejects.toThrow('图片列表响应格式无效');
   });
 
+  it('sends delete requests as JSON and parses per-path results', async () => {
+    const requested: { url: string; method: string | undefined; body: string }[] = [];
+    const fetchMock = vi.fn(async (input: Parameters<typeof fetch>[0], init?: RequestInit) => {
+      requested.push({
+        url: String(input),
+        method: init?.method,
+        body: typeof init?.body === 'string' ? init.body : ''
+      });
+      return Response.json({
+        ok: true,
+        result: {
+          deleted: ['public/images/archive/cover.png'],
+          failed: [{ path: 'public/favicon.png', error: '系统保留图片不允许从 Images Console 删除' }]
+        }
+      });
+    });
+    vi.stubGlobal('fetch', fetchMock);
+
+    const result = await deleteImages('/api/admin/images/delete/', [
+      'public/images/archive/cover.png',
+      'public/favicon.png'
+    ]);
+
+    expect(fetchMock).toHaveBeenCalledOnce();
+    expect(requested[0]?.url).toBe('/api/admin/images/delete/');
+    expect(requested[0]?.method).toBe('POST');
+    expect(JSON.parse(requested[0]?.body ?? '{}')).toEqual({
+      paths: ['public/images/archive/cover.png', 'public/favicon.png']
+    });
+    expect(result.deleted).toEqual(['public/images/archive/cover.png']);
+    expect(result.failed[0]?.path).toBe('public/favicon.png');
+  });
   it('rejects malformed shared picker list and metadata responses', () => {
     expect(() => parseAdminImageListResponse({
       ...createListPayload(),

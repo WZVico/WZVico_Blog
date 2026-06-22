@@ -141,11 +141,21 @@ export const parseAdminImageMetaResponse = (payload: unknown): AdminImageClientM
   return payload.result;
 };
 
-export const fetchAdminImageJson = async (url: string, fallbackMessage = '图片接口请求失败'): Promise<unknown> => {
+export const fetchAdminImageJson = async (
+  url: string,
+  fallbackMessage = '图片接口请求失败',
+  init: RequestInit = {}
+): Promise<unknown> => {
+  const headers = new Headers(init.headers);
+  if (!headers.has('accept')) {
+    headers.set('accept', 'application/json');
+  }
+
   const response = await fetch(url, {
     method: 'GET',
-    headers: { Accept: 'application/json' },
-    cache: 'no-store'
+    cache: 'no-store',
+    ...init,
+    headers
   });
   const payload = (await response.json().catch(() => null)) as unknown;
 

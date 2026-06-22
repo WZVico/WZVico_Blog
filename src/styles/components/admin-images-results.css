@@ -49,8 +49,85 @@
 }
 
 .admin-images-browser__item-shell {
+  position: relative;
   display: grid;
   min-width: 0;
+}
+
+.admin-images-browser__select {
+  position: absolute;
+  inset-block-start: 10px;
+  inset-inline-start: 10px;
+  z-index: 3;
+  display: grid;
+  place-items: center;
+  inline-size: 28px;
+  block-size: 28px;
+  cursor: pointer;
+}
+
+.admin-images-browser__select-input {
+  position: absolute;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.admin-images-browser__select-box {
+  position: relative;
+  inline-size: 20px;
+  block-size: 20px;
+  border: 1px solid color-mix(in srgb, var(--border) 64%, var(--text) 36%);
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--bg) 86%, transparent 14%);
+  box-shadow:
+    0 1px 2px color-mix(in srgb, var(--overlay-20) 72%, transparent 28%),
+    inset 0 1px 0 color-mix(in srgb, var(--bg) 72%, transparent 28%);
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+.admin-images-browser__select-box::after {
+  content: '';
+  position: absolute;
+  inset-block-start: 5px;
+  inset-inline-start: 4px;
+  inline-size: 9px;
+  block-size: 5px;
+  border-inline-start: 2px solid currentColor;
+  border-block-end: 2px solid currentColor;
+  color: var(--admin-status-danger-text);
+  opacity: 0;
+  transform: rotate(-45deg) scale(0.82);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.admin-images-browser__select:hover .admin-images-browser__select-box,
+.admin-images-browser__select-input:focus-visible + .admin-images-browser__select-box {
+  border-color: color-mix(in srgb, var(--text) 58%, var(--border) 42%);
+  background: color-mix(in srgb, var(--bg) 94%, var(--panel) 6%);
+}
+
+.admin-images-browser__select-input:focus-visible + .admin-images-browser__select-box {
+  box-shadow: var(--admin-focus-shadow);
+}
+
+.admin-images-browser__select-input:checked + .admin-images-browser__select-box {
+  border-color: var(--admin-status-danger-border);
+  background: var(--admin-status-danger-bg);
+  color: var(--admin-status-danger-text);
+}
+
+.admin-images-browser__select-input:checked + .admin-images-browser__select-box::after {
+  opacity: 1;
+  transform: rotate(-45deg) scale(1);
 }
 
 .admin-images-browser__card {
@@ -148,6 +225,13 @@
   border-color: color-mix(in srgb, var(--text) 58%, var(--border) 42%);
   box-shadow:
     0 0 0 1px color-mix(in srgb, var(--text) 58%, var(--border) 42%);
+}
+
+.admin-images-browser__item-shell[data-selected='true'] .admin-images-browser__thumb {
+  border-color: var(--admin-status-danger-border);
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--admin-status-danger-border) 72%, transparent),
+    0 12px 24px -22px color-mix(in srgb, var(--admin-status-danger-text) 36%, transparent);
 }
 
 .admin-images-browser__card:focus-visible {

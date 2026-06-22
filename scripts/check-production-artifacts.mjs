@@ -58,6 +58,7 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/api/admin/preview',
     'dist/api/admin/images/list',
     'dist/api/admin/images/meta',
+    'dist/api/admin/images/delete',
     'dist/api/admin/images/upload'
   ];
 
@@ -335,6 +336,12 @@ export const runProductionArtifactCheck = async (options = {}) => {
     'dist/api/admin/images/meta',
     adminImageMetaArtifact,
     '/api/admin/images/meta/'
+  );
+  const adminImageDeleteArtifact = readText('dist/api/admin/images/delete');
+  assertAdminImageStaticShell(
+    'dist/api/admin/images/delete',
+    adminImageDeleteArtifact,
+    '/api/admin/images/delete/'
   );
   const adminImageUploadArtifact = readText('dist/api/admin/images/upload');
   assertAdminImageStaticShell(

@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
-import { mkdtemp, mkdir, rm, utimes, writeFile } from 'node:fs/promises';
+import { access, mkdtemp, mkdir, rm, utimes, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 
@@ -275,6 +275,57 @@ describe('admin images api', () => {
       'public/images/archive/cover.png',
       'public/bits/demo.png'
     ]);
+  });
+  it('deletes selected image files and reports rejected paths', async () => {
+    const { POST } = await import('../src/pages/api/admin/images/delete');
+    const url = new URL('http://127.0.0.1:4321/api/admin/images/delete/');
+    const response = await POST({
+      url,
+      request: new Request(url, {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          origin: url.origin
+        },
+        body: JSON.stringify({
+          paths: [
+            'public/bits/demo.png',
+            'src/assets/hero.png',
+            'public/favicon.png',
+            'public/../src/assets/hero.png',
+            'public/images/archive/missing.png'
+          ]
+        })
+      })
+    } as never);
+
+    expect(response.status).toBe(200);
+    const payload = JSON.parse(await response.text());
+    expect(payload.ok).toBe(true);
+    expect([...payload.result.deleted].sort()).toEqual([
+      'public/bits/demo.png',
+      'src/assets/hero.png'
+    ].sort());
+    expect(payload.result.failed).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ path: 'public/favicon.png' }),
+        expect.objectContaining({ path: 'public/../src/assets/hero.png' }),
+        expect.objectContaining({ path: 'public/images/archive/missing.png' })
+      ])
+    );
+
+    await expect(access(path.join(tempRoot, 'public', 'bits', 'demo.png'))).rejects.toThrow();
+    await expect(access(path.join(tempRoot, 'src', 'assets', 'hero.png'))).rejects.toThrow();
+    await expect(access(path.join(tempRoot, 'public', 'favicon.png'))).resolves.toBeUndefined();
+
+    const { GET } = await import('../src/pages/api/admin/images/list');
+    const listResponse = await GET({
+      url: new URL('http://127.0.0.1:4321/api/admin/images/list?scope=recent&page=1&limit=20')
+    } as never);
+    const listPayload = JSON.parse(await listResponse.text());
+    const listedPaths = listPayload.result.items.map((item: { path: string }) => item.path);
+    expect(listedPaths).not.toContain('public/bits/demo.png');
+    expect(listedPaths).not.toContain('src/assets/hero.png');
   });
 
 });

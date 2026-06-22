@@ -12,6 +12,7 @@ import {
 import { type AdminImageClientMeta } from '../admin-shared/image-client';
 import {
   copyText,
+  deleteImages,
   fetchList,
   fetchMetaByPath,
   navigateToRefresh,
@@ -75,6 +76,7 @@ export const initAdminImagesConsole = () => {
     searchPanelEl: byId<HTMLDivElement>('admin-images-search-panel'),
     searchToggleBtn: byId<HTMLButtonElement>('admin-images-search-toggle'),
     queryInput: byId<HTMLInputElement>('admin-images-query'),
+    selectPageBtn: byId<HTMLButtonElement>('admin-images-select-page'),
     recentBtn: byId<HTMLButtonElement>('admin-images-recent'),
     refreshBtn: byId<HTMLButtonElement>('admin-images-refresh'),
     listViewBtn: byId<HTMLButtonElement>('admin-images-view-list'),
@@ -82,6 +84,10 @@ export const initAdminImagesConsole = () => {
     statusLiveEl: byId<HTMLElement>('admin-images-status-live'),
     statusEl: byId<HTMLElement>('admin-images-status'),
     pageMetaEl: byId<HTMLElement>('admin-images-page-meta'),
+    selectionBarEl: byId<HTMLDivElement>('admin-images-selection-bar'),
+    selectionSummaryEl: byId<HTMLElement>('admin-images-selection-summary'),
+    clearSelectionBtn: byId<HTMLButtonElement>('admin-images-clear-selection'),
+    deleteSelectedBtn: byId<HTMLButtonElement>('admin-images-delete-selected'),
     resultListEl: byId<HTMLUListElement>('admin-images-result-list'),
     emptyEl: byId<HTMLElement>('admin-images-empty'),
     prevBtn: byId<HTMLButtonElement>('admin-images-prev'),
@@ -100,6 +106,7 @@ export const initAdminImagesConsole = () => {
     searchPanelEl: '#admin-images-search-panel',
     searchToggleBtn: '#admin-images-search-toggle',
     queryInput: '#admin-images-query',
+    selectPageBtn: '#admin-images-select-page',
     recentBtn: '#admin-images-recent',
     refreshBtn: '#admin-images-refresh',
     listViewBtn: '#admin-images-view-list',
@@ -107,6 +114,10 @@ export const initAdminImagesConsole = () => {
     statusLiveEl: '#admin-images-status-live',
     statusEl: '#admin-images-status',
     pageMetaEl: '#admin-images-page-meta',
+    selectionBarEl: '#admin-images-selection-bar',
+    selectionSummaryEl: '#admin-images-selection-summary',
+    clearSelectionBtn: '#admin-images-clear-selection',
+    deleteSelectedBtn: '#admin-images-delete-selected',
     resultListEl: '#admin-images-result-list',
     emptyEl: '#admin-images-empty',
     prevBtn: '#admin-images-prev',
@@ -135,6 +146,7 @@ export const initAdminImagesConsole = () => {
     searchPanelEl,
     searchToggleBtn,
     queryInput,
+    selectPageBtn,
     recentBtn,
     refreshBtn,
     listViewBtn,
@@ -142,6 +154,10 @@ export const initAdminImagesConsole = () => {
     statusLiveEl,
     statusEl,
     pageMetaEl,
+    selectionBarEl,
+    selectionSummaryEl,
+    clearSelectionBtn,
+    deleteSelectedBtn,
     resultListEl,
     emptyEl,
     prevBtn,
@@ -166,6 +182,7 @@ export const initAdminImagesConsole = () => {
   let currentGroupOptions: AdminImageFilterOption[] = [];
   let currentSubgroupOptions: AdminImageFilterOption[] = [];
   let selectedPath: string | null = null;
+  const selectedDeletePaths = new Set<string>();
   const detailMetaCache = new Map<string, AdminImageClientMeta>();
   const detailMetaErrors = new Map<string, string>();
   const detailMetaPending = new Set<string>();
@@ -185,7 +202,8 @@ export const initAdminImagesConsole = () => {
   const icons = {
     copy: getIconMarkup('copy'),
     link: getIconMarkup('link'),
-    eye: getIconMarkup('eye')
+    eye: getIconMarkup('eye'),
+    trash: getIconMarkup('trash')
   };
 
   const getCurrentPageSize = (): number =>
@@ -243,6 +261,7 @@ export const initAdminImagesConsole = () => {
       emptyEl,
       items: currentItems,
       selectedPath,
+      selectedDeletePaths,
       detailMetaCache
     });
   };
@@ -258,6 +277,7 @@ export const initAdminImagesConsole = () => {
       copyIcon: icons.copy,
       linkIcon: icons.link,
       eyeIcon: icons.eye,
+      deleteIcon: icons.trash,
       largeFileThreshold: LARGE_FILE_THRESHOLD
     });
   };
@@ -326,10 +346,19 @@ export const initAdminImagesConsole = () => {
     });
   };
 
+  const getCurrentPagePaths = (): string[] => currentItems.map((item) => item.path);
+
+  const isCurrentPageFullySelected = (): boolean => {
+    const currentPagePaths = getCurrentPagePaths();
+    return currentPagePaths.length > 0 && currentPagePaths.every((assetPath) => selectedDeletePaths.has(assetPath));
+  };
+
   const syncControls = () => {
     const searchVisible = searchOpen;
     const filterVisible = filtersOpen && currentState.scope === DEFAULT_SCOPE;
     const filtered = hasBrowseFilters();
+    const selectedCount = selectedDeletePaths.size;
+    const allCurrentPageSelected = isCurrentPageFullySelected();
 
     queryInput.value = draftQuery;
     queryInput.disabled = busy;
@@ -347,16 +376,24 @@ export const initAdminImagesConsole = () => {
     searchPanelEl.setAttribute('aria-hidden', searchVisible ? 'false' : 'true');
     searchToggleBtn.dataset.active = searchVisible ? 'true' : 'false';
     searchToggleBtn.setAttribute('aria-expanded', searchVisible ? 'true' : 'false');
+    selectPageBtn.disabled = busy || currentItems.length === 0;
+    selectPageBtn.textContent = allCurrentPageSelected ? '取消本页' : '选择本页';
+    selectPageBtn.setAttribute('aria-pressed', allCurrentPageSelected ? 'true' : 'false');
     recentBtn.disabled = busy;
     recentBtn.textContent = currentState.scope === 'recent' ? '返回分类' : ADMIN_IMAGE_SCOPE_LABELS.recent;
     recentBtn.setAttribute('aria-pressed', currentState.scope === 'recent' ? 'true' : 'false');
     refreshBtn.disabled = busy;
+    clearSelectionBtn.disabled = busy || selectedCount === 0;
+    deleteSelectedBtn.disabled = busy || selectedCount === 0;
+    selectionBarEl.hidden = selectedCount === 0;
+    selectionSummaryEl.textContent = `已选择 ${selectedCount} 张图片`;
     listViewBtn.disabled = busy;
     gridViewBtn.disabled = busy;
     prevBtn.disabled = busy || currentState.page <= 1;
     nextBtn.disabled = busy || currentState.page >= currentTotalPages;
     formEl.dataset.busy = busy ? 'true' : 'false';
     resultListEl.dataset.busy = busy ? 'true' : 'false';
+    resultListEl.dataset.selection = selectedCount > 0 ? 'true' : 'false';
     syncViewMode();
     renderCurrentGroupButtons();
     renderCurrentSubgroupButtons();
@@ -639,16 +676,105 @@ export const initAdminImagesConsole = () => {
     }
   };
 
-  const applyCurrentState = ({ updateLocation }: { updateLocation: boolean }) => {
+  const applyCurrentState = async ({ updateLocation }: { updateLocation: boolean }): Promise<void> => {
     if (currentState.scope) {
-      void loadList({ updateLocation });
+      await loadList({ updateLocation });
       return;
     }
     if (hasLocalBrowse) {
-      void applyBrowseState({ updateLocation });
+      await applyBrowseState({ updateLocation });
       return;
     }
-    void loadList({ updateLocation });
+    await loadList({ updateLocation });
+  };
+
+  const getUniqueDeletePaths = (paths: readonly string[]): string[] =>
+    Array.from(new Set(paths.map((item) => item.trim()).filter((item) => item.length > 0)));
+
+  const pruneDeletedPaths = (deletedPaths: readonly string[]) => {
+    const deletedSet = new Set(deletedPaths);
+    deletedSet.forEach((assetPath) => {
+      selectedDeletePaths.delete(assetPath);
+      detailMetaCache.delete(assetPath);
+      detailMetaErrors.delete(assetPath);
+      detailMetaPending.delete(assetPath);
+    });
+
+    if (selectedPath && deletedSet.has(selectedPath)) {
+      selectedPath = null;
+    }
+
+    if (bootstrap.browseIndex) {
+      bootstrap.browseIndex = bootstrap.browseIndex.filter((item) => !deletedSet.has(item.path));
+    }
+  };
+
+  const getDeleteConfirmationMessage = (paths: readonly string[]): string => {
+    if (paths.length === 1) {
+      return `确定删除这张图片？\n\n${paths[0]}`;
+    }
+
+    const previewPaths = paths.slice(0, 5).join('\n');
+    const moreText = paths.length > 5 ? `\n等 ${paths.length} 张图片` : '';
+    return `确定删除选中的 ${paths.length} 张图片？\n\n${previewPaths}${moreText}`;
+  };
+
+  const getDeleteResultMessage = ({ deleted, failed }: { deleted: string[]; failed: { path: string; error: string }[] }): string => {
+    if (deleted.length > 0 && failed.length > 0) {
+      return `已删除 ${deleted.length} 张图片，${failed.length} 张删除失败：${failed[0]?.error ?? '未知错误'}`;
+    }
+    if (deleted.length > 0) {
+      return `已删除 ${deleted.length} 张图片`;
+    }
+    if (failed.length > 0) {
+      return `${failed.length} 张图片删除失败：${failed[0]?.error ?? '未知错误'}`;
+    }
+    return '没有图片被删除';
+  };
+
+  const deleteImagePaths = async (paths: readonly string[]) => {
+    if (busy) return;
+
+    const deletePaths = getUniqueDeletePaths(paths);
+    if (deletePaths.length === 0) {
+      setStatus('warn', '请先选择要删除的图片');
+      return;
+    }
+
+    const confirmed = window.confirm(getDeleteConfirmationMessage(deletePaths));
+    if (!confirmed) return;
+
+    requestToken += 1;
+    busy = true;
+    syncControls();
+    setStatus('loading', `正在删除 ${deletePaths.length} 张图片...`);
+
+    try {
+      const result = await deleteImages(bootstrap.deleteEndpoint, deletePaths);
+      const hasDeleted = result.deleted.length > 0;
+      if (hasDeleted) {
+        pruneDeletedPaths(result.deleted);
+        busy = false;
+        await applyCurrentState({ updateLocation: true });
+      } else {
+        busy = false;
+        renderCurrentItems();
+        renderCurrentDetail();
+        syncControls();
+      }
+
+      setStatus(
+        result.failed.length > 0 ? (hasDeleted ? 'warn' : 'error') : 'ok',
+        getDeleteResultMessage(result)
+      );
+    } catch (error) {
+      busy = false;
+      syncControls();
+      setStatus('error', error instanceof Error ? error.message : '图片删除失败');
+    } finally {
+      busy = false;
+      syncControls();
+    }
   };
 
   const setViewMode = (viewMode: AdminImageViewMode) => {
@@ -804,6 +930,37 @@ export const initAdminImagesConsole = () => {
     setViewMode('grid');
   });
 
+  selectPageBtn.addEventListener('click', () => {
+    if (busy) return;
+    const currentPagePaths = getCurrentPagePaths();
+    if (currentPagePaths.length === 0) return;
+
+    const shouldSelect = !isCurrentPageFullySelected();
+    currentPagePaths.forEach((assetPath) => {
+      if (shouldSelect) {
+        selectedDeletePaths.add(assetPath);
+      } else {
+        selectedDeletePaths.delete(assetPath);
+      }
+    });
+
+    renderCurrentItems();
+    syncControls();
+    setStatus('ok', shouldSelect ? `已选择当前页 ${currentPagePaths.length} 张图片` : '已取消当前页选择');
+  });
+
+  clearSelectionBtn.addEventListener('click', () => {
+    if (busy || selectedDeletePaths.size === 0) return;
+    selectedDeletePaths.clear();
+    renderCurrentItems();
+    syncControls();
+    setStatus('ok', '已清除图片选择');
+  });
+
+  deleteSelectedBtn.addEventListener('click', () => {
+    void deleteImagePaths(Array.from(selectedDeletePaths));
+  });
+
   recentBtn.addEventListener('click', () => {
     if (busy) return;
     currentState = {
@@ -812,6 +969,26 @@ export const initAdminImagesConsole = () => {
       page: 1
     };
     applyCurrentState({ updateLocation: true });
+  });
+
+  resultListEl.addEventListener('change', (event) => {
+    if (busy) return;
+    const target = event.target instanceof HTMLElement
+      ? event.target.closest<HTMLInputElement>('[data-select-path]')
+      : null;
+    if (!(target instanceof HTMLInputElement)) return;
+
+    const assetPath = target.dataset.selectPath?.trim() ?? '';
+    if (!assetPath) return;
+
+    if (target.checked) {
+      selectedDeletePaths.add(assetPath);
+      target.closest<HTMLElement>('.admin-images-browser__item-shell')?.setAttribute('data-selected', 'true');
+    } else {
+      selectedDeletePaths.delete(assetPath);
+      target.closest<HTMLElement>('.admin-images-browser__item-shell')?.removeAttribute('data-selected');
+    }
+    syncControls();
   });
 
   resultListEl.addEventListener('click', (event) => {
@@ -831,6 +1008,18 @@ export const initAdminImagesConsole = () => {
   });
 
   detailEl.addEventListener('click', async (event) => {
+    const deleteTarget = event.target instanceof Element
+      ? event.target.closest<HTMLButtonElement>('[data-delete-path]')
+      : null;
+    if (deleteTarget instanceof HTMLButtonElement) {
+      if (busy) return;
+      const deletePath = deleteTarget.dataset.deletePath?.trim() ?? '';
+      if (deletePath) {
+        void deleteImagePaths([deletePath]);
+      }
+      return;
+    }
+
     const target = event.target instanceof Element ? event.target.closest<HTMLButtonElement>('[data-copy-value]') : null;
     if (!(target instanceof HTMLButtonElement)) return;
 

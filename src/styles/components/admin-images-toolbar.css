@@ -278,6 +278,7 @@
   color: var(--admin-images-toolbar-icon-muted);
 }
 
+.admin-images-browser__select-page,
 .admin-images-browser__recent-link {
   --admin-images-toolbar-disabled-opacity: 0.52;
 
@@ -292,8 +293,42 @@
 
 .admin-images-browser__filter-toggle:disabled,
 .admin-images-browser__tool-btn:disabled,
+.admin-images-browser__select-page:disabled,
 .admin-images-browser__recent-link:disabled {
   opacity: var(--admin-images-toolbar-disabled-opacity, 0.5);
+}
+
+.admin-images-browser__selection-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px 12px;
+  padding: 10px 12px;
+  border: 1px solid color-mix(in srgb, var(--admin-status-danger-border) 36%, var(--border) 64%);
+  border-radius: var(--admin-control-radius);
+  background: color-mix(in srgb, var(--admin-status-danger-bg) 28%, var(--bg) 72%);
+}
+
+.admin-images-browser__selection-bar[hidden] {
+  display: none;
+}
+
+.admin-images-browser__selection-summary {
+  margin: 0;
+  color: var(--admin-status-danger-text);
+  font-family: var(--admin-font-ui);
+  font-size: var(--admin-text-sm);
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.admin-images-browser__selection-actions {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .admin-images-browser__chips {

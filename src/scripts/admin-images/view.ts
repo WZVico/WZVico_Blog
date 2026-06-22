@@ -168,12 +168,14 @@ export const renderItems = ({
   emptyEl,
   items,
   selectedPath,
+  selectedDeletePaths,
   detailMetaCache
 }: {
   resultListEl: HTMLUListElement;
   emptyEl: HTMLElement;
   items: readonly AdminImageBrowseItem[];
   selectedPath: string | null;
+  selectedDeletePaths: ReadonlySet<string>;
   detailMetaCache: ReadonlyMap<string, AdminImageClientMeta>;
 }) => {
   if (items.length === 0) {
@@ -195,9 +197,20 @@ export const renderItems = ({
       const pathId = `admin-images-card-path-${index}`;
       const descriptionId = `admin-images-card-description-${index}`;
       const descriptionText = getCardDescriptionText(item, detailMetaCache);
+      const selectedForDelete = selectedDeletePaths.has(item.path);
 
       return `
-        <li class="admin-images-browser__item-shell">
+        <li class="admin-images-browser__item-shell"${selectedForDelete ? ' data-selected="true"' : ''}>
+          <label class="admin-images-browser__select" title="选择图片">
+            <input
+              class="admin-images-browser__select-input"
+              type="checkbox"
+              data-select-path="${escapeHtml(item.path)}"
+              aria-label="选择图片 ${escapeHtml(item.fileName)}"
+              ${selectedForDelete ? 'checked' : ''}
+            />
+            <span class="admin-images-browser__select-box" aria-hidden="true"></span>
+          </label>
           <button
             class="admin-images-browser__card${selectedPath === item.path ? ' admin-images-browser__card--active' : ''}"
             type="button"
@@ -336,6 +349,7 @@ export const renderDetail = ({
   copyIcon,
   linkIcon,
   eyeIcon,
+  deleteIcon,
   largeFileThreshold
 }: {
   detailEl: HTMLElement;
@@ -346,6 +360,7 @@ export const renderDetail = ({
   copyIcon: string;
   linkIcon: string;
   eyeIcon: string;
+  deleteIcon: string;
   largeFileThreshold: number;
 }) => {
   if (!item) {
@@ -445,6 +460,14 @@ export const renderDetail = ({
               浏览器新标签中打开
             </a>`
         : ''}
+          <button
+            class="admin-btn admin-btn--danger"
+            type="button"
+            data-delete-path="${escapeHtml(item.path)}"
+          >
+            ${deleteIcon}
+            删除图片
+          </button>
         </div>
       </div>
     </div>
