@@ -1,5 +1,6 @@
 ---
 import BaseLayout from './BaseLayout.astro';
+import type { MarkdownHeading } from 'astro';
 import UiIcon from '../components/UiIcon.astro';
 import Lightbox from '../components/Lightbox.astro';
 import '../styles/article.css';
@@ -27,12 +28,14 @@ const {
   prev,
   next,
   articleMetaSettings,
+  headings = [],
   visibleTags = []
 } = Astro.props as {
   entry: LongformEntry;
   prev: ArticleNeighborLink | null;
   next: ArticleNeighborLink | null;
   articleMetaSettings: ArticleMetaSettings;
+  headings?: MarkdownHeading[];
   visibleTags?: string[];
 };
 
@@ -83,6 +86,20 @@ const translation = entry.data.translation;
 const translationSource = translation?.source?.trim() ?? '';
 const translationSourceUrl = translation?.sourceUrl?.trim() ?? '';
 const translationSourceLabel = translationSource || (translationSourceUrl ? '原文' : '');
+const articleTocItems = headings
+  .filter((heading) =>
+    heading.depth >= 1
+    && heading.depth <= 6
+    && typeof heading.slug === 'string'
+    && heading.slug.trim().length > 0
+    && heading.text.trim().length > 0
+  )
+  .map((heading) => ({
+    depth: heading.depth,
+    slug: heading.slug,
+    text: heading.text.trim()
+  }));
+const shouldShowArticleToc = articleTocItems.length > 0;
 
 ---
 
@@ -213,6 +230,21 @@ const translationSourceLabel = translationSource || (translationSourceUrl ? '原
         )}
       </div>
     ) : null}
+    {shouldShowArticleToc ? (
+      <details class="article-toc" data-article-toc>
+        <summary class="article-toc__summary">
+          <span class="article-toc__title">目录</span>
+          <span class="article-toc__count">{articleTocItems.length}</span>
+        </summary>
+        <ol class="article-toc__list">
+          {articleTocItems.map((heading) => (
+            <li class={`article-toc__item article-toc__item--depth-${heading.depth}`}>
+              <a class="article-toc__link" href={`#${heading.slug}`} data-article-toc-link={heading.slug}>{heading.text}</a>
+            </li>
+          ))}
+        </ol>
+      </details>
+    ) : null}
   </div>
 
   <div class="prose heti">
@@ -263,6 +295,77 @@ const translationSourceLabel = translationSource || (translationSourceUrl ? '原
       enableZoom: false,
       enablePan: false,
       enableSwipeDownClose: false
+    });
+
+    const articleToc = document.querySelector<HTMLDetailsElement>('[data-article-toc]');
+    const wideTocQuery = window.matchMedia('(min-width: 1360px)');
+    const tocTargets = Array.from(
+      articleToc?.querySelectorAll<HTMLAnchorElement>('[data-article-toc-link]') ?? []
+    ).map((link) => {
+      const id = link.dataset.articleTocLink ?? '';
+      const target = document.getElementById(id) ?? document.getElementById(`user-content-${id}`);
+      return target ? { link, target, item: link.closest('.article-toc__item') } : null;
+    }).filter((item): item is { link: HTMLAnchorElement; target: HTMLElement; item: Element | null } => item !== null);
+    let activeTocLink: HTMLAnchorElement | null = null;
+    let activeTocItem: Element | null = null;
+    let tocUpdateFrame = 0;
+
+    const setActiveTocLink = (link: HTMLAnchorElement | null, item: Element | null = null) => {
+      if (link === activeTocLink) return;
+      activeTocLink?.classList.remove('is-active');
+      activeTocLink?.removeAttribute('aria-current');
+      activeTocItem?.classList.remove('is-active');
+      activeTocLink = link;
+      activeTocItem = item;
+      activeTocLink?.classList.add('is-active');
+      activeTocLink?.setAttribute('aria-current', 'location');
+      activeTocItem?.classList.add('is-active');
+      activeTocLink?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+    };
+
+    const updateActiveTocLink = () => {
+      tocUpdateFrame = 0;
+      if (tocTargets.length === 0) return;
+      const marker = Math.max(96, window.innerHeight * 0.24);
+      const nearDocumentEnd = window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 4;
+      let activeTarget = nearDocumentEnd ? tocTargets[tocTargets.length - 1] : null;
+
+      if (!activeTarget) {
+        for (const tocTarget of tocTargets) {
+          if (tocTarget.target.getBoundingClientRect().top <= marker) {
+            activeTarget = tocTarget;
+            continue;
+          }
+          break;
+        }
+      }
+
+      setActiveTocLink(activeTarget?.link ?? null, activeTarget?.item ?? null);
+    };
+
+    const scheduleActiveTocUpdate = () => {
+      if (tocUpdateFrame) return;
+      tocUpdateFrame = window.requestAnimationFrame(updateActiveTocLink);
+    };
+
+    const syncArticleTocState = () => {
+      if (!articleToc) return;
+      articleToc.open = wideTocQuery.matches;
+      scheduleActiveTocUpdate();
+    };
+
+    syncArticleTocState();
+    wideTocQuery.addEventListener('change', syncArticleTocState);
+    window.addEventListener('scroll', scheduleActiveTocUpdate, { passive: true });
+    window.addEventListener('resize', scheduleActiveTocUpdate);
+    window.addEventListener('hashchange', () => window.setTimeout(scheduleActiveTocUpdate, 120));
+    articleToc?.addEventListener('click', (event) => {
+      const target = event.target instanceof Element
+        ? event.target.closest<HTMLAnchorElement>('.article-toc__link')
+        : null;
+      if (!target) return;
+      setActiveTocLink(target, target.closest('.article-toc__item'));
+      if (!wideTocQuery.matches) articleToc.open = false;
     });
   </script>
 </BaseLayout>
