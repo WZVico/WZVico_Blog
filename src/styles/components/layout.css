@@ -806,13 +806,20 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
 
 /* 浮动动作按钮（回到顶部 / 阅读模式浮层） */
 .float-action {
-  --float-bottom: calc(16px + env(safe-area-inset-bottom));
+  --float-size: 44px;
+  --float-bottom: calc(50px + env(safe-area-inset-bottom));
   --float-gap: 10px;
   position: fixed;
-  right: calc(var(--pad-x) + env(safe-area-inset-right));
+  right: max(
+    env(safe-area-inset-right),
+    calc(
+      (100vw - min(100vw, var(--layout-shell-max-inline-size))) / 2 -
+      var(--float-size)
+    )
+  );
   bottom: var(--float-bottom);
-  width: 44px;
-  height: 44px;
+  width: var(--float-size);
+  height: var(--float-size);
   border-radius: 999px;
   border: 0;
   background: transparent;
@@ -849,7 +856,14 @@ body[data-reading="immersive"] .reader-toggle .icon-book-open {
 }
 
 .scroll-top[data-stack="true"] {
-  bottom: calc(var(--float-bottom) + var(--float-gap) + 44px);
+  bottom: calc(var(--float-bottom) + var(--float-gap) + var(--float-size));
+}
+
+@media (max-width: 900px) {
+  .float-action {
+    --float-bottom: calc(16px + env(safe-area-inset-bottom));
+    right: calc(var(--pad-x) + env(safe-area-inset-right));
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

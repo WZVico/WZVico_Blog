@@ -23,6 +23,8 @@ const prefersReducedMotion = () =>
 const isLongPage = () =>
   /^(?:\/(?:archive|longform|picks)(?:\/|$))/.test(window.location.pathname);
 
+const isArticlePage = () => body?.classList.contains('article-page') ?? false;
+
 let updateFloating = () => {};
 
 const isTheme = (value: string | null): value is Theme =>
@@ -190,7 +192,6 @@ const initFloatingActions = () => {
   if (!isLongPage()) return;
 
   let scrollTopBtn: HTMLButtonElement | null = null;
-  let threshold = Math.max(600, window.innerHeight * 2);
   let ticking = false;
 
   const ensureScrollTop = () => {
@@ -201,17 +202,14 @@ const initFloatingActions = () => {
     body.appendChild(scrollTopBtn);
   };
 
-  const updateThreshold = () => {
-    threshold = Math.max(600, window.innerHeight * 2);
-  };
-
   const update = () => {
     const y = window.scrollY || document.documentElement.scrollTop || 0;
-    const scrolledPast = y >= threshold;
+    const scrolledPast = y > 0;
     const isReading = isReaderOn();
     const floatExit = isReading && mobileMq.matches && scrolledPast;
+    const shouldEnableScrollTop = mobileMq.matches || isArticlePage();
 
-    if (mobileMq.matches) {
+    if (shouldEnableScrollTop) {
       ensureScrollTop();
       if (scrollTopBtn) {
         scrollTopBtn.dataset.stack = floatExit ? 'true' : 'false';
@@ -240,15 +238,9 @@ const initFloatingActions = () => {
     });
   };
 
-  const onResize = () => {
-    updateThreshold();
-    update();
-  };
-
   updateFloating = update;
   mobileMq.addEventListener('change', update);
   window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', onResize);
   update();
 };
 
