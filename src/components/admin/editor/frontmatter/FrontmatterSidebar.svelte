@@ -18,6 +18,7 @@ import {
   getFieldDescribedBy as getSharedFieldDescribedBy,
   getFieldIssueId as getSharedFieldIssueId
 } from '../shared/field-issue-a11y';
+import { normalizeLongformSlugInput } from '../../../../utils/slug-rules';
 
 type AdminContentIssue = {
   path: string;
@@ -37,6 +38,7 @@ type Props = {
   entryId?: string;
   showEntryId?: boolean;
   slugPlaceholder?: string;
+  normalizeSlugOnInput?: boolean;
   bitsDefaultAuthor?: BitsCardAuthorInput;
   authorProfiles?: readonly AuthorLibraryProfile[];
   ariaLabel?: string;
@@ -53,6 +55,7 @@ let {
   entryId = '',
   showEntryId = false,
   slugPlaceholder = '',
+  normalizeSlugOnInput = false,
   bitsDefaultAuthor = {},
   authorProfiles = [],
   ariaLabel = '内容字段',
@@ -84,6 +87,11 @@ const getFieldDescribedBy = (
   extraIds: readonly string[] = []
 ): string | undefined => {
   return getSharedFieldDescribedBy(FRONTMATTER_ISSUE_ID_SCOPE, path, issue, extraIds);
+};
+
+const handleSlugInput = (event: Event) => {
+  if (!normalizeSlugOnInput || !(event.currentTarget instanceof HTMLInputElement)) return;
+  event.currentTarget.value = normalizeLongformSlugInput(event.currentTarget.value);
 };
 
 const base = import.meta.env.BASE_URL ?? '/';
@@ -517,6 +525,7 @@ const bitsAuthorAvatarFallback = $derived(
           name="slug"
           type="text"
           bind:value={value.slug}
+          oninput={handleSlugInput}
           placeholder={slugPlaceholder}
           spellcheck="false"
           aria-invalid={getIssue('slug') ? 'true' : undefined}

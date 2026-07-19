@@ -552,6 +552,7 @@ $effect(() => {
     entryId={dialogMode === 'create' ? createEntryId : selectedEntryId}
     showEntryId={dialogMode === 'create'}
     {slugPlaceholder}
+    normalizeSlugOnInput={dialogMode === 'create'}
     dialogTitle={dialogMode === 'create' ? '新建长文' : selectedCollection === 'bits' ? '修改信息' : '长文信息'}
     fieldsAriaLabel={selectedCollection === 'bits' ? '标题、摘要与作者' : '长文字段'}
     {bitsDefaultAuthor}

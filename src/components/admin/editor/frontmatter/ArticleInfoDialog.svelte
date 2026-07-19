@@ -34,6 +34,7 @@ type Props = {
   entryId?: string;
   showEntryId?: boolean;
   slugPlaceholder?: string;
+  normalizeSlugOnInput?: boolean;
   relativePath?: string;
   bitsDefaultAuthor?: BitsCardAuthorInput;
   authorProfiles?: readonly AuthorLibraryProfile[];
@@ -63,6 +64,7 @@ let {
   entryId = '',
   showEntryId = false,
   slugPlaceholder = '',
+  normalizeSlugOnInput = false,
   relativePath = '',
   bitsDefaultAuthor = {},
   authorProfiles = [],
@@ -198,6 +200,7 @@ $effect(() => {
             {entryId}
             {showEntryId}
             {slugPlaceholder}
+            {normalizeSlugOnInput}
             {bitsDefaultAuthor}
             {authorProfiles}
             ariaLabel={fieldsAriaLabel}

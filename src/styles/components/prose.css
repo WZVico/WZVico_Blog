@@ -18,6 +18,15 @@
   font-weight: inherit;
 }
 
+/* Heti's negative-margin fallback duplicates native punctuation trimming in
+ * modern browsers, causing pairs such as `》（` to visibly overlap. */
+@supports (text-spacing-trim: space-all) {
+  .prose.heti .heti-adjacent-half,
+  .prose.heti .heti-adjacent-quarter {
+    margin-inline-end: 0;
+  }
+}
+
 .prose .page-anchor {
   display: block;
   height: 0;

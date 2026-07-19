@@ -11,6 +11,10 @@ import { slug as githubSlug } from 'github-slugger';
 /** A valid public slug must be lowercase kebab-case. */
 export const LONGFORM_PUBLIC_SLUG_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
+/** Format text as it is entered in the longform public URL field. */
+export const normalizeLongformSlugInput = (value: string): string =>
+  value.toLowerCase().replace(/\s+/g, '-');
+
 /**
  * Slug values that collide with sibling static routes under `/archive/` or
  * `/longform/`.  Since longform slugs are always single-segment (enforced by schema
