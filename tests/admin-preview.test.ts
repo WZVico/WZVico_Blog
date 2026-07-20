@@ -22,6 +22,8 @@ describe('admin markdown preview', () => {
 
     expect(result.collection).toBe('longform');
     expect(result.html).toContain('<h2 data-admin-outline-key');
+    expect(result.html).toMatch(/<h2[^>]+data-admin-source-start="0"[^>]+data-admin-source-end="10"/);
+    expect(result.html).toMatch(/<p[^>]+data-admin-source-start="12"[^>]+data-admin-source-end=/);
     expect(result.html).toContain('编辑器正文标题');
     expect(result.html).toContain('<em>斜体</em>');
     expect(result.html).toContain('<strong>加粗</strong>');
@@ -35,6 +37,27 @@ describe('admin markdown preview', () => {
     expect(result.html).not.toContain('*斜体*');
     expect(result.html).not.toContain('**加粗**');
     expect(result.html).not.toContain(':::tip');
+  });
+
+  it('adds source ranges to rendered blocks without exposing them outside the admin preview', async () => {
+    const result = await renderAdminMarkdownPreview({
+      collection: 'longform',
+      source: [
+        '第一段正文。',
+        '',
+        '- 列表项目一',
+        '- 列表项目二',
+        '',
+        '```ts',
+        'const answer = 42;',
+        '```'
+      ].join('\n')
+    });
+
+    expect(result.html).toMatch(/<p data-admin-source-start="0" data-admin-source-end="6">/);
+    expect(result.html).toMatch(/<ul[^>]+data-admin-source-start="8"[^>]+data-admin-source-end=/);
+    expect(result.html).toMatch(/<li[^>]+data-admin-source-start="8"[^>]+data-admin-source-end=/);
+    expect(result.html).toMatch(/<div class="code-block"[^>]+data-admin-source-start=/);
   });
 
   it('keeps longform preview independent from article info/frontmatter', async () => {

@@ -21,6 +21,7 @@ import type {
 import type { EditableImageBlock } from '../media-insert/editor-image-blocks';
 import type { EditableGalleryBlock } from '../media-insert/editor-gallery-blocks';
 import type { MarkdownHighlightTheme } from '../markdown/editor-markdown-highlight';
+import type { EditorSourcePosition } from './editor-preview-follow';
 import BodyEditor from './BodyEditor.svelte';
 import EditorSidePanels from '../markdown/EditorSidePanels.svelte';
 import PreviewPane from './PreviewPane.svelte';
@@ -44,8 +45,11 @@ type Props = {
   writeResult: AdminContentWriteResult | null;
   syncScrollEnabled: boolean;
   scrollSyncToggleLabel: string;
+  scrollSyncControlText?: string;
   scrollSyncControlDisabled: boolean;
   scrollTopControlDisabled: boolean;
+  locatePreviewControlLabel?: string;
+  locatePreviewControlDisabled?: boolean;
   getWriteFieldLabel: (field: string) => string;
   mediaEditEnabled?: boolean;
   galleryEditEnabled?: boolean;
@@ -70,6 +74,8 @@ type Props = {
   outlinePanelLabel?: string;
   onBodyScrollElementChange: (element: HTMLElement | null) => void;
   onBodyOutlineJump: (element: HTMLElement) => void;
+  onSourcePositionChange?: (position: EditorSourcePosition | null) => void;
+  onViewportPositionChange?: (position: EditorSourcePosition) => void;
   onImageToolRequest: (block: EditableImageBlock | null) => void;
   onGalleryEditRequest: (block: EditableGalleryBlock) => void;
   onBodyChange?: (value: string) => void;
@@ -77,6 +83,7 @@ type Props = {
   onPreviewArticleElementChange?: (element: HTMLElement | null) => void;
   onShortcutTool: (toolId: MarkdownToolId) => void;
   onToggleScrollSync: () => void;
+  onLocatePreview?: (() => void) | null;
   onScrollToTop: () => void;
   onOutlineTabChange: (tab: EditorOutlineTab) => void;
   onOutlineHeadingSelect: (item: MarkdownOutlineItem) => void;
@@ -104,8 +111,11 @@ let {
   writeResult,
   syncScrollEnabled,
   scrollSyncToggleLabel,
+  scrollSyncControlText = '同步滚动',
   scrollSyncControlDisabled,
   scrollTopControlDisabled,
+  locatePreviewControlLabel = '定位到当前编辑处',
+  locatePreviewControlDisabled = false,
   getWriteFieldLabel,
   mediaEditEnabled = true,
   galleryEditEnabled = true,
@@ -130,6 +140,8 @@ let {
   outlinePanelLabel = '编辑器目录',
   onBodyScrollElementChange,
   onBodyOutlineJump,
+  onSourcePositionChange = () => {},
+  onViewportPositionChange = () => {},
   onImageToolRequest,
   onGalleryEditRequest,
   onBodyChange = () => {},
@@ -137,6 +149,7 @@ let {
   onPreviewArticleElementChange = () => {},
   onShortcutTool,
   onToggleScrollSync,
+  onLocatePreview = null,
   onScrollToTop,
   onOutlineTabChange,
   onOutlineHeadingSelect,
@@ -168,6 +181,8 @@ let {
         {aboutDirectiveHighlightEnabled}
         onScrollElementChange={onBodyScrollElementChange}
         onOutlineJump={onBodyOutlineJump}
+        {onSourcePositionChange}
+        {onViewportPositionChange}
         {mediaEditEnabled}
         {galleryEditEnabled}
         {onImageToolRequest}
@@ -189,10 +204,14 @@ let {
       {writeResult}
       {syncScrollEnabled}
       {scrollSyncToggleLabel}
+      {scrollSyncControlText}
       {scrollSyncControlDisabled}
       {scrollTopControlDisabled}
+      {locatePreviewControlLabel}
+      {locatePreviewControlDisabled}
       {getWriteFieldLabel}
       onToggleScrollSync={onToggleScrollSync}
+      {onLocatePreview}
       onScrollToTop={onScrollToTop}
     />
     <div class="admin-editor-shell__pane admin-editor-shell__pane--preview" hidden={effectiveViewMode === 'edit'}>

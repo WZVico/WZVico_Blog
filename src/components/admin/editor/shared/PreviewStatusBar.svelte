@@ -15,10 +15,14 @@ type Props = {
   writeResult?: AdminContentWriteResult | null;
   syncScrollEnabled?: boolean;
   scrollSyncToggleLabel: string;
+  scrollSyncControlText?: string;
   scrollSyncControlDisabled?: boolean;
   scrollTopControlDisabled?: boolean;
+  locatePreviewControlLabel?: string;
+  locatePreviewControlDisabled?: boolean;
   getWriteFieldLabel: (field: string) => string;
   onToggleScrollSync: () => void;
+  onLocatePreview?: (() => void) | null;
   onScrollToTop: () => void;
 };
 
@@ -32,10 +36,14 @@ let {
   writeResult = null,
   syncScrollEnabled = false,
   scrollSyncToggleLabel,
+  scrollSyncControlText = '同步滚动',
   scrollSyncControlDisabled = false,
   scrollTopControlDisabled = false,
+  locatePreviewControlLabel = '定位到当前编辑处',
+  locatePreviewControlDisabled = false,
   getWriteFieldLabel,
   onToggleScrollSync,
+  onLocatePreview = null,
   onScrollToTop
 }: Props = $props();
 </script>
@@ -151,8 +159,20 @@ let {
       onclick={onToggleScrollSync}
     >
       <AdminEditorIcon name={syncScrollEnabled ? 'lock' : 'lock-open'} size={14} strokeWidth={2} />
-      <span>同步滚动</span>
+      <span>{scrollSyncControlText}</span>
     </button>
+    {#if onLocatePreview}
+      <button
+        class="admin-btn admin-btn--ghost admin-btn--compact admin-editor-shell__preview-action"
+        type="button"
+        aria-label={locatePreviewControlLabel}
+        disabled={locatePreviewControlDisabled}
+        onclick={onLocatePreview}
+      >
+        <AdminEditorIcon name="map-pin" size={14} strokeWidth={2} />
+        <span>定位编辑处</span>
+      </button>
+    {/if}
     <span class="admin-editor-shell__preview-separator" aria-hidden="true">|</span>
     <button
       class="admin-btn admin-btn--ghost admin-btn--compact admin-editor-shell__preview-action"

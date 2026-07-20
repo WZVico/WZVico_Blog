@@ -31,6 +31,13 @@ import type {
   MarkdownToolbarCommand,
   MarkdownToolId
 } from '../markdown/markdown-tools';
+import {
+  EDITOR_FOCUS_BAND_CENTER_RATIO,
+  EDITOR_FOCUS_BAND_END_RATIO,
+  EDITOR_FOCUS_BAND_START_RATIO,
+  PREVIEW_FOCUS_TARGET_RATIO,
+  type EditorSourcePosition
+} from './editor-preview-follow';
 
 type Props = {
   value: string;
@@ -46,6 +53,8 @@ type Props = {
   onImageToolRequest?: (block: EditableImageBlock | null) => void;
   onGalleryEditRequest?: (block: EditableGalleryBlock) => void;
   onChange?: (value: string) => void;
+  onSourcePositionChange?: (position: EditorSourcePosition | null) => void;
+  onViewportPositionChange?: (position: EditorSourcePosition) => void;
   onShortcutTool?: (toolId: MarkdownToolId) => void;
 };
 
@@ -63,6 +72,8 @@ let {
   onImageToolRequest,
   onGalleryEditRequest,
   onChange,
+  onSourcePositionChange,
+  onViewportPositionChange,
   onShortcutTool
 }: Props = $props();
 
@@ -82,6 +93,46 @@ const getEditorSelection = (editorView: EditorView): EditorTextSelection => {
     from: selection.from,
     to: selection.to
   };
+};
+
+const getActiveSourcePosition = (editorView: EditorView): EditorSourcePosition => {
+  const offset = editorView.state.selection.main.head;
+  const line = editorView.state.doc.lineAt(offset).number;
+  const scrollerRect = editorView.scrollDOM.getBoundingClientRect();
+  const cursorRect = editorView.coordsAtPos(offset);
+  const viewportRatio = cursorRect && editorView.scrollDOM.clientHeight > 0
+    ? (cursorRect.top - scrollerRect.top) / editorView.scrollDOM.clientHeight
+    : 0.3;
+
+  return { offset, line, viewportRatio };
+};
+
+const getViewportSourcePosition = (editorView: EditorView): EditorSourcePosition => {
+  const scrollerRect = editorView.scrollDOM.getBoundingClientRect();
+  const contentRect = editorView.contentDOM.getBoundingClientRect();
+  const x = Math.min(
+    scrollerRect.right - 1,
+    Math.max(scrollerRect.left + 1, contentRect.left + 12)
+  );
+  const sampleRatios = [
+    EDITOR_FOCUS_BAND_CENTER_RATIO,
+    0.4,
+    0.5,
+    0.35,
+    0.55,
+    EDITOR_FOCUS_BAND_START_RATIO,
+    EDITOR_FOCUS_BAND_END_RATIO
+  ];
+  const sampledOffsets = sampleRatios.map((ratio) => {
+    const y = scrollerRect.top + editorView.scrollDOM.clientHeight * ratio;
+    return editorView.posAtCoords({ x, y }, false) ?? editorView.viewport.from;
+  });
+  const offset = sampledOffsets.find((sampledOffset) => (
+    editorView.state.doc.lineAt(sampledOffset).text.trim().length > 0
+  )) ?? sampledOffsets[0] ?? editorView.viewport.from;
+  const line = editorView.state.doc.lineAt(offset).number;
+
+  return { offset, line, viewportRatio: PREVIEW_FOCUS_TARGET_RATIO };
 };
 
 const dispatchMarkdownEdit = (edit: MarkdownTextEdit) => {
@@ -239,15 +290,19 @@ const createEditorExtensions = (): Extension[] => [
   readOnlyCompartment.of(EditorState.readOnly.of(disabled)),
   editableCompartment.of(EditorView.editable.of(!disabled)),
   EditorView.updateListener.of((update) => {
-    if (!update.docChanged) return;
-
-    const nextValue = normalizeEditorBodyValue(update.state.doc.toString());
-    lastKnownEditorValue = nextValue;
-    if (nextValue !== value) {
-      value = nextValue;
+    if (update.docChanged) {
+      const nextValue = normalizeEditorBodyValue(update.state.doc.toString());
+      lastKnownEditorValue = nextValue;
+      if (nextValue !== value) {
+        value = nextValue;
+      }
+      if (!update.transactions.some((transaction) => transaction.annotation(Transaction.addToHistory) === false)) {
+        onChange?.(nextValue);
+      }
     }
-    if (!update.transactions.some((transaction) => transaction.annotation(Transaction.addToHistory) === false)) {
-      onChange?.(nextValue);
+
+    if (update.docChanged || update.selectionSet || (update.focusChanged && update.view.hasFocus)) {
+      onSourcePositionChange?.(getActiveSourcePosition(update.view));
     }
   })
 ];
@@ -271,9 +326,30 @@ onMount(() => {
 
   view = editorView;
   onScrollElementChange?.(editorView.scrollDOM);
+  onSourcePositionChange?.(getActiveSourcePosition(editorView));
+
+  let viewportFollowFrame: number | null = null;
+
+  const queueViewportPosition = () => {
+    if (!onViewportPositionChange || viewportFollowFrame !== null) return;
+
+    viewportFollowFrame = window.requestAnimationFrame(() => {
+      viewportFollowFrame = null;
+      onViewportPositionChange?.(getViewportSourcePosition(editorView));
+    });
+  };
+
+  const handleViewportScroll = () => {
+    queueViewportPosition();
+  };
+
+  editorView.scrollDOM.addEventListener('scroll', handleViewportScroll, { passive: true });
 
   return () => {
+    if (viewportFollowFrame !== null) window.cancelAnimationFrame(viewportFollowFrame);
+    editorView.scrollDOM.removeEventListener('scroll', handleViewportScroll);
     onScrollElementChange?.(null);
+    onSourcePositionChange?.(null);
     editorView.destroy();
     view = null;
   };

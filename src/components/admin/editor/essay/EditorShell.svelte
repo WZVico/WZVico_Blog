@@ -40,7 +40,6 @@ import {
   EDITOR_OUTLINE_TARGET_SCROLL_OFFSET_RATIO,
   EDITOR_SCROLLBAR_VISIBILITY_TIMEOUT_MS,
   getEditorBodyCharCount,
-  getEditorScrollSyncToggleLabel,
   getPreviewDebounceMs,
   normalizeEditorBodyValue,
   readStoredWriteFeedback,
@@ -66,6 +65,13 @@ import {
 } from '../shared/editor-preview-request-guard';
 import type { MarkdownToolbarCommand } from '../markdown/markdown-tools';
 import { createMarkdownCommandDispatcher } from '../markdown/editor-markdown-command-dispatcher';
+import {
+  EDITOR_FOCUS_BAND_END_RATIO,
+  EDITOR_FOCUS_BAND_START_RATIO,
+  PREVIEW_FOCUS_TARGET_RATIO,
+  scrollPreviewToSourcePosition,
+  type EditorSourcePosition
+} from '../shared/editor-preview-follow';
 import type { EssayEditorShellProps } from './editor-shell-props';
 import { getContentEditorAdapter, isEssayEditorValues } from '../shared/content-editor-adapters';
 
@@ -162,6 +168,12 @@ let bodyScrollElement = $state<HTMLElement | null>(null);
 let previewScrollElement = $state<HTMLElement | null>(null);
 let previewArticleElement = $state<HTMLElement | null>(null);
 let syncScrollEnabled = $state(true);
+let activeSourcePosition = $state<EditorSourcePosition | null>(null);
+let previewFollowPaused = false;
+let previewFollowFrame: number | null = null;
+let previewFollowAlignmentPending = false;
+let previewFollowAllowWhenDisabledPending = false;
+let viewportFollowSuppressedUntil = 0;
 let writeFeedbackRestored = false;
 let pendingPreviewOutlineKey = $state<string | null>(null);
 let pendingPreviewOutlineJumpId = 0;
@@ -181,12 +193,16 @@ const exportHref = $derived(buildContentExportHref(exportEndpoint, collection, e
 const scrollSyncAvailable = $derived(
   shell.effectiveViewMode === 'both' && Boolean(bodyScrollElement && previewScrollElement)
 );
-const scrollSyncToggleLabel = $derived(getEditorScrollSyncToggleLabel({
-  available: scrollSyncAvailable,
-  enabled: syncScrollEnabled
-}));
+const scrollSyncToggleLabel = $derived(
+  scrollSyncAvailable
+    ? (syncScrollEnabled ? '关闭预览跟随编辑' : '开启预览跟随编辑')
+    : '双区视图下可使用预览跟随编辑'
+);
 const scrollSyncControlDisabled = $derived(!scrollSyncAvailable);
 const scrollTopControlDisabled = $derived(!bodyScrollElement && !previewScrollElement);
+const locatePreviewControlDisabled = $derived(
+  !scrollSyncAvailable || !activeSourcePosition || !previewHtml || previewBusy
+);
 const markdownOutlineItems = $derived(
   essayOutlineEnabled && shell.outlineVisible && shell.outlineActiveTab === 'headings'
     ? extractMarkdownOutline(body)
@@ -288,12 +304,105 @@ const scrollSyncController = createEditorScrollSyncController({
   scrollbarVisibilityTimeoutMs: EDITOR_SCROLLBAR_VISIBILITY_TIMEOUT_MS
 });
 
-const handleEditorPaneScroll = (source: EditorScrollSource) => {
-  scrollSyncController.handlePaneScroll(source);
+const cancelQueuedPreviewFollow = () => {
+  if (previewFollowFrame === null) return;
+  window.cancelAnimationFrame(previewFollowFrame);
+  previewFollowFrame = null;
+};
+
+type PreviewFollowRequest = {
+  forceAlignment?: boolean;
+  allowWhenDisabled?: boolean;
+};
+
+const applyPreviewFollow = ({
+  forceAlignment = false,
+  allowWhenDisabled = false
+}: PreviewFollowRequest = {}): boolean => {
+  if (
+    !scrollSyncAvailable
+    || (!allowWhenDisabled && !syncScrollEnabled)
+    || (!forceAlignment && previewFollowPaused)
+    || previewBusy
+    || previewRequestGuard.getLatestSource() !== body
+  ) {
+    return false;
+  }
+
+  const scrolled = scrollPreviewToSourcePosition({
+    previewElement: previewScrollElement,
+    articleElement: previewArticleElement,
+    position: activeSourcePosition,
+    force: forceAlignment
+  });
+  if (scrolled && previewScrollElement) {
+    scrollSyncController.markElementScrolling(previewScrollElement);
+  }
+  return scrolled;
+};
+
+const queuePreviewFollow = ({
+  forceAlignment = false,
+  allowWhenDisabled = false
+}: PreviewFollowRequest = {}) => {
+  previewFollowAlignmentPending = previewFollowAlignmentPending || forceAlignment;
+  previewFollowAllowWhenDisabledPending = previewFollowAllowWhenDisabledPending || allowWhenDisabled;
+  if (previewFollowFrame !== null) return;
+
+  previewFollowFrame = window.requestAnimationFrame(() => {
+    previewFollowFrame = null;
+    const previewIsCurrent = !previewBusy && previewRequestGuard.getLatestSource() === body;
+    if (!previewIsCurrent) return;
+
+    const request = {
+      forceAlignment: previewFollowAlignmentPending,
+      allowWhenDisabled: previewFollowAllowWhenDisabledPending
+    };
+    previewFollowAlignmentPending = false;
+    previewFollowAllowWhenDisabledPending = false;
+    applyPreviewFollow(request);
+  });
+};
+
+const handleSourcePositionChange = (position: EditorSourcePosition | null) => {
+  const positionInFocusBand = position
+    && position.viewportRatio >= EDITOR_FOCUS_BAND_START_RATIO
+    && position.viewportRatio <= EDITOR_FOCUS_BAND_END_RATIO;
+  activeSourcePosition = positionInFocusBand
+    ? { ...position, viewportRatio: PREVIEW_FOCUS_TARGET_RATIO }
+    : position;
+  if (!position) return;
+
+  viewportFollowSuppressedUntil = Date.now() + 160;
+  previewFollowPaused = false;
+  queuePreviewFollow({ forceAlignment: Boolean(positionInFocusBand) });
+};
+
+const handleViewportPositionChange = (position: EditorSourcePosition) => {
+  if (Date.now() <= viewportFollowSuppressedUntil) return;
+
+  activeSourcePosition = position;
+  previewFollowPaused = false;
+  queuePreviewFollow({ forceAlignment: true });
+};
+
+const handlePreviewManualInteraction = () => {
+  if (syncScrollEnabled) previewFollowPaused = true;
 };
 
 const toggleScrollSync = () => {
-  scrollSyncController.toggleEnabled();
+  if (!scrollSyncAvailable) return;
+
+  syncScrollEnabled = !syncScrollEnabled;
+  if (syncScrollEnabled) {
+    previewFollowPaused = false;
+    queuePreviewFollow({ forceAlignment: true });
+  }
+};
+
+const locateActivePreviewPosition = () => {
+  previewFollowPaused = false;
+  queuePreviewFollow({ forceAlignment: true, allowWhenDisabled: true });
 };
 
 const scrollEditorPanesToTop = () => {
@@ -566,6 +675,7 @@ const refreshLongformPreviewEnhancements = async () => {
   initHeti('.admin-editor-preview__article--longform-detail.heti');
   initCodeCopyButtons();
   window.dispatchEvent(new Event('resize'));
+  queuePreviewFollow({ forceAlignment: true });
 };
 
 const resetToBaseline = () => {
@@ -703,33 +813,51 @@ $effect(() => {
   if (!bodyElement || !previewElement || shell.effectiveViewMode !== 'both') return;
 
   const handleBodyScroll = () => {
-    handleEditorPaneScroll('body');
+    scrollSyncController.markElementScrolling(bodyElement);
   };
 
   const handlePreviewScroll = () => {
-    handleEditorPaneScroll('preview');
+    scrollSyncController.markElementScrolling(previewElement);
   };
 
   const handlePreviewContentLoad = () => {
-    if (syncScrollEnabled && scrollSyncAvailable) {
-      scrollSyncController.queueLastSource();
-    }
+    queuePreviewFollow({ forceAlignment: true });
   };
 
   bodyElement.addEventListener('scroll', handleBodyScroll, { passive: true });
   previewElement.addEventListener('scroll', handlePreviewScroll, { passive: true });
   previewElement.addEventListener('load', handlePreviewContentLoad, true);
+  previewElement.addEventListener('wheel', handlePreviewManualInteraction, { passive: true });
+  previewElement.addEventListener('pointerdown', handlePreviewManualInteraction, { passive: true });
+  previewElement.addEventListener('touchstart', handlePreviewManualInteraction, { passive: true });
 
   if (syncScrollEnabled) {
-    scrollSyncController.queueLastSource();
+    queuePreviewFollow();
   }
 
   return () => {
     bodyElement.removeEventListener('scroll', handleBodyScroll);
     previewElement.removeEventListener('scroll', handlePreviewScroll);
     previewElement.removeEventListener('load', handlePreviewContentLoad, true);
+    previewElement.removeEventListener('wheel', handlePreviewManualInteraction);
+    previewElement.removeEventListener('pointerdown', handlePreviewManualInteraction);
+    previewElement.removeEventListener('touchstart', handlePreviewManualInteraction);
     scrollSyncController.clearElement(bodyElement);
     scrollSyncController.clearElement(previewElement);
+  };
+});
+
+$effect(() => {
+  const articleElement = previewArticleElement;
+  if (!articleElement || typeof ResizeObserver === 'undefined') return;
+
+  const observer = new ResizeObserver(() => {
+    queuePreviewFollow({ forceAlignment: true });
+  });
+  observer.observe(articleElement);
+
+  return () => {
+    observer.disconnect();
   };
 });
 
@@ -742,6 +870,7 @@ $effect(() => {
 
 $effect(() => {
   return () => {
+    cancelQueuedPreviewFollow();
     scrollSyncController.destroy();
     previewRequestGuard.destroy();
   };
@@ -884,8 +1013,11 @@ $effect(() => {
       writeResult={visibleWriteResult}
       {syncScrollEnabled}
       {scrollSyncToggleLabel}
+      scrollSyncControlText="预览跟随"
       {scrollSyncControlDisabled}
       {scrollTopControlDisabled}
+      locatePreviewControlLabel="将预览定位到当前编辑位置"
+      {locatePreviewControlDisabled}
       getWriteFieldLabel={editorAdapter.getWriteFieldLabel}
       mediaEditEnabled={imageInsertEnabled}
       galleryEditEnabled={galleryInsertEnabled}
@@ -901,12 +1033,15 @@ $effect(() => {
       {outlineListItems}
       onBodyScrollElementChange={setBodyScrollElement}
       onBodyOutlineJump={handleBodyOutlineJump}
+      onSourcePositionChange={handleSourcePositionChange}
+      onViewportPositionChange={handleViewportPositionChange}
       onImageToolRequest={handleImageToolRequest}
       onGalleryEditRequest={handleGalleryEditRequest}
       onPreviewScrollElementChange={setPreviewScrollElement}
       onPreviewArticleElementChange={setPreviewArticleElement}
       onShortcutTool={markdownCommandDispatcher.applyTool}
       onToggleScrollSync={toggleScrollSync}
+      onLocatePreview={locateActivePreviewPosition}
       onScrollToTop={scrollEditorPanesToTop}
       onOutlineTabChange={shell.setOutlineTab}
       onOutlineHeadingSelect={handleOutlineHeadingSelect}

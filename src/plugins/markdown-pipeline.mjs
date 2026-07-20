@@ -166,6 +166,12 @@ export const previewMarkdownRehypeSegments = Object.freeze([
     before: 'math-boundary-protect'
   },
   {
+    id: 'preview-source-map-before-highlight',
+    previewOnly: true,
+    plugins: ['createPreviewSourceMapCapturePlugin'],
+    before: 'math-boundary-protect'
+  },
+  {
     id: 'math-boundary-protect',
     plugins: ['rehypeProtectMarkdownMath']
   },
@@ -181,6 +187,13 @@ export const previewMarkdownRehypeSegments = Object.freeze([
     plugins: ['rehype-raw', 'rehypeRestoreMarkdownMathBoundary'],
     after: 'code-highlighting',
     before: 'sanitize'
+  },
+  {
+    id: 'preview-source-map',
+    previewOnly: true,
+    plugins: ['createPreviewSourceMapFinalizePlugin'],
+    after: 'sanitize',
+    before: 'katex'
   },
   {
     id: 'preview-local-image-src',

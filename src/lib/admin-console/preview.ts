@@ -25,6 +25,9 @@ import {
 } from './content-entry-source';
 import type { AdminContentCollectionKey } from './content-collections';
 import { extractMarkdownOutline } from './editor-outline';
+import {
+  PREVIEW_SOURCE_BLOCK_TAG_NAMES
+} from './preview-source-map';
 
 export const ADMIN_PREVIEW_CODE_HIGHLIGHT_MODE = 'shiki-rehype' as const;
 
@@ -163,6 +166,67 @@ const createPreviewOutlineAnchorPlugin = (source: string): Plugin<[], Root> => {
   };
 };
 
+type PreviewCodeSourceRange = {
+  start: number;
+  end: number;
+};
+
+const applyPreviewSourceRange = (node: Element, start: number, end: number) => {
+  node.properties = {
+    ...node.properties,
+    dataAdminSourceStart: String(start),
+    dataAdminSourceEnd: String(end)
+  };
+};
+
+const createPreviewSourceMapCapturePlugin = (): Plugin<[], Root> => {
+  return () => (tree, file) => {
+    const codeRanges: PreviewCodeSourceRange[] = [];
+
+    visit(tree, 'element', (node: Element) => {
+      if (node.tagName !== 'pre') return;
+
+      const start = node.position?.start.offset;
+      const end = node.position?.end.offset;
+      if (typeof start !== 'number' || typeof end !== 'number' || end < start) return;
+
+      codeRanges.push({ start, end });
+    });
+
+    file.data.adminPreviewCodeSourceRanges = codeRanges;
+  };
+};
+
+const hasClassName = (node: Element, className: string): boolean => {
+  const value = node.properties?.className;
+  if (Array.isArray(value)) return value.includes(className);
+  return typeof value === 'string' && value.split(/\s+/).includes(className);
+};
+
+const createPreviewSourceMapFinalizePlugin = (): Plugin<[], Root> => {
+  return () => (tree, file) => {
+    visit(tree, 'element', (node: Element) => {
+      if (!PREVIEW_SOURCE_BLOCK_TAG_NAMES.has(node.tagName)) return;
+
+      const start = node.position?.start.offset;
+      const end = node.position?.end.offset;
+      if (typeof start !== 'number' || typeof end !== 'number' || end < start) return;
+      applyPreviewSourceRange(node, start, end);
+    });
+
+    const codeRanges = Array.isArray(file.data.adminPreviewCodeSourceRanges)
+      ? file.data.adminPreviewCodeSourceRanges as PreviewCodeSourceRange[]
+      : [];
+    let codeRangeIndex = 0;
+    visit(tree, 'element', (node: Element) => {
+      if (node.tagName !== 'div' || !hasClassName(node, 'code-block')) return;
+      const range = codeRanges[codeRangeIndex];
+      codeRangeIndex += 1;
+      if (range) applyPreviewSourceRange(node, range.start, range.end);
+    });
+  };
+};
+
 const useProcessorPlugin = (processor: any, pluginEntry: any) => {
   if (Array.isArray(pluginEntry)) {
     processor.use(pluginEntry[0], pluginEntry[1]);
@@ -193,12 +257,14 @@ const createPreviewProcessor = (_collection: AdminContentCollectionKey, sourceFi
 
   processor.use(remarkRehype, { allowDangerousHtml: true });
   processor.use(createPreviewOutlineAnchorPlugin(source));
+  processor.use(createPreviewSourceMapCapturePlugin());
   useProcessorPlugin(processor, rehypeProtectMath);
   processor.use(rehypeShiki, previewShikiOptions);
   useProcessorPlugin(processor, rehypeRawHtml);
   useProcessorPlugin(processor, rehypeRestoreMathBoundary);
   processor.use(createPreviewImageSrcPlugin(sourceFilePath));
   useProcessorPlugin(processor, rehypeSanitizeSchema);
+  processor.use(createPreviewSourceMapFinalizePlugin());
   useProcessorPlugin(processor, rehypeRenderKatex);
 
   return processor

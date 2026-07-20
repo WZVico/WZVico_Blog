@@ -134,6 +134,17 @@ describe('markdown pipeline contract', () => {
       previewOnly: true,
       plugins: ['createPreviewImageSrcPlugin']
     });
+    expect(previewMarkdownRehypeSegments.find((segment) => segment.id === 'preview-source-map')).toMatchObject({
+      previewOnly: true,
+      plugins: ['createPreviewSourceMapFinalizePlugin'],
+      after: 'sanitize',
+      before: 'katex'
+    });
+    expect(previewMarkdownRehypeSegments.find((segment) => segment.id === 'preview-source-map-before-highlight')).toMatchObject({
+      previewOnly: true,
+      plugins: ['createPreviewSourceMapCapturePlugin'],
+      before: 'math-boundary-protect'
+    });
   });
 
   it('creates shared project remark and rehype plugin entries', () => {
